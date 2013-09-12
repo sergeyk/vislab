@@ -1,3 +1,4 @@
+import operator
 import os
 import pandas as pd
 import numpy as np
@@ -11,12 +12,17 @@ class Collection(object):
     def __init__(self):
         # load dataframe
         self.images = aphrodite.flickr.load_flickr_df()
-        self.images = self.images.iloc[:1000]
+        #self.images = self.images.iloc[:1000]
 
-        self.feats = pd.read_hdf(
-            os.path.expanduser('~/work/aphrodite/data/feats/flickr/decaf_fc6_arr_df.h5'),
-            'df')
-        self.feats = self.feats.ix[self.images.index]
+        preds_filename = os.path.expanduser(
+            '~/work/aphrodite/data/results/flickr_decaf_fc6_preds.h5')
+        preds = pd.read_hdf(preds_filename, 'df')
+        self.images = self.images.join(preds)
+
+        feats_filename = os.path.expanduser(
+            '~/work/aphrodite/data/feats/flickr/decaf_fc6_arr_df.h5')
+        feats = pd.read_hdf(feats_filename, 'df')
+        self.feats = feats.ix[self.images.index]
 
     def find_by_id(self, id_):
         """
@@ -25,13 +31,12 @@ class Collection(object):
         image = self.images.ix[id_]
         return image.to_dict()
 
-    def nn_by_id(self, id_, feature, distance, page=1, style='all'):
+    def nn_by_id(self, id_, feature, distance, page=1,
+                 filter_conditions=None):
         t = time.time()
 
         # Filter on images if given filter.
-        images = self.images
-        if style != 'all':
-            images = images[images[style]]
+        images = filter(self.images, filter_conditions)
 
         # Compute feature distances among candidates.
         # TODO: handle different features
@@ -58,6 +63,25 @@ class Collection(object):
             'num_results': num_results,
             'time_elapsed': time.time() - t
         }
+
+
+def filter(df, conditions):
+    """
+    Filter the DataFrame based on free-form conditions.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+    filter_conditions: dict
+        column: condition as str
+        ex: {'pred_HDR': '> 0'}
+    """
+    if conditions is None or len(conditions) == 0:
+        return df
+    inds = [eval("df['{}'] {}".format(col, condition))
+            for col, condition in conditions.iteritems()]
+    ind = reduce(operator.and_, inds)
+    return df[ind]
 
 
 def nn(feat, feats, distance='euclidean', K=50):

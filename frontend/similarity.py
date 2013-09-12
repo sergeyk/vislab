@@ -21,7 +21,8 @@ def similar_to_id():
     """
     select_options = {
         'distance': ['euclidean', 'manhattan', 'chi_square'],
-        'style': ['all'] + aphrodite.flickr.underscored_style_names
+        'style': ['all'] + aphrodite.flickr.underscored_style_names,
+        'prediction': ['all'] + ['pred_{}'.format(x) for x in aphrodite.flickr.underscored_style_names]
     }
 
     args = util.get_query_args(
@@ -30,7 +31,8 @@ def similar_to_id():
             'feature': 'decaf_fc6',
             'distance': 'euclidean',
             'page': 1,
-            'style': 'all'
+            'style': 'all',
+            'prediction': 'all'
         },
         types={
             'page': int
@@ -39,9 +41,14 @@ def similar_to_id():
 
     # In case of style_pred args, make a lambda filter and pass it.
     # Want to keep collection code very domain-independent.
+    filter_conditions = {}
+    if args['style'] != 'all':
+        filter_conditions = {args['style']: ''}
+    if args['prediction'] != 'all':
+        filter_conditions.update({args['prediction']: '> 0'})
     results_data = collection.nn_by_id(
         args['id'], args['feature'], args['distance'], args['page'],
-        args['style']
+        filter_conditions
     )
 
     # Fetch all information we have about the image: url, labels.
