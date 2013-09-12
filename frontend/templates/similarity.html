@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+    <title>VisLab: Image Similarity</title>
+
+    <link href="/static/main.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" />
+
+    <script src="/static/sprintf-0.7-beta1.js"></script>
+    <script src="/static/jquery-1.10.2.min.js"></script>
+
+    <script>
+    $(document).ready(function() {
+        id = "{{args.id}}";
+        page = {{args.page}};
+
+        // Set selects to the passed-in arguments.
+        {% for arg_name, val in args.iteritems() %}
+            $("#{{arg_name}}").val("{{val}}");
+        {% endfor %}
+
+        var get_full_query = function(query) {
+            var full_query = {
+                'id': id,
+                'page': page
+            };
+            $('.query_arg').each(function(i, x) {
+                full_query[$(x).attr('id')] = $(x).val();
+            });
+            $.extend(full_query, query);
+            console.log(full_query);
+            return full_query;
+        };
+
+        var update_url_with_query = function(query) {
+            full_query = get_full_query(query);
+            search_url = './similar_to?' + $.param(full_query);
+            window.location = search_url;
+        };
+
+        // Any change in drop-down menu triggers page reload.
+        $('select').change(function() {
+            page = 1;
+            update_url_with_query();
+        });
+
+        $('#prev-page').click(function() {
+            update_url_with_query({'page': Math.max(1, page - 1)});
+        });
+
+        $('#next-page').click(function() {
+            update_url_with_query({'page': page + 1});
+        });
+    });
+    </script>
+</head>
+
+<body><div class="container">
+
+<h1>
+    <a href="/"><i class="icon-home"></i></a>&nbsp;
+    VisLab: Similar Images
+</h1>
+
+<div id="search-form">
+    <div class="query-image" style="display: inline-block; width: 520px;">
+        <img src="{{image_info.image_url}}" alt="query image" width="500px" />
+        <br />
+        <a href="{{image_info.page_url}}">source url</a>
+    </div>
+
+    <div id="search-options" style="display: inline-block;">
+        {% for name, options in select_options.iteritems() %}
+        <label for="{{name}}">{{name}}</label>
+        <select id="{{name}}" class='query_arg'>
+            {% for x in options %}
+            <option value="{{ x }}">{{ x }}</option>
+            {% endfor %}
+        </select>
+        <br />
+        {% endfor %}
+    </div>
+</div>
+
+<hr />
+
+<div id="images">
+    <div class="results-nav">
+        <h3>Matching images</h3>
+        <span id="num-results">{{results_data.num_results}}</span> results
+        (processed in {{'{:.3f}'.format(results_data.time_elapsed)}} s),
+            <a href="#" id="prev-page">&larr;</a>
+            page <span id="page">{{results_data.page}}</span>
+            (starting at {{ results_data.start_ind }})
+            <a href="#" id="next-page">&rarr;</a>
+    <div id="results">
+    {% for result in results_data.results %}
+        <div class="result">
+            <a href="/similar_to?id={{result.image_id}}">
+                <img src="{{result.image_url}}" width="160px" /><br />
+                <div class="caption">
+                    {{ '{:.3f}'.format(result.distance) }}
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+
+</div></body>
+</html>
