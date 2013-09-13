@@ -1,5 +1,6 @@
 import operator
 import os
+import bottleneck as bn
 import pandas as pd
 import numpy as np
 import time
@@ -10,19 +11,28 @@ import aphrodite.flickr
 class Collection(object):
 
     def __init__(self):
-        # load dataframe
+        # Load image information in a dataframe.
         self.images = aphrodite.flickr.load_flickr_df()
-        #self.images = self.images.iloc[:1000]
+        #self.images = self.images.iloc[:10000]
 
+        # Load predictions, which are used to filter results and as a
+        # feature.
         preds_filename = os.path.expanduser(
             '~/work/aphrodite/data/results/flickr_decaf_fc6_preds.h5')
         preds = pd.read_hdf(preds_filename, 'df')
+        preds = preds.ix[self.images.index]
         self.images = self.images.join(preds)
 
+        # Load all features.
         feats_filename = os.path.expanduser(
             '~/work/aphrodite/data/feats/flickr/decaf_fc6_arr_df.h5')
         feats = pd.read_hdf(feats_filename, 'df')
-        self.feats = feats.ix[self.images.index]
+        feats = feats.ix[self.images.index]
+
+        self.features = {
+            'deep learned fc6': feats,
+            'style scores': preds
+        }
 
     def get_random_id(self):
         ind = np.random.randint(self.images.shape[0] + 1)
@@ -37,15 +47,16 @@ class Collection(object):
 
     def nn_by_id(self, id_, feature, distance, page=1,
                  filter_conditions=None):
+        assert(feature in self.features)
         t = time.time()
 
         # Filter on images if given filter.
         images = filter(self.images, filter_conditions)
 
         # Compute feature distances among candidates.
-        # TODO: handle different features
-        feat = self.feats.ix[id_].values
-        feats = self.feats.ix[images.index].values
+        feats = self.features[feature]
+        feat = feats.ix[id_].values
+        feats = feats.ix[images.index].values
 
         # Discount the first element, because it's the query.
         results_per_page = 50
@@ -100,8 +111,8 @@ def nn(feat, feats, distance='euclidean', K=50):
         dists = -additive_chi2_kernel(feat, feats)
 
     dists = dists.flatten()
-    #nn_ind = bn.argpartsort(dists, K).flatten()[:K]
-    nn_ind = np.argsort(dists).flatten()[:K + 1]
+    nn_ind = bn.argpartsort(dists, K + 1).flatten()[:K + 1]
+    nn_ind = nn_ind[np.argsort(dists[nn_ind])]
     nn_dist = dists[nn_ind]
 
     return nn_ind, nn_dist

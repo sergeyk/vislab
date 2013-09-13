@@ -11,10 +11,13 @@ collection = vislab.backend.collection.Collection()
 def index():
     return flask.redirect(flask.url_for('similar_to_random'))
 
+
 @app.route('/similar_to_random')
 def similar_to_random():
     image_id = collection.get_random_id()
-    return flask.redirect(flask.url_for('similar_to_id', image_id=image_id))
+    return flask.redirect(flask.url_for(
+        'similar_to_id', image_id=image_id))
+
 
 @app.route('/similar_to/<image_id>')
 def similar_to_id(image_id):
@@ -24,17 +27,18 @@ def similar_to_id(image_id):
     This keeps the parameter-parsing logic in one place.
     """
     select_options = {
+        'feature': ['deep learned fc6', 'style scores'],
         'distance': ['euclidean', 'manhattan'],
-        'style': ['all'] + aphrodite.flickr.underscored_style_names,
+        'label': ['all'] + aphrodite.flickr.underscored_style_names,
         'prediction': ['all'] + ['pred_{}'.format(x) for x in aphrodite.flickr.underscored_style_names]
     }
 
     args = util.get_query_args(
         defaults={
-            'feature': 'decaf_fc6',
+            'feature': 'deep learned fc6',
             'distance': 'euclidean',
             'page': 1,
-            'style': 'all',
+            'label': 'all',
             'prediction': 'all'
         },
         types={
@@ -42,11 +46,9 @@ def similar_to_id(image_id):
         }
     )
 
-    # In case of style_pred args, make a lambda filter and pass it.
-    # Want to keep collection code very domain-independent.
     filter_conditions = {}
-    if args['style'] != 'all':
-        filter_conditions = {args['style']: ''}
+    if args['label'] != 'all':
+        filter_conditions = {args['label']: ''}
     if args['prediction'] != 'all':
         filter_conditions.update({args['prediction']: '> 0'})
     results_data = collection.nn_by_id(
@@ -54,7 +56,6 @@ def similar_to_id(image_id):
         filter_conditions
     )
 
-    # Fetch all information we have about the image: url, labels.
     image_info = collection.find_by_id(image_id)
 
     return flask.render_template(
