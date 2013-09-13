@@ -11,7 +11,6 @@
 
     <script>
     $(document).ready(function() {
-        id = "{{args.id}}";
         page = {{args.page}};
 
         // Set selects to the passed-in arguments.
@@ -21,7 +20,6 @@
 
         var get_full_query = function(query) {
             var full_query = {
-                'id': id,
                 'page': page
             };
             $('.query_arg').each(function(i, x) {
@@ -34,7 +32,8 @@
 
         var update_url_with_query = function(query) {
             full_query = get_full_query(query);
-            search_url = './similar_to?' + $.param(full_query);
+            var url = [location.protocol, '//', location.host, location.pathname].join('');
+            search_url = url + '?' + $.param(full_query);
             window.location = search_url;
         };
 
@@ -70,6 +69,8 @@
     </div>
 
     <div id="search-options" style="display: inline-block;">
+        <a href="/similar_to_random">[Random image]</a>
+        <br /><br />
         {% for name, options in select_options.iteritems() %}
         <label for="{{name}}">{{name}}</label>
         <select id="{{name}}" class='query_arg'>

@@ -24,6 +24,10 @@ class Collection(object):
         feats = pd.read_hdf(feats_filename, 'df')
         self.feats = feats.ix[self.images.index]
 
+    def get_random_id(self):
+        ind = np.random.randint(self.images.shape[0] + 1)
+        return self.images.index[ind]
+
     def find_by_id(self, id_):
         """
         Return dict of everything we know about the image at id.
