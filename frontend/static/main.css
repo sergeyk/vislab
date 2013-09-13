@@ -105,12 +105,13 @@ a img {
 
 a {
   color: #333333;
-  text-decoration: none;
+  text-decoration: underline;
   -webkit-transition: color .3s ease-in;
   transition: color .3s ease-in;
 }
 a:not(:hover) {
   color: #999999;
+  text-decoration: none;
 }
 
 td, th {
@@ -124,6 +125,10 @@ th {
 
 div {
   vertical-align: top;
+}
+
+p {
+  margin-bottom: 1em;
 }
 
 #images {

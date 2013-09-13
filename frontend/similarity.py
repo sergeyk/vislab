@@ -27,19 +27,26 @@ def similar_to_id(image_id):
     This keeps the parameter-parsing logic in one place.
     """
     select_options = {
-        'feature': ['deep learned fc6', 'style scores'],
-        'distance': ['euclidean', 'manhattan'],
-        'label': ['all'] + aphrodite.flickr.underscored_style_names,
-        'prediction': ['all'] + ['pred_{}'.format(x) for x in aphrodite.flickr.underscored_style_names]
+        'feature': {
+            'name': 'feature',
+            'options': ['deep learned fc6', 'style scores']
+        },
+        'distance': {
+            'name': 'distance_metric',
+            'options': ['euclidean', 'manhattan']
+        },
+        'prediction': {
+            'name': 'filter by prediction',
+            'options': ['all'] + ['pred_{}'.format(x) for x in aphrodite.flickr.underscored_style_names]
+        }
     }
 
     args = util.get_query_args(
         defaults={
             'feature': 'deep learned fc6',
             'distance': 'euclidean',
+            'prediction': 'all',
             'page': 1,
-            'label': 'all',
-            'prediction': 'all'
         },
         types={
             'page': int
@@ -47,8 +54,6 @@ def similar_to_id(image_id):
     )
 
     filter_conditions = {}
-    if args['label'] != 'all':
-        filter_conditions = {args['label']: ''}
     if args['prediction'] != 'all':
         filter_conditions.update({args['prediction']: '> 0'})
     results_data = collection.nn_by_id(
