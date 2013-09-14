@@ -34,10 +34,6 @@ def similar_to_id(image_id):
         'distance': {
             'name': 'distance_metric',
             'options': ['euclidean', 'manhattan']
-        },
-        'prediction': {
-            'name': 'filter by prediction',
-            'options': ['all'] + ['pred_{}'.format(x) for x in aphrodite.flickr.underscored_style_names]
         }
     }
 
@@ -45,7 +41,6 @@ def similar_to_id(image_id):
         defaults={
             'feature': 'deep learned fc6',
             'distance': 'euclidean',
-            'prediction': 'all',
             'page': 1,
         },
         types={
@@ -53,13 +48,24 @@ def similar_to_id(image_id):
         }
     )
 
-    filter_conditions = {}
-    if args['prediction'] != 'all':
-        filter_conditions.update({args['prediction']: '> 0'})
-    results_data = collection.nn_by_id(
+    prediction_options = ['all'] + [
+        'pred_{}'.format(x)
+        for x in aphrodite.flickr.underscored_style_names
+    ]
+
+    filter_conditions_list = []
+    for prediction in prediction_options:
+        filter_conditions = {}
+        if prediction != 'all':
+            filter_conditions.update({prediction: '> 0'})
+        filter_conditions_list.append(filter_conditions)
+
+    results_sets = collection.nn_by_id_many_filters(
         image_id, args['feature'], args['distance'], args['page'],
-        filter_conditions
-    )
+        filter_conditions_list, results_per_page=8)
+
+    for results_data, prediction in zip(results_sets, prediction_options):
+        results_data['title'] = prediction
 
     image_info = collection.find_by_id(image_id)
 
@@ -67,7 +73,7 @@ def similar_to_id(image_id):
         'similarity.html', args=args,
         select_options=select_options,
         image_info=image_info,
-        results_data=results_data
+        results_sets=results_sets
     )
 
 

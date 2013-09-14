@@ -85,7 +85,8 @@
 
         <h3>Explanation</h3>
         <p>
-            Select a style from the "filter by prediction" list to only consider positively classified images according to that style.
+            Select the feature to use and the distance metric from the dropdown menus.
+            Closest matches are displayed below, given in groups depending on whether the image was classified as positive by that style classifier.
         </p>
         <p>
             Click on any of the images below to search by that image.
@@ -96,9 +97,10 @@
 
 <hr />
 
-<div id="images">
+{% for results_data in results_sets %}
+<div class="images">
+    <h3>Matching images for {{results_data.title}}</h3>
     <div class="results-nav">
-        <h3>Matching images</h3>
         <p>
         <span id="num-results">{{results_data.num_results}}</span> results
         (processed in {{'{:.3f}'.format(results_data.time_elapsed)}} s),
@@ -120,6 +122,7 @@
     {% endfor %}
     </div>
 </div>
+{% endfor %}
 
 </div></body>
 </html>
