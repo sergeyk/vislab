@@ -1,7 +1,10 @@
+import time
 import flask
+import aphrodite.flickr
 import vislab.frontend.util as util
 import vislab.backend.collection
-import aphrodite.flickr
+import vislab.backend.util as backend_util
+from vislab.backend import redis_q
 
 app = flask.Flask(__name__)
 collection = vislab.backend.collection.Collection()
@@ -14,6 +17,7 @@ def index():
 
 @app.route('/similar_to_random')
 def similar_to_random():
+    # TODO: figure this out
     image_id = collection.get_random_id()
     return flask.redirect(flask.url_for(
         'similar_to_id', image_id=image_id))
@@ -60,9 +64,18 @@ def similar_to_id(image_id):
             filter_conditions.update({prediction: '> 0'})
         filter_conditions_list.append(filter_conditions)
 
-    results_sets = collection.nn_by_id_many_filters(
-        image_id, args['feature'], args['distance'], args['page'],
-        filter_conditions_list, results_per_page=8)
+    kwargs = {
+        'image_id': image_id,
+        'feature': args['feature'],
+        'distance': args['distance'],
+        'page': args['page'],
+        'filter_conditions_list': filter_conditions_list,
+        'results_per_page': 8
+    }
+    method_name = 'nn_by_id_many_filters'
+    job = redis_q.redis_delay(
+        method_name, kwargs, 'similarity_server')
+    results_sets = redis_q.get_return_value(job)
 
     for results_data, prediction in zip(results_sets, prediction_options):
         results_data['title'] = prediction

@@ -10,5 +10,6 @@ config['VOC_DIR'] = os.path.expanduser(config['VOC_DIR'])
 config['data_dir'] = repo_dirname + '/data'
 
 import util
+import redis_q
 import wikipaintings
 import collection

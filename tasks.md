@@ -1,6 +1,10 @@
 ## Doing
 
 - switch to using a standalone queue-based similarity engine
+    : rq is too rigidly dependent on pickled function calls.
+    : beanstalkd doesn't have results store.
+    x roll own solution, based on redis.
+    - get rid of using eval: register the instance method instead
 
 ## Quick
 

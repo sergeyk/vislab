@@ -59,7 +59,8 @@ def get_mongodb_client():
 
 def get_redis_conn():
     host = 'flapjack' if running_on_icsi() else 'localhost'
-    return redis.Redis(host)
+    redis_conn = redis.Redis(host)
+    return redis_conn
 
 
 def chunk(function, args_list):
