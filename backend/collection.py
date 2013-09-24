@@ -174,12 +174,16 @@ def nn(feat, feats, distance='euclidean', K=-1):
     return nn_ind, nn_dist
 
 
-if __name__ == '__main__':
+def run_worker():
+    """
+    Initialize a searchable collection and start listening for jobs.
+    """
     collection = Collection()
+    registered_functions = {
+        'nn_by_id_many_filters': collection.nn_by_id_many_filters
+    }
+    redis_q.poll_for_jobs(registered_functions, 'similarity_server')
 
-    def do_job(method_name, kwargs):
-        assert(method_name in dir(collection))
-        results_sets = eval('collection.{}(**{})'.format(method_name, kwargs))
-        print("Returning results")
-        return results_sets
-    redis_q.wait_for_job(do_job, 'similarity_server')
+
+if __name__ == '__main__':
+    run_worker()

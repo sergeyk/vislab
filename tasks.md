@@ -1,10 +1,6 @@
 ## Doing
 
-- switch to using a standalone queue-based similarity engine
-    : rq is too rigidly dependent on pickled function calls.
-    : beanstalkd doesn't have results store.
-    x roll own solution, based on redis.
-    - get rid of using eval: register the instance method instead
+- switch to using mongo instead of dataframe for the data explorer task
 
 ## Quick
 
@@ -14,7 +10,6 @@
 
 ## Long
 
-- switch to using mongo instead of dataframe for the data explorer task
 
 - implement data approval view
 
@@ -38,3 +33,8 @@
 - handle multiple sources of features: add the style classifier feature first (sep 13)
 - display top 8 results for all styles on one page (sep 13)
 - start detailed data collection on cluster (sep 23)
+- switch to using a standalone queue-based similarity engine
+    : rq is too rigidly dependent on pickled function calls.
+    : beanstalkd doesn't have results store.
+    x roll own solution, based on redis.
+    x get rid of using eval: register the instance method instead

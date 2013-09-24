@@ -71,8 +71,7 @@ def similar_to_id(image_id):
         'results_per_page': 8
     }
     method_name = 'nn_by_id_many_filters'
-    job = redis_q.redis_delay(
-        method_name, kwargs, 'similarity_server')
+    job = redis_q.submit_job(method_name, kwargs, 'similarity_server')
     results_sets = redis_q.get_return_value(job)
 
     for results_data, prediction in zip(results_sets, prediction_options):
