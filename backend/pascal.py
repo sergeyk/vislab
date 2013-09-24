@@ -13,10 +13,11 @@ def load_pascal_annotation(filename):
     """
     def get_data_from_tag(node, tag):
         if tag is "bndbox":
-            x1 = int(node.getElementsByTagName(tag)[0].childNodes[1].childNodes[0].data)
-            y1 = int(node.getElementsByTagName(tag)[0].childNodes[3].childNodes[0].data)
-            x2 = int(node.getElementsByTagName(tag)[0].childNodes[5].childNodes[0].data)
-            y2 = int(node.getElementsByTagName(tag)[0].childNodes[7].childNodes[0].data)
+            bbox = node.getElementsByTagName(tag)[0]
+            x1 = int(bbox.childNodes[1].childNodes[0].data)
+            y1 = int(bbox.childNodes[3].childNodes[0].data)
+            x2 = int(bbox.childNodes[5].childNodes[0].data)
+            y2 = int(bbox.childNodes[7].childNodes[0].data)
             return (x1, y1, x2, y2)
         else:
             return node.getElementsByTagName(tag)[0].childNodes[0].data
@@ -86,7 +87,8 @@ def load_pascal(force=False):
     splits_dir = vislab.backend.config['VOC_DIR'] + '/ImageSets/Main'
     images_df['_split'] = None
     for split in ['train', 'val', 'test']:
-        inds = [x.strip() for x in open(splits_dir + '/{}.txt'.format(split)).readlines()]
+        with open(splits_dir + '/{}.txt'.format(split)) as f:
+            inds = [x.strip() for x in f.readlines()]
         images_df['_split'].ix[inds] = split
 
     objects_df = objects_dfs[0]

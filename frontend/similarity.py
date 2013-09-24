@@ -1,9 +1,7 @@
-import time
 import flask
 import aphrodite.flickr
 import vislab.frontend.util as util
 import vislab.backend.collection
-import vislab.backend.util as backend_util
 from vislab.backend import redis_q
 
 app = flask.Flask(__name__)

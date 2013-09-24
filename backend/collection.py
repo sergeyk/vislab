@@ -42,6 +42,9 @@ class Collection(object):
         }
 
     def get_random_id(self):
+        """
+        Return random image id from the collection.
+        """
         ind = np.random.randint(self.images.shape[0] + 1)
         return self.images.index[ind]
 
@@ -54,6 +57,10 @@ class Collection(object):
 
     def nn_by_id_many_filters(self, image_id, feature, distance, page=1,
                               filter_conditions_list=None, results_per_page=8):
+        """
+        Return several sets of results, each filtered by different
+        filter_conditions.
+        """
         assert(feature in self.features)
         t = time.time()
 
@@ -79,7 +86,7 @@ class Collection(object):
             num_results = result_images.shape[0]
             result_images = result_images[start_ind:end_ind]
             result_images['image_id'] = result_images.index
-            results = [row.to_dict() for ix, row in result_images.iterrows()]
+            results = [row.to_dict() for _, row in result_images.iterrows()]
             results_data = {
                 'results': results,
                 'start_ind': start_ind,
@@ -92,6 +99,9 @@ class Collection(object):
 
     def nn_by_id(self, image_id, feature, distance, page=1,
                  filter_conditions=None, results_per_page=32):
+        """
+        Fetch nearest neighbors for image at given id.
+        """
         assert(feature in self.features)
         t = time.time()
 
@@ -112,7 +122,7 @@ class Collection(object):
         result_images = images.iloc[nn_ind[start_ind:]]
         result_images['image_id'] = result_images.index
         result_images['distance'] = nn_dist[start_ind:]
-        results = [row.to_dict() for ix, row in result_images.iterrows()]
+        results = [row.to_dict() for _, row in result_images.iterrows()]
 
         return {
             'results': results,
@@ -166,6 +176,7 @@ def nn(feat, feats, distance='euclidean', K=-1):
 
 if __name__ == '__main__':
     collection = Collection()
+
     def do_job(method_name, kwargs):
         assert(method_name in dir(collection))
         results_sets = eval('collection.{}(**{})'.format(method_name, kwargs))

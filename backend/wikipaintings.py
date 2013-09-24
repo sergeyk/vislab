@@ -1,9 +1,5 @@
-import time
-import bs4
 import requests
-import os
-import re
-import json
+import bs4
 import pandas as pd
 import numpy as np
 import vislab.backend
@@ -91,7 +87,7 @@ def fetch_basic_dataset():
             'image_id': slug.replace('/en/', '').replace('/', '_'),
             'artist_slug': slug.split('/')[-2],
             'artwork_slug':slug.split('/')[-1]
-        } for slug in data
+        } for slug in all_links
     ])
     df.index = pd.Index(df['image_id'], name='image_id')
     return df

@@ -19,7 +19,7 @@ def exclude_ids_in_collection(image_ids, collection):
     Useful for submitting map jobs.
     """
     computed_image_ids = [
-       x['image_id'] for x in collection.find(fields=['image_id'])
+        x['image_id'] for x in collection.find(fields=['image_id'])
     ]
     num_ids = len(image_ids)
     image_ids = list(set(image_ids) - set(computed_image_ids))
@@ -117,17 +117,32 @@ def map_through_rq(
 
     # Check the failed queue for old jobs and get rid of them.
     failed_jobs = [j.cancel() for j in fq.get_jobs() if j.origin == name]
-    print("Canceled {} failed jobs are left over from previous run.".format(len(failed_jobs)))
+    print("Canceled {} failed jobs are left over from previous run.".format(
+        len(failed_jobs)))
 
-    # Empty the queue and fill it with jobs (result_ttl is the caching time of results, in seconds).
+    # Empty the queue and fill it with jobs (result_ttl is the caching
+        # time of results, in seconds).
     print("Queing jobs...")
     q.empty()
     t = time.time()
     if chunk_size > 1:
-        chunked_args_list = [(function, args_list[i:i+chunk_size]) for i in range(0, len(args_list), chunk_size)]
-        jobs = [q.enqueue_call(func=chunk, args=chunked_args, timeout=timeout, result_ttl=result_ttl) for chunked_args in chunked_args_list]
+        chunked_args_list = [
+            (function, args_list[i:i+chunk_size])
+            for i in range(0, len(args_list), chunk_size)
+        ]
+        jobs = [
+            q.enqueue_call(
+                func=chunk, args=chunked_args,
+                timeout=timeout, result_ttl=result_ttl)
+            for chunked_args in chunked_args_list
+        ]
     else:
-        jobs = [q.enqueue_call(func=function, args=args, timeout=timeout, result_ttl=result_ttl) for args in args_list]
+        jobs = [
+            q.enqueue_call(
+                func=function, args=args,
+                timeout=timeout, result_ttl=result_ttl)
+            for args in args_list
+        ]
     print("...finished in {:.3f} s".format(time.time() - t))
 
     if async:
@@ -139,8 +154,12 @@ def map_through_rq(
         if running_on_icsi():
             redis_hostname = 'flapjack'
             job_log_dirname = makedirs('data_shared/rqworkers')
-            cmd = "srun -p vision --cpus-per-task={} --mem={} --time={} --output={}/{}_%j-out.txt rqworker --host {} --burst {}".format(
-                cpus_per_task, mem, max_time, job_log_dirname, name, redis_hostname, name)
+            cmd = "srun -p vision --cpus-per-task={} --mem={}".format(
+                cpus_per_task, mem)
+            cmd += " --time={} --output={}/{}_%j-out.txt".format(
+                max_time, job_log_dirname)
+            cmd += " rqworker --host {} --burst {}".format(
+                name, redis_hostname, name)
         print(cmd)
         pids = []
         for i in range(num_workers):
@@ -160,7 +179,10 @@ def map_through_rq(
                         known_jobs[job] = 1
             num_failed = sum(known_jobs.values())
             num_succeeded = len(known_jobs) - num_failed
-            sys.stdout.write('\r{:.1f} s passed, {} succeeded / {} failed out of {} total'.format(time.time() - t, num_succeeded, num_failed, len(jobs)))
+            msg = "\r{:.1f} s passed, {} succeeded / {} failed".format(
+                time.time() - t, num_succeeded, num_failed)
+            msg += " out of {} total".format(len(jobs))
+            sys.stdout.write(msg)
             sys.stdout.flush()
             if num_succeeded + num_failed == len(jobs):
                 break
@@ -171,7 +193,8 @@ def map_through_rq(
 
     # Print some statistics about the run.
     failed_jobs = [j for j in fq.get_jobs() if j.origin == name]
-    print("{} jobs failed and went into the failed queue.".format(len(failed_jobs)))
+    print("{} jobs failed and went into the failed queue.".format(
+        len(failed_jobs)))
 
     # If requested, aggregate and return the results.
     if aggregate:
@@ -192,7 +215,10 @@ def pickle_function_call(func_name, args):
     f, temp_filename = tempfile.mkstemp()
     with open(temp_filename, 'w') as f:
         cPickle.dump((func_name, args), f)
-    c = "import os; import cPickle; f = open('{0}'); func, args = cPickle.load(f); f.close(); os.remove('{0}'); func(*args)".format(temp_filename)
+    c = "import os; import cPickle;"
+    c += "f = open('{0}'); func, args = cPickle.load(f); f.close();"
+    c += "os.remove('{0}'); func(*args)"
+    c = c.format(temp_filename)
     return c
 
 
