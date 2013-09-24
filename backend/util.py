@@ -1,3 +1,4 @@
+import pandas as pd
 import os
 import numpy as np
 import time
@@ -10,6 +11,30 @@ import socket
 import tempfile
 import cPickle
 import subprocess
+
+
+def exclude_ids_in_collection(image_ids, collection):
+    """
+    Exclude ids already stored in the collection.
+    Useful for submitting map jobs.
+    """
+    computed_image_ids = [
+       x['image_id'] for x in collection.find(fields=['image_id'])
+    ]
+    num_ids = len(image_ids)
+    image_ids = list(set(image_ids) - set(computed_image_ids))
+    print("Cut down on {} existing out of {} total image ids.".format(
+        num_ids - len(image_ids), num_ids))
+    return image_ids
+
+
+def load_or_generate_df(filename, generator_fn, force):
+    if not force and os.path.exists(filename):
+        df = pd.read_hdf(filename, 'df')
+    else:
+        df = generator_fn()
+        df.to_hdf(filename, 'df', mode='w')
+    return df
 
 
 def running_on_icsi():
@@ -30,6 +55,11 @@ def get_mongodb_client():
     except pymongo.errors.ConnectionFailure:
         raise Exception(
             "Need a MongoDB server running on {}, port 27666".format(host))
+
+
+def get_redis_conn():
+    host = 'flapjack' if running_on_icsi() else 'localhost'
+    return redis.Redis(host)
 
 
 def chunk(function, args_list):
@@ -80,8 +110,7 @@ def map_through_rq(
     assert(chunk_size > 0)
 
     # Establish connection to Redis queue.
-    host = 'flapjack' if running_on_icsi() else 'localhost'
-    redis_conn = redis.Redis(host)
+    redis_conn = get_redis_conn()
     fq = rq.Queue('failed', connection=redis_conn)
     q = rq.Queue(name, connection=redis_conn, async=async)
 
@@ -108,7 +137,9 @@ def map_through_rq(
         cmd = "rqworker --burst {}".format(name)
         if running_on_icsi():
             redis_hostname = 'flapjack'
-            cmd = "srun -p vision --cpus-per-task={} --mem={} --time={} --output=data_shared/rqworkers/{}_%j-out.txt rqworker --host {} --burst {}".format(cpus_per_task, mem, max_time, name, redis_hostname, name)
+            job_log_dirname = makedirs('data_shared/rqworkers')
+            cmd = "srun -p vision --cpus-per-task={} --mem={} --time={} --output={}/{}_%j-out.txt rqworker --host {} --burst {}".format(
+                cpus_per_task, mem, max_time, job_log_dirname, name, redis_hostname, name)
         print(cmd)
         pids = []
         for i in range(num_workers):

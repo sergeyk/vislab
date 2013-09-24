@@ -94,6 +94,6 @@ def load_pascal(force=False):
         objects_df = objects_df.append(df)
     print('load_pascal: finished in {:.3f} s'.format(time.time() - t))
 
-    images_df.to_hdf(filename, 'images_df')
-    objects_df.to_hdf(filename, 'objects_df')
+    images_df.to_hdf(filename, 'images_df', mode='w')
+    objects_df.to_hdf(filename, 'objects_df', mode='w')
     return images_df, objects_df

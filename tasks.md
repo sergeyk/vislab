@@ -1,8 +1,18 @@
+## Doing
+
+- switch to using a standalone queue-based similarity engine
+
 ## Quick
 
-- re-implement the single-similarity page in addition to per-style simialrity page
+- add tests for wikipaintings
+
+- re-implement the single-similarity page in addition to per-style similarity page
 
 ## Long
+
+- switch to using mongo instead of dataframe for the data explorer task
+
+- implement data approval view
 
 - give more feature options: different levels of decaf feature
     : need to re-run feature computation on the images, saving multiple levels of features
@@ -23,3 +33,4 @@
 - link to go to a random image (sep 12)
 - handle multiple sources of features: add the style classifier feature first (sep 13)
 - display top 8 results for all styles on one page (sep 13)
+- start detailed data collection on cluster (sep 23)

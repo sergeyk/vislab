@@ -3,7 +3,7 @@
 # rsync the repo to cluster
 
 # code
-rsync -ravz --delete --exclude=".DS_Store" --exclude='*.pyc' --exclude='data' --prune-empty-dirs . flapjack.icsi.berkeley.edu:/u/sergeyk/work/aphrodite
+rsync -ravzP --delete --exclude='*.pyc' --exclude='data' --prune-empty-dirs . flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab
 
-# results data
-rsync -ravz --delete data/results flapjack.icsi.berkeley.edu:/u/sergeyk/work/aphrodite/data/
+# shared data
+rsync -ravzP --delete data/shared flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/
