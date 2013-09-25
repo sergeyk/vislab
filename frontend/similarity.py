@@ -6,6 +6,7 @@ from vislab.backend import redis_q
 
 app = flask.Flask(__name__)
 collection = vislab.backend.collection.Collection()
+collection_name = 'flickr'
 
 
 @app.route('/')
@@ -16,7 +17,7 @@ def index():
 @app.route('/similar_to_random')
 def similar_to_random():
     # TODO: figure this out
-    image_id = collection.get_random_id()
+    image_id = collection.get_random_id(collection_name)
     return flask.redirect(flask.url_for(
         'similar_to_id', image_id=image_id))
 
@@ -77,7 +78,7 @@ def similar_to_id(image_id):
     for results_data, prediction in zip(results_sets, prediction_options):
         results_data['title'] = prediction
 
-    image_info = collection.find_by_id(image_id)
+    image_info = collection.find_by_id(image_id, collection_name)
 
     return flask.render_template(
         'similarity.html', args=args,
