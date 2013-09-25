@@ -2,16 +2,20 @@ import requests
 import bs4
 import pandas as pd
 import numpy as np
+import vislab
 import vislab.backend
 from vislab.backend import util
+import os
 
 
 def get_basic_dataset(force=False):
     """
     Return DataFrame of image_id -> page_url, artist_slug, artwork_slug.
     """
+    assert(os.path.exists(
+        vislab.repo_dir + '/data/shared/wikipaintings_basic_info.h5'))
     return util.load_or_generate_df(
-        'data/shared/wikipaintings_basic_info.h5',
+        vislab.repo_dir + '/data/shared/wikipaintings_basic_info.h5',
         fetch_basic_dataset, force
     )
 
@@ -28,23 +32,26 @@ def get_detailed_dataset(force=False):
 
 
 def fetch_detailed_dataset(
-        num_workers=1, mem=2000, cpus_per_task=1, async=True):
+        force=False, num_workers=1, mem=2000,
+        cpus_per_task=1, async=True):
     db = util.get_mongodb_client()['wikipaintings']
     collection = db['image_info']
     print("Old collection size: {}".format(collection.count()))
 
-    # Exclude ids that were already computed.
     basic_df = get_basic_dataset()
-    image_ids = basic_df.index.tolist()
-    image_ids = util.exclude_ids_in_collection(image_ids, collection)
-    basic_df = basic_df.ix[image_ids]
+    if not force:
+        # Exclude ids that were already computed.
+        image_ids = basic_df.index.tolist()
+        image_ids = util.exclude_ids_in_collection(
+            image_ids, collection)
+        basic_df = basic_df.ix[image_ids]
 
     # Chunk up the rows.
     rows = [row.to_dict() for ind, row in basic_df.iterrows()]
     chunk_size = 10
-    num_chunks = len(image_ids) / chunk_size
+    num_chunks = len(rows) / chunk_size
     chunks = np.array_split(rows, num_chunks)
-    args_list = [(chunk.tolist(),) for chunk in chunks]
+    args_list = [(chunk.tolist(), force) for chunk in chunks]
 
     # Work the jobs.
     util.map_through_rq(
@@ -83,7 +90,7 @@ def fetch_basic_dataset():
     # Turn URLs into image ids
     df = pd.DataFrame([
         {
-            'page_url': 'http://wikipaintings.org' + slug,
+            'page_url': 'http://www.wikipaintings.org' + slug,
             'image_id': slug.replace('/en/', '').replace('/', '_'),
             'artist_slug': slug.split('/')[-2],
             'artwork_slug':slug.split('/')[-1]
@@ -105,7 +112,7 @@ def get_links_from_search_results(url):
     return links
 
 
-def fetch_artwork_infos(image_ids_and_page_urls):
+def fetch_artwork_infos(image_ids_and_page_urls, force=False):
     """
     Fetch artwork info, including image url, from the artwork page for
     each of the given image_ids, storing the obtained info to DB.
@@ -115,10 +122,11 @@ def fetch_artwork_infos(image_ids_and_page_urls):
     collection.ensure_index('image_id')
 
     for row in image_ids_and_page_urls:
-        # Check if the image exists in the database.
-        cursor = collection.find({'image_id': row['image_id']}).limit(1)
-        if cursor.count() > 0:
-            continue
+        if not force:
+            # Check if the image exists in the database.
+            cursor = collection.find({'image_id': row['image_id']})
+            if cursor.limit(1).count() > 0:
+                continue
 
         # Get detailed info for the image.
         info = fetch_artwork_info(row['image_id'], row['page_url'])
@@ -147,4 +155,4 @@ def fetch_artwork_info(image_id, page_url):
 
 
 if __name__ == '__main__':
-    fetch_detailed_dataset(num_workers=20)
+    fetch_detailed_dataset(force=True, num_workers=20, async=True)

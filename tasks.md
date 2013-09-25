@@ -1,5 +1,9 @@
 ## Doing
 
+- re-implement data exploration view in vislab
+
+- look at wikipaintings data
+
 ## Quick
 
 - add tests for wikipaintings

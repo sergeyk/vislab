@@ -11,6 +11,7 @@ import socket
 import tempfile
 import cPickle
 import subprocess
+from IPython import embed
 
 
 def exclude_ids_in_collection(image_ids, collection):
@@ -157,9 +158,9 @@ def map_through_rq(
             cmd = "srun -p vision --cpus-per-task={} --mem={}".format(
                 cpus_per_task, mem)
             cmd += " --time={} --output={}/{}_%j-out.txt".format(
-                max_time, job_log_dirname)
+                max_time, job_log_dirname, name)
             cmd += " rqworker --host {} --burst {}".format(
-                name, redis_hostname, name)
+                redis_hostname, name)
         print(cmd)
         pids = []
         for i in range(num_workers):
