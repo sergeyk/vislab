@@ -1,10 +1,22 @@
 ## Doing
 
-- re-implement data exploration view in vislab
+- update get_url to use db instead of loading dataframe
 
-- look at wikipaintings data
+- get classifier scores for the painting classification
+
+- get similarity display for paintings
+
+- experiment with standardizing the features and not using negative values
+
+- add another level of decaf feature for similarity
+
+- add a HOG feature for straight-up shape similarity
+
+- implement feature computation in vislab that computed multiple levels of decaf feature
 
 ## Quick
+
+- re-implement data exploration view in vislab
 
 - add tests for wikipaintings
 
@@ -14,14 +26,13 @@
 
 - implement data approval view
 
-- give more feature options: different levels of decaf feature
-    : need to re-run feature computation on the images, saving multiple levels of features
-- add a HOG feature for straight-up shape similarity
 
 ## Ideas
 
 - "Similar image, but less beautiful."
 - "Similar image, but more hazy."
+
+- similarity ratings interface: this image is closer than this one
 
 ## Notes
 

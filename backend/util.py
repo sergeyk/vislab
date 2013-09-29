@@ -29,7 +29,7 @@ def exclude_ids_in_collection(image_ids, collection):
     return image_ids
 
 
-def load_or_generate_df(filename, generator_fn, force):
+def load_or_generate_df(filename, generator_fn, force=False):
     if not force and os.path.exists(filename):
         df = pd.read_hdf(filename, 'df')
     else:

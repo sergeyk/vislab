@@ -1,3 +1,4 @@
+import os
 import requests
 import bs4
 import pandas as pd
@@ -5,15 +6,26 @@ import numpy as np
 import vislab
 import vislab.backend
 from vislab.backend import util
-import os
+
+
+def get_image_url_for_id(image_id):
+    filename = vislab.repo_dir + '/data/shared/wikipaintings_urls.h5'
+
+    if not os.path.exists(filename):
+        df = get_detailed_dataset()
+        dfs = df['image_url']
+        dfs.to_hdf(filename, 'df', mode='w')
+    else:
+        dfs = pd.read_hdf(filename, 'df')
+
+    assert(image_id in dfs.index)
+    return dfs.ix[image_id]
 
 
 def get_basic_dataset(force=False):
     """
     Return DataFrame of image_id -> page_url, artist_slug, artwork_slug.
     """
-    assert(os.path.exists(
-        vislab.repo_dir + '/data/shared/wikipaintings_basic_info.h5'))
     return util.load_or_generate_df(
         vislab.repo_dir + '/data/shared/wikipaintings_basic_info.h5',
         fetch_basic_dataset, force
@@ -26,9 +38,44 @@ def get_detailed_dataset(force=False):
     image URLs.
     """
     return util.load_or_generate_df(
-        'data/shared/wikipaintings_detailed_info.h5',
+        vislab.repo_dir + '/data/shared/wikipaintings_detailed_info.h5',
         fetch_detailed_dataset, force
     )
+
+
+def get_style_dataset(min_pos=1000):
+    """
+    Filter:
+    - have more than min_pos examples,
+    - have a genre.
+
+    Expand the style labels to own columns, with 'style_' prefix.
+    Expand the genre labels to own columns, with 'genre_' prefix.
+    """
+    df = get_detailed_dataset()
+    df = df.dropna(subset=['style'])
+    df = df.dropna(subset=['genre'])
+
+    def filter_and_expand(df, prop, min_pos=None):
+        df = df.copy()
+        freqs = df.groupby(prop)['image_id'].nunique()
+
+        # Filter out vals with less than min_pos examples.
+        if min_pos is not None:
+            freqs = freqs[freqs >= min_pos]
+        prop_vals = freqs.index.tolist()
+        df = df[df[prop].apply(lambda x: x in prop_vals)]
+
+        # Expand into own columns, prefixed by property name.
+        for val in prop_vals:
+            ascii_name = val.replace(' ', '_').encode('ascii', 'ignore')
+            df['{}_{}'.format(prop, ascii_name)] = (df[prop] == val)
+        return df
+
+    df = filter_and_expand(df, 'style', min_pos)
+    df = filter_and_expand(df, 'genre', min_pos)
+
+    return df
 
 
 def fetch_detailed_dataset(
@@ -62,9 +109,34 @@ def fetch_detailed_dataset(
     print("Final collection size: {}".format(collection.count()))
 
     # Assemble into DataFrame to return.
-    df = pd.DataFrame([doc for doc in collection.find()])
+    # Drop artworks without an image.
+    orig_df = pd.DataFrame([doc for doc in collection.find()])
+    df = orig_df.dropna(subset=['image']).copy()
+
+    # Rename some columns and add an index.
+    df['image_url'] = df['image']
+    df['date'] = df['dateCreated']
     df.index = pd.Index(df['image_id'], name='image_id')
-    del df['_id']
+
+    # Only take useful columns.
+    columns_to_take = [
+        'image_id', 'artist_slug', 'artwork_slug', 'date',
+        'genre', 'style', 'technique', 'keywords', 'name',
+        'page_url', 'image_url'
+    ]
+    df = df[columns_to_take]
+
+    # Drop artworks with messed up image urls
+    good_inds = []
+    for ind, row in df.iterrows():
+        try:
+            str(row['image_url'])
+            good_inds.append(ind)
+        except:
+            pass
+    df = df.ix[good_inds]
+    df['image_url'] = df['image_url'].apply(lambda x: str(x))
+
     return df
 
 
