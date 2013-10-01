@@ -9,5 +9,8 @@ for path_name, path in config['paths'].iteritems():
     config['paths'][path_name] = os.path.expanduser(path)
 
 import util
+import vw
+import dataset
+import results
 import datasets
 import collection

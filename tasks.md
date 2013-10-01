@@ -48,6 +48,8 @@
 
 - similarity ratings interface: this image is closer than this one
 
+- idea: can introduce a third label, NOTSURE, which means that the image should simply not be a part of the training/test set for the concept. this is the label that would be set by the UI to clean up data.
+
 ## Notes
 
 - http://0.0.0.0:4000/similar_to/f_9209451148

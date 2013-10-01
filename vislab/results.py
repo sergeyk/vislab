@@ -6,20 +6,18 @@ import numpy as np
 import pandas as pd
 
 
-def classification_report(pred_df, loss_function='logistic'):
+def classification_metrics(pred_df):
     """
     Parameters
     ----------
     pred_df: pandas.DataFrame
         Must have columns 'pred' and 'true', which contain the predicted
         and true values.
+        The predicted values can be real-valued; > 0 values are
+        considered positive.
     """
     # The prediction we loaded is actually a raw score.
     pred_df['score'] = pred_df['pred']
-
-    # If using logisitic loss, convert to [-1, 1].
-    if loss_function == 'logistic':
-        pred_df['score'] = (2. / (1. + np.exp(-pred_df['score'])) - 1.)
 
     # To compute accuracy, convert to binary predictions.
     pred_df['pred'] = -1
@@ -39,10 +37,18 @@ def classification_report(pred_df, loss_function='logistic'):
 
     score = np.sqrt(pos_score * neg_score)
 
+    # TODO: add more metrics here
 
-def regression_report(pred_df, loss_function='squared'):
+    metrics = {
+        'score': score
+    }
+    return metrics
+
+
+def regression_metrics(pred_df):
     r2_score = sklearn.metrics.r2_score(
         pred_df['label'].values, pred_df['pred'].values)
-    return {
+    metrics = {
         'r2_score': r2_score
     }
+    return metrics
