@@ -3,6 +3,7 @@ A searchable collection of images, listening for jobs on a Redis queue.
 """
 import operator
 import os
+import sys
 import bottleneck as bn
 import pandas as pd
 import numpy as np
@@ -10,36 +11,55 @@ import time
 import sklearn.metrics.pairwise as metrics
 import aphrodite.flickr
 from vislab.backend import redis_q
+import vislab.backend.wikipaintings
+
+
+data_dir = os.path.expanduser('~/work/aphrodite/data')
+feat_filenames = {
+    'flickr': {
+        'style scores': '/results/flickr_decaf_fc6_preds.h5',
+        # TODO: why arr_df?
+        'deep fc6': data_dir + '/feats/flickr/decaf_fc6_arr_df.h5',
+        'deep pool5': data_dir + '/feats/flickr/decaf_fc6_flatten.h5'
+    },
+    'wikipaintings': {
+        'deep fc6': data_dir + '/feats/wikipaintings/decaf_fc6_arr_df.h5',
+        'deep pool5': data_dir + '/feats/wikipaintings/decaf_fc6_flatten.h5'
+    }
+}
+
+dataset_loaders = {
+    'flickr': aphrodite.flickr.load_flickr_df,
+    'wikipaintings': vislab.backend.wikipaintings.get_basic_dataset
+}
 
 
 class SearchableCollection(object):
     """
-    A searchable collection of images.
+    A searchable collection of images for a given dataset.
     """
-    def __init__(self):
-        # Load image information in a dataframe.
-        self.images = aphrodite.flickr.load_flickr_df()
+    def __init__(self, dataset_name):
+        assert(dataset_name in dataset_loaders)
 
-        # Downsample if needed.
+        # Load image information in a dataframe.
+        self.images = dataset_loaders[dataset_name]()
+
+        # Downsample [optional for dev].
         # self.images = self.images.iloc[:10000]
 
-        # Load predictions, which are used to filter results and as a feature.
-        preds_filename = os.path.expanduser(
-            '~/work/aphrodite/data/results/flickr_decaf_fc6_preds.h5')
-        preds = pd.read_hdf(preds_filename, 'df')
-        preds = preds.ix[self.images.index]
-        self.images = self.images.join(preds)
-
         # Load all features.
-        feats_filename = os.path.expanduser(
-            '~/work/aphrodite/data/feats/flickr/decaf_fc6_arr_df.h5')
-        feats = pd.read_hdf(feats_filename, 'df')
-        feats = feats.ix[self.images.index]
+        self.features = {}
+        for name, filename in feat_filenames[dataset_name]:
+            try:
+                feats = pd.read_hdf(filename, 'df')
+            except:
+                feats = pd.read_pickle(filename)
+            feats = feats.ix[self.images.index]
+            self.features[name] = feats
 
-        self.features = {
-            'deep learned fc6': feats,
-            'style scores': preds
-        }
+        # Append predictions to the images DataFrame.
+        if 'style scores' in self.features:
+            self.images = self.images.join(self.features['style scores'])
 
     def nn_by_id_many_filters(self, image_id, feature, distance, page=1,
                               filter_conditions_list=None, results_per_page=8):
@@ -160,16 +180,19 @@ def nn(feat, feats, distance='euclidean', K=-1):
     return nn_ind, nn_dist
 
 
-def run_worker():
+def run_worker(dataset_name='flickr'):
     """
     Initialize a searchable collection and start listening for jobs.
     """
-    collection = SearchableCollection()
+    collection = SearchableCollection(dataset_name)
     registered_functions = {
         'nn_by_id_many_filters': collection.nn_by_id_many_filters
     }
-    redis_q.poll_for_jobs(registered_functions, 'similarity_server')
+    redis_q.poll_for_jobs(
+        registered_functions, 'similarity_server_{}'.format(dataset_name))
 
 
 if __name__ == '__main__':
-    run_worker()
+    print("usage: python searchable_collection.py <dataset_name>")
+    dataset_name = sys.argv[1]
+    run_worker(dataset_name)

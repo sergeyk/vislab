@@ -1,5 +1,29 @@
 ## Doing
 
+## Next
+
+- abstract classifier/regression metrics into own module, and call them from vw.
+
+- plot confusion matrix for the wikipaintings styles and send email to jessica
+    - idea: confusion matrix plotted vs confidence in the time dimension
+
+- plot correlation matrix between style and genre
+    - dust off the correlation matrix code from pascal days
+
+- do I need to use the same test set for all classes?
+
+- compute VW classifier performance with the fc6_flatten feature
+
+- what's the order of features in the wikipaintings dataset?
+
+- re-implement data exploration view in vislab
+
+- add tests for wikipaintings
+
+- re-implement the single-similarity page in addition to per-style similarity page
+
+- implement data approval view
+
 - update get_url to use db instead of loading dataframe
 
 - get classifier scores for the painting classification
@@ -14,17 +38,7 @@
 
 - implement feature computation in vislab that computed multiple levels of decaf feature
 
-## Quick
-
-- re-implement data exploration view in vislab
-
-- add tests for wikipaintings
-
-- re-implement the single-similarity page in addition to per-style similarity page
-
-## Long
-
-- implement data approval view
+- load pascal and compute deep feature on it
 
 
 ## Ideas
