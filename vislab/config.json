@@ -1,0 +1,7 @@
+{
+    "paths": {
+        "VOC2007": "~/Dropbox/work/vision_data/VOC2007",
+        "data": "~/work/vislab-dev/data",
+        "shared_data": "~/work/vislab-dev/data/shared"
+    }
+}

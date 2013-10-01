@@ -1,15 +1,22 @@
+"""
+Code to scrape the WikiPaintings website to construct a dataset.
+"""
+
 import os
 import requests
 import bs4
 import pandas as pd
 import numpy as np
-import vislab
+
 import vislab
 from vislab import util
 
+DB_NAME = 'wikipaintings'
+
 
 def get_image_url_for_id(image_id):
-    filename = vislab.repo_dir + '/data/shared/wikipaintings_urls.h5'
+    # TODO: switch to using a DB instead of loading DataFrame.
+    filename = vislab.config['paths']['shared_data'] + '/wikipaintings_urls.h5'
 
     if not os.path.exists(filename):
         df = get_detailed_dataset()
@@ -22,32 +29,14 @@ def get_image_url_for_id(image_id):
     return dfs.ix[image_id]
 
 
-def get_basic_dataset(force=False):
-    """
-    Return DataFrame of image_id -> page_url, artist_slug, artwork_slug.
-    """
-    return util.load_or_generate_df(
-        vislab.repo_dir + '/data/shared/wikipaintings_basic_info.h5',
-        fetch_basic_dataset, force
-    )
-
-
-def get_detailed_dataset(force=False):
-    """
-    Return DataFrame of image_id -> detailed artwork info, including
-    image URLs.
-    """
-    return util.load_or_generate_df(
-        vislab.repo_dir + '/data/shared/wikipaintings_detailed_info.h5',
-        fetch_detailed_dataset, force
-    )
-
-
 def get_style_dataset(min_pos=1000):
     """
-    Filter:
+    Return DataFrame that is suitable for learning style and genre
+    properties of artworks.
+
+    Filter on:
     - have more than min_pos examples,
-    - have a genre.
+    - have both a style and a genre.
 
     Expand the style labels to own columns, with 'style_' prefix.
     Expand the genre labels to own columns, with 'genre_' prefix.
@@ -74,14 +63,71 @@ def get_style_dataset(min_pos=1000):
 
     df = filter_and_expand(df, 'style', min_pos)
     df = filter_and_expand(df, 'genre', min_pos)
+    return df
 
+
+def get_basic_dataset(force=False):
+    """
+    Return DataFrame of image_id -> page_url, artist_slug, artwork_slug.
+    """
+    filename = vislab.config['paths']['shared_data'] + \
+        '/wikipaintings_basic_info.h5'
+    df = util.load_or_generate_df(filename, fetch_basic_dataset, force)
+    return df
+
+
+def fetch_basic_dataset():
+    """
+    Fetch basic info and page urls of all artworks by crawling search
+    results.
+    """
+    search_url = 'http://www.wikipaintings.org/en/search/Any/{}'
+
+    # Manual inspection of the available results on 20 Sep 2013
+    # showed 1894 pages, with a blank last page, and reportedly
+    # 113615 artworks and 1540 artists.
+    all_links = []
+    for page in range(1, 1894):
+        url = search_url.format(page)
+        try:
+            links = _get_links_from_search_results(url)
+        except:
+            pass
+        all_links += links
+        page += 1
+
+    # Turn URLs into image ids and get other basic info.
+    df = pd.DataFrame([
+        {
+            'page_url': 'http://www.wikipaintings.org' + slug,
+            'image_id': slug.replace('/en/', '').replace('/', '_'),
+            'artist_slug': slug.split('/')[-2],
+            'artwork_slug':slug.split('/')[-1]
+        } for slug in all_links
+    ])
+    df.index = pd.Index(df['image_id'], name='image_id')
+    return df
+
+
+def get_detailed_dataset(force=False):
+    """
+    Return DataFrame of image_id -> detailed artwork info, including
+    image URLs.
+    """
+    filename = vislab.config['paths']['shared_data'] + \
+        '/wikipaintings_detailed_info.h5'
+    df = util.load_or_generate_df(filename, fetch_detailed_dataset, force)
     return df
 
 
 def fetch_detailed_dataset(
         force=False, num_workers=1, mem=2000,
         cpus_per_task=1, async=True):
-    db = util.get_mongodb_client()['wikipaintings']
+    """
+    Fetch detailed info by crawling the detailed artwork pages, using
+    the links from the basic dataset.
+    """
+    db = util.get_mongodb_client()[DB_NAME]
     collection = db['image_info']
     print("Old collection size: {}".format(collection.count()))
 
@@ -102,7 +148,7 @@ def fetch_detailed_dataset(
 
     # Work the jobs.
     util.map_through_rq(
-        vislab.datasets.wikipaintings.fetch_artwork_infos,
+        vislab.datasets.wikipaintings._fetch_artwork_infos,
         args_list, 'wikipaintings_info',
         num_workers=num_workers, mem=mem, cpus_per_task=cpus_per_task,
         async=async)
@@ -140,39 +186,7 @@ def fetch_detailed_dataset(
     return df
 
 
-def fetch_basic_dataset():
-    """
-    Fetch dataset of basic info and page urls from the search pages.
-    """
-    search_url = 'http://www.wikipaintings.org/en/search/Any/{}'
-
-    # Manual inspection of the available results on 20 Sep 2013
-    # showed 1894 pages, with a blank last page, and reportedly
-    # 113615 artworks and 1540 artists.
-    all_links = []
-    for page in range(1, 1894):
-        url = search_url.format(page)
-        try:
-            links = get_links_from_search_results(url)
-        except:
-            pass
-        all_links += links
-        page += 1
-
-    # Turn URLs into image ids
-    df = pd.DataFrame([
-        {
-            'page_url': 'http://www.wikipaintings.org' + slug,
-            'image_id': slug.replace('/en/', '').replace('/', '_'),
-            'artist_slug': slug.split('/')[-2],
-            'artwork_slug':slug.split('/')[-1]
-        } for slug in all_links
-    ])
-    df.index = pd.Index(df['image_id'], name='image_id')
-    return df
-
-
-def get_links_from_search_results(url):
+def _get_links_from_search_results(url):
     try:
         r = requests.get(url)
         soup = bs4.BeautifulSoup(r.text)
@@ -184,24 +198,23 @@ def get_links_from_search_results(url):
     return links
 
 
-def fetch_artwork_infos(image_ids_and_page_urls, force=False):
+def _fetch_artwork_infos(image_ids_and_page_urls, force=False):
     """
     Fetch artwork info, including image url, from the artwork page for
     each of the given image_ids, storing the obtained info to DB.
     """
-    db = util.get_mongodb_client()['wikipaintings']
-    collection = db['image_info']
+    collection = util.get_mongodb_client()[DB_NAME]['image_info']
     collection.ensure_index('image_id')
 
     for row in image_ids_and_page_urls:
         if not force:
-            # Check if the image exists in the database.
+            # Skip if image exists in the database.
             cursor = collection.find({'image_id': row['image_id']})
             if cursor.limit(1).count() > 0:
                 continue
 
         # Get detailed info for the image.
-        info = fetch_artwork_info(row['image_id'], row['page_url'])
+        info = _fetch_artwork_info(row['image_id'], row['page_url'])
         info.update(row)
 
         collection.update(
@@ -209,7 +222,7 @@ def fetch_artwork_infos(image_ids_and_page_urls, force=False):
         print('inserted {}'.format(info['image_id']))
 
 
-def fetch_artwork_info(image_id, page_url):
+def _fetch_artwork_info(image_id, page_url):
     """
     Scrape the artwork info page for relevant properties to return dict.
     """
@@ -227,4 +240,7 @@ def fetch_artwork_info(image_id, page_url):
 
 
 if __name__ == '__main__':
+    """
+    Run the scraping with a number of workers taking jobs from a queue.
+    """
     fetch_detailed_dataset(force=True, num_workers=20, async=True)

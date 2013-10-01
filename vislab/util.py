@@ -1,17 +1,17 @@
-import pandas as pd
 import os
+import sys
 import numpy as np
+import pandas as pd
+import json
 import time
 import pymongo
 import rq
 import redis
-import sys
 import shlex
 import socket
 import tempfile
 import cPickle
 import subprocess
-from IPython import embed
 
 
 def exclude_ids_in_collection(image_ids, collection):
@@ -56,6 +56,14 @@ def get_mongodb_client():
     except pymongo.errors.ConnectionFailure:
         raise Exception(
             "Need a MongoDB server running on {}, port 27666".format(host))
+
+
+def show_all_collections(mongodb_client):
+    d = {
+        db: [coll for coll in mongodb_client[db].collection_names()]
+        for db in mongodb_client.database_names()
+    }
+    print json.dumps(d)
 
 
 def get_redis_conn():
