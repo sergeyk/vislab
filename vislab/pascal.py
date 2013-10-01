@@ -4,7 +4,7 @@ import xml.dom.minidom as minidom
 import pandas as pd
 import time
 import joblib
-import vislab.backend
+import vislab
 
 
 def load_pascal_annotation(filename):
@@ -67,13 +67,13 @@ def load_pascal(force=False):
     Load all the annotations, including object bounding boxes.
     Warning: this takes a good few minutes to load from scratch!
     """
-    filename = vislab.backend.config['data_dir'] + '/pascal_dfs.h5'
+    filename = vislab.config['data_dir'] + '/pascal_dfs.h5'
     if not force and os.path.exists(filename):
         images_df = pd.read_hdf(filename, 'images_df')
         objects_df = pd.read_hdf(filename, 'objects_df')
         return images_df, objects_df
 
-    annotations = glob.glob(vislab.backend.config['VOC_DIR'] +
+    annotations = glob.glob(vislab.config['VOC_DIR'] +
                             '/Annotations/*.xml')
     t = time.time()
     results = joblib.Parallel(n_jobs=8)(
@@ -84,7 +84,7 @@ def load_pascal(force=False):
     images_df = pd.DataFrame(list(images))
 
     # Get the canonical split information.
-    splits_dir = vislab.backend.config['VOC_DIR'] + '/ImageSets/Main'
+    splits_dir = vislab.config['VOC_DIR'] + '/ImageSets/Main'
     images_df['_split'] = None
     for split in ['train', 'val', 'test']:
         with open(splits_dir + '/{}.txt'.format(split)) as f:

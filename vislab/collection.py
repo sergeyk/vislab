@@ -2,7 +2,7 @@
 Interface to a Mongo database of images.
 """
 import numpy as np
-from vislab.backend import util
+from vislab import util
 
 
 class Collection(object):

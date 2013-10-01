@@ -4,8 +4,8 @@ import bs4
 import pandas as pd
 import numpy as np
 import vislab
-import vislab.backend
-from vislab.backend import util
+import vislab
+from vislab import util
 
 
 def get_image_url_for_id(image_id):
@@ -102,7 +102,7 @@ def fetch_detailed_dataset(
 
     # Work the jobs.
     util.map_through_rq(
-        vislab.backend.wikipaintings.fetch_artwork_infos,
+        vislab.datasets.wikipaintings.fetch_artwork_infos,
         args_list, 'wikipaintings_info',
         num_workers=num_workers, mem=mem, cpus_per_task=cpus_per_task,
         async=async)

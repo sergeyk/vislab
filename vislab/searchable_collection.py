@@ -10,8 +10,8 @@ import numpy as np
 import time
 import sklearn.metrics.pairwise as metrics
 import aphrodite.flickr
-from vislab.backend import redis_q
-import vislab.backend.wikipaintings
+from vislab import redis_q
+import vislab.datasets.wikipaintings
 
 
 data_dir = os.path.expanduser('~/work/aphrodite/data')
@@ -30,7 +30,7 @@ feat_filenames = {
 
 dataset_loaders = {
     'flickr': aphrodite.flickr.load_flickr_df,
-    'wikipaintings': vislab.backend.wikipaintings.get_basic_dataset
+    'wikipaintings': vislab.datasets.wikipaintings.get_basic_dataset
 }
 
 

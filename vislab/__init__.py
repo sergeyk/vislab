@@ -1,15 +1,16 @@
 import os
 import json
+repo_dirname = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-repo_dirname = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..'))
-
-with open(repo_dirname + '/backend/config.json', 'r') as f:
+# Load config file.
+with open(repo_dirname + '/config.json', 'r') as f:
     config = json.load(f)
-config['VOC_DIR'] = os.path.expanduser(config['VOC_DIR'])
+for path_name, path in config['paths']:
+    config['paths'][path_name] = os.path.expanduser(path)
+
+# Set data directory in the config.
 config['data_dir'] = repo_dirname + '/data'
 
 import util
-import redis_q
-import wikipaintings
+import datasets
 import collection

@@ -5,7 +5,7 @@ based on http://flask.pocoo.org/snippets/73/
 import time
 import uuid
 import cPickle
-from vislab.backend import util
+from vislab import util
 
 
 class DelayedResult(object):
