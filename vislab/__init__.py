@@ -12,5 +12,6 @@ import util
 import vw
 import dataset
 import results
-import datasets
 import collection
+import datasets
+import utils

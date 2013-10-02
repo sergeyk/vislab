@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 
 import vislab
-from vislab import util
 
 DB_NAME = 'wikipaintings'
 
@@ -72,7 +71,7 @@ def get_basic_dataset(force=False):
     """
     filename = vislab.config['paths']['shared_data'] + \
         '/wikipaintings_basic_info.h5'
-    df = util.load_or_generate_df(filename, fetch_basic_dataset, force)
+    df = vislab.util.load_or_generate_df(filename, fetch_basic_dataset, force)
     return df
 
 
@@ -81,6 +80,8 @@ def fetch_basic_dataset():
     Fetch basic info and page urls of all artworks by crawling search
     results.
     """
+    print("Fetching basic Wikipaintings dataset by scraping search results.")
+
     search_url = 'http://www.wikipaintings.org/en/search/Any/{}'
 
     # Manual inspection of the available results on 20 Sep 2013
@@ -116,7 +117,8 @@ def get_detailed_dataset(force=False):
     """
     filename = vislab.config['paths']['shared_data'] + \
         '/wikipaintings_detailed_info.h5'
-    df = util.load_or_generate_df(filename, fetch_detailed_dataset, force)
+    df = vislab.util.load_or_generate_df(
+        filename, fetch_detailed_dataset, force)
     return df
 
 
@@ -127,7 +129,9 @@ def fetch_detailed_dataset(
     Fetch detailed info by crawling the detailed artwork pages, using
     the links from the basic dataset.
     """
-    db = util.get_mongodb_client()[DB_NAME]
+    print("Fetching detailed Wikipaintings dataset by scraping artwork pages.")
+
+    db = vislab.util.get_mongodb_client()[DB_NAME]
     collection = db['image_info']
     print("Old collection size: {}".format(collection.count()))
 
@@ -135,7 +139,7 @@ def fetch_detailed_dataset(
     if not force:
         # Exclude ids that were already computed.
         image_ids = basic_df.index.tolist()
-        image_ids = util.exclude_ids_in_collection(
+        image_ids = vislab.util.exclude_ids_in_collection(
             image_ids, collection)
         basic_df = basic_df.ix[image_ids]
 
@@ -147,7 +151,7 @@ def fetch_detailed_dataset(
     args_list = [(chunk.tolist(), force) for chunk in chunks]
 
     # Work the jobs.
-    util.map_through_rq(
+    vislab.utils.distributed.map_through_rq(
         vislab.datasets.wikipaintings._fetch_artwork_infos,
         args_list, 'wikipaintings_info',
         num_workers=num_workers, mem=mem, cpus_per_task=cpus_per_task,
@@ -203,7 +207,7 @@ def _fetch_artwork_infos(image_ids_and_page_urls, force=False):
     Fetch artwork info, including image url, from the artwork page for
     each of the given image_ids, storing the obtained info to DB.
     """
-    collection = util.get_mongodb_client()[DB_NAME]['image_info']
+    collection = vislab.util.get_mongodb_client()[DB_NAME]['image_info']
     collection.ensure_index('image_id')
 
     for row in image_ids_and_page_urls:

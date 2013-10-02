@@ -2,8 +2,11 @@
 Construct dicts containing identifying information and DataFrames
 for train, val, test splits of data, for use with classifiers.
 """
+import argparse
 import numpy as np
 import pandas as pd
+import vislab
+import aphrodite
 
 
 def get_importance(df):
@@ -117,3 +120,62 @@ def get_binary_dataset(
     })
 
     return dataset
+
+
+def add_cmdline_args(parser):
+    """
+    Add relevant command line arguments to the given ArgumentParser.
+    Modifies the passed-in object.
+
+    Parameters
+    ----------
+    parser: argparse.ArgumentParser
+    """
+    parser.add_argument(
+        '--force_dataset',
+        help="force load of the dataset from source instead of cache",
+        action="store_true", default=False)
+    parser.add_argument(
+        '--dataset',
+        help="select which dataset to use",
+        required=True,
+        choices=['ava', 'ava_style', 'flickr', 'wikipaintings'])
+    parser.add_argument(
+        '--num_images',
+        help="number of images to use from the dataset (-1 for all)",
+        type=int, default=-1)
+
+
+def load_dataset_with_args(args):
+    """
+    Use the parsed command line arguments to load the correct dataset.
+    """
+    if args.dataset == 'ava':
+        df = aphrodite.dataset.load_ava_df(
+            args.num_images, args.random_seed, args.ava_force)
+
+    elif args.dataset == 'ava_style':
+        style_df = aphrodite.dataset.load_style_df()
+        df = df.ix[style_df.index]
+
+    elif args.dataset == 'flickr':
+        df = aphrodite.flickr.load_flickr_df(
+            args.num_images, args.random_seed, args.dataset_force)
+
+    elif args.dataset == 'wikipaintings':
+        df = vislab.datasets.wikipaintings.get_style_dataset(min_pos=1000)
+        if args.num_images > 0:
+            df = df.iloc[:args.num_images]
+
+    else:
+        raise Exception('Unknown dataset.')
+
+    return df
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Load a dataset.")
+    vislab.util.add_cmdline_args(parser)
+    vislab.utils.distributed.add_cmdline_args(parser)
+    add_cmdline_args(parser)
+    args = parser.parse_args()
