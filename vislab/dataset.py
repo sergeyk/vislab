@@ -9,6 +9,18 @@ import vislab
 import aphrodite
 
 
+def subsample_dataset(df, num_images=-1, random_seed=42):
+    """
+    Return a subsampled version of the dataset, with num_images images.
+    Take images randomly, according to random_seed.
+    """
+    if num_images < 0:
+        return df
+    ind = np.random.permutation(df.shape[0])[:num_images]
+    subsampled_df = df.iloc[ind]
+    return subsampled_df
+
+
 def get_importance(df):
     """
     Get importance weights of data points based on the prevalence of the
@@ -164,13 +176,53 @@ def load_dataset_with_args(args):
 
     elif args.dataset == 'wikipaintings':
         df = vislab.datasets.wikipaintings.get_style_dataset(min_pos=1000)
-        if args.num_images > 0:
-            df = df.iloc[:args.num_images]
+        df = subsample_dataset(df, args.num_images)
 
     else:
         raise Exception('Unknown dataset.')
 
     return df
+
+
+def get_binary_dataset_with_options(df, dataset_name, args):
+    if (dataset_name in ['ava', 'flickr'] and
+            args.task.startswith('clf_style_')):
+        label = args.task.replace('clf_style_', '')
+    elif dataset_name == 'wikipaintings' and args.task.startswith('clf_'):
+        label = args.task.replace('clf_', '')
+    else:
+        raise Exception("Unknown task")
+    dataset = vislab.dataset.get_binary_dataset(
+        df, dataset_name, label, args.random_seed)
+    return dataset
+
+
+def get_ava_dataset_with_options(df, args):
+    if args.task in [
+            'clf_rating_mean', 'regr_rating_mean',
+            'clf_rating_std', 'regr_rating_std']:
+        dataset = aphrodite.dataset.get_rating_dataset(
+            df, args.task,
+            args.frac_test, args.num_train, -1,
+            args.delta, args.random_seed)
+
+    elif args.task == 'clf_style':
+        dataset = aphrodite.dataset.get_style_dataset(df, args.random_seed)
+
+    elif args.task.startswith('clf_style_'):
+        label = args.task.replace('clf_style_', '')
+        style_df = aphrodite.dataset.load_style_df()
+        style_df = df.ix[df.index.intersection(df.index)]
+        dataset = vislab.dataset.get_binary_dataset(
+            style_df, 'ava_style', label, args.random_seed)
+
+    elif args.task in ['clf_semantic']:
+        dataset = aphrodite.dataset.get_semantic_dataset(df, args.random_seed)
+
+    else:
+        raise Exception("Unknown task")
+
+    return dataset
 
 
 if __name__ == '__main__':

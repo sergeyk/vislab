@@ -2,15 +2,15 @@
 
 - add rating_mean_bin and rating_mean_norm_bin labels
 
-- each dataset should have a notebook page showing some plots and such
+- load style information into AVA by default
+
+## Next
 
 - need util function for syncing up dataframe with mongodb collection. useful for datasets.
 
 - re-implement data exploration view in vislab and get it working for all datasets
 
-- load style information into AVA by default
-
-## Next
+- each dataset should have a notebook page showing some plots and such
 
 - idea: deep learning for telling apart artistic style
 

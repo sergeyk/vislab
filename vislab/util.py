@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import json
 import pymongo
 import redis
 import socket
@@ -61,12 +60,14 @@ def get_mongodb_client():
             "Need a MongoDB server running on {}, port 27666".format(host))
 
 
-def show_all_collections(mongodb_client):
-    d = {
-        db: [coll for coll in mongodb_client[db].collection_names()]
-        for db in mongodb_client.database_names()
-    }
-    print json.dumps(d)
+def print_collection_counts():
+    """
+    Print all collections and their counts for all databases in MongoDB.
+    """
+    client = get_mongodb_client()
+    for db_name in client.database_names():
+        for coll_name in client[db_name].collection_names():
+            print db_name, coll_name, client[db_name][coll_name].count()
 
 
 def get_redis_conn():
