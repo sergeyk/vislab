@@ -1,14 +1,25 @@
 ## Doing
 
+- add rating_mean_bin and rating_mean_norm_bin labels
+
+- each dataset should have a notebook page showing some plots and such
+
+- need util function for syncing up dataframe with mongodb collection. useful for datasets.
+
+- re-implement data exploration view in vislab and get it working for all datasets
+
+- load style information into AVA by default
+
 ## Next
+
+- idea: deep learning for telling apart artistic style
+
+- get rid of the url map thing for AVA dataset
 
 - abstract classifier/regression metrics into own module, and call them from vw.
 
 - plot confusion matrix for the wikipaintings styles and send email to jessica
     - idea: confusion matrix plotted vs confidence in the time dimension
-
-- plot correlation matrix between style and genre
-    - dust off the correlation matrix code from pascal days
 
 - do I need to use the same test set for all classes?
 
@@ -16,7 +27,9 @@
 
 - what's the order of features in the wikipaintings dataset?
 
-- re-implement data exploration view in vislab
+- implement oaa mode for vw
+
+- add tests for vw
 
 - add tests for wikipaintings
 
@@ -67,3 +80,5 @@
     x roll own solution, based on redis.
     x get rid of using eval: register the instance method instead
 - switch to using mongo instead of dataframe for the data explorer task (sep 24)
+- plot correlation matrix between style and genre
+    - dust off the correlation matrix code from pascal days

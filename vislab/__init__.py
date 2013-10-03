@@ -11,6 +11,8 @@ for path_name, path in config['paths'].iteritems():
 import util
 import vw
 import dataset
+import dataset_stats
+import dataset_viz
 import results
 import collection
 import datasets
