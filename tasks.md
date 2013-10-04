@@ -1,10 +1,19 @@
 ## Doing
 
-- add rating_mean_bin and rating_mean_norm_bin labels
+- ! correlation matrix between objects and styles
 
-- load style information into AVA by default
+- plot confusion matrix for the wikipaintings styles
+    - send email to jessica to check if it makes art historical sense
+    - idea: confusion matrix plotted vs confidence in the time dimension
+
+- get ava dataset up to par
+    - add rating_mean_bin and rating_mean_norm_bin labels
+    - load style information into AVA by default
+
+- get displays going again
 
 ## Next
+
 
 - need util function for syncing up dataframe with mongodb collection. useful for datasets.
 
@@ -18,8 +27,6 @@
 
 - abstract classifier/regression metrics into own module, and call them from vw.
 
-- plot confusion matrix for the wikipaintings styles and send email to jessica
-    - idea: confusion matrix plotted vs confidence in the time dimension
 
 - do I need to use the same test set for all classes?
 
