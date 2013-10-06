@@ -9,7 +9,7 @@ def plot__frequencies(df, column, top_k=20):
     """
     Plot bar chart of frequencies of top_k values of a column in the df.
     """
-    column_vals = vislab.dataset_stats.top_k_vals(df, column, top_k)
+    column_vals = df[column].value_counts()[:top_k]
     fig = plt.figure(figsize=(12, 4))
     ax = column_vals.plot(fig, kind='bar', title='{} Frequency'.format(
         column))
@@ -18,9 +18,9 @@ def plot__frequencies(df, column, top_k=20):
     return fig
 
 
-def plot_conditional_occurence(
+def plot_conditional_occurrence(
         df_m, size=None, cmap=plt.cm.gray_r, color_anchor=[0, 1],
-        x_tick_rot=90, title=None, plot_vals=True):
+        x_tick_rot=90, title=None, plot_vals=True, sort_by_prior=True):
     """
     Plot the occurrence of the columns of the given DataFrame
     conditioned on the occurrence of its rows.
@@ -39,9 +39,32 @@ def plot_conditional_occurence(
     title: string
     plot_vals: bool [True]
         If true, actual values are plotted.
+    sort_by_prior: bool [True]
     """
     df_m = vislab.dataset_stats.condition_df_on_row(df_m)
-    df_m = df_m.sort('prior', ascending=False)
+    if sort_by_prior:
+        df_m = df_m.sort('prior', ascending=False)
+
+    fig = plot_occurrence(
+        df_m, size, cmap, color_anchor, x_tick_rot, title, plot_vals)
+    ax = fig.get_axes()[0]
+
+    # Plot line separating 'nothing' and 'prior' from rest of plot
+    M, N = df_m.shape
+    l = ax.add_line(mpl.lines.Line2D(
+        [N - 1.5, N - 1.5], [-.5, M - 0.5],
+        ls='--', c='gray', lw=2))
+    l.set_zorder(3)
+
+    return fig
+
+
+def plot_occurrence(
+        df_m, size=None, cmap=plt.cm.gray_r, color_anchor=[0, 1],
+        x_tick_rot=90, title=None, plot_vals=True):
+    """
+    TODO
+    """
     M, N = df_m.shape
 
     # Initialize figure of given size.
@@ -103,12 +126,6 @@ def plot_conditional_occurence(
     else:
         ticks = [color_anchor[0], max_val, color_anchor[1]]
 
-    # Plot line separating 'nothing' and 'prior' from rest of plot
-    l = ax.add_line(mpl.lines.Line2D(
-        [N - 1.5, N - 1.5], [-.5, M - 0.5],
-        ls='--', c='gray', lw=2))
-    l.set_zorder(3)
-
     # Display the actual values in the cells
     if plot_vals:
         for i in xrange(0, M):
@@ -135,3 +152,5 @@ def plot_conditional_occurence(
     cb = fig.colorbar(im, cax=ax_cb, orientation='horizontal',
                       cmap=cmap, ticks=ticks, format='%.2f')
     cb.ax.artists.remove(cb.outline)
+
+    return fig

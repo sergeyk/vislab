@@ -3,7 +3,7 @@ import sklearn.metrics as metrics
 import numpy as np
 
 
-def plot_roc_curve(y_true, y_score):
+def plot_roc_curve(y_true, y_score, title=None):
     """
     Plot the [Receiver Operating Characteristic][roc] curve of the given
     true labels and confidence scores.
@@ -16,10 +16,12 @@ def plot_roc_curve(y_true, y_score):
         fpr, tpr, auc, 'False Positive Rate', 'True Positive Rate', 'AUC')
     ax = fig.get_axes()[0]
     ax.plot([0, 1], [0, 1], 'k--')
+    if title is not None:
+        ax.set_title(title)
     return fig, fpr, tpr, auc
 
 
-def plot_pr_curve(y_true, y_score):
+def plot_pr_curve(y_true, y_score, title=None):
     """
     Plot Precision-Recall curve of the true labels and confidence scores
     and return the precision and recall vectors and the average
@@ -38,11 +40,11 @@ def plot_pr_curve(y_true, y_score):
         prec[i + 1] = max(prec[i + 1], prec[i])
     ap = np.trapz(-prec, rec)
     fig = plot_curve_with_area(
-        rec, prec, ap, 'Recall', 'Precision', 'AP')
+        rec, prec, ap, 'Recall', 'Precision', 'AP', title)
     return fig, prec, rec, ap
 
 
-def plot_curve_with_area(x, y, area, xlabel, ylabel, area_label):
+def plot_curve_with_area(x, y, area, xlabel, ylabel, area_label, title=None):
     fig = plt.figure(figsize=(5, 5))
     ax = fig.add_subplot(111)
     ax.plot(x, y, 'k-')
@@ -52,4 +54,6 @@ def plot_curve_with_area(x, y, area, xlabel, ylabel, area_label):
     ax.set_yticks([0, .25, .5, .75, 1])
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+    if title is not None:
+        ax.set_title(title)
     return fig

@@ -1,6 +1,14 @@
 ## Doing
 
-- ! correlation matrix between objects and styles
+- multiclass classifier metrics
+    - top-k accuracy
+    x confusion table
+    - plot P-R curves for all classes
+
+- force layout graph of confusion matrix
+
+- ! plot correlation matrix between objects and styles
+    - classify for objects
 
 - plot confusion matrix for the wikipaintings styles
     - send email to jessica to check if it makes art historical sense
@@ -14,7 +22,6 @@
 
 ## Next
 
-
 - need util function for syncing up dataframe with mongodb collection. useful for datasets.
 
 - re-implement data exploration view in vislab and get it working for all datasets
@@ -25,8 +32,7 @@
 
 - get rid of the url map thing for AVA dataset
 
-- abstract classifier/regression metrics into own module, and call them from vw.
-
+- call classifier/regression metrics in results module from vw
 
 - do I need to use the same test set for all classes?
 
@@ -43,6 +49,8 @@
 - re-implement the single-similarity page in addition to per-style similarity page
 
 - implement data approval view
+
+- aaron's idea to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
 
 - update get_url to use db instead of loading dataframe
 
@@ -89,3 +97,4 @@
 - switch to using mongo instead of dataframe for the data explorer task (sep 24)
 - plot correlation matrix between style and genre
     - dust off the correlation matrix code from pascal days
+- abstract classifier/regression metrics into own module

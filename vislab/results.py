@@ -4,42 +4,11 @@ Code for parsing results of prediction tasks.
 import sklearn.metrics
 import numpy as np
 import pandas as pd
+import re
 import vislab
 
 
-def compute_binary_metrics(df):
-    """
-    """
-    metrics = {}
-    results = sklearn.metrics.precision_recall_fscore_support(
-        df['label'], df['pred_bin'])
-    metrics['results_df'] = pd.DataFrame(
-        np.array(results).T,
-        columns=[['precision', 'recall', 'f1-score', 'support']],
-        index=[['False', 'True']])
-    metrics['mcc'] = sklearn.metrics.matthews_corrcoef(
-        df['label'], df['pred_bin'])
-    metrics['accuracy'] = sklearn.metrics.accuracy_score(
-        df['label'], df['pred_bin'])
-    pr_fig, prec, rec, metrics['ap'] = vislab.results_viz.plot_pr_curve(
-        df['label'], df['pred'])
-    roc_fig, fpr, tpr, metrics['auc'] = vislab.results_viz.plot_roc_curve(
-        df['label'], df['pred'])
-    return metrics
-
-
-def print_binary_metrics(metrics, name):
-    print('-'*60)
-    if len(name) > 0:
-        name = 'on the {} task'.format(name)
-    print("Classification metrics {}".format(name))
-    print(metrics['results_df'].to_string())
-    print("Matthews' Correlation Coefficient: {}".format(metrics['mcc']))
-    print("Accuracy: {}".format(metrics['accuracy']))
-    print('')
-
-
-def binary_metrics(pred_df, balanced=True):
+def binary_metrics(pred_df, name='', balanced=True):
     """
     Binary classification metrics.
 
@@ -47,6 +16,8 @@ def binary_metrics(pred_df, balanced=True):
     ----------
     pred_df: pandas.DataFrame
         Must contain 'label' (int) and 'pred' (float) columns.
+    name: string ['']
+        Name of the classification task: for example, the class name.
     balanced: bool [True]
         If True, the evaluation considers a class-balanced subset of
         the dataset.
@@ -62,7 +33,7 @@ def binary_metrics(pred_df, balanced=True):
     if balanced:
         # Find the most frequent label
         counts = pred_df['label'].value_counts()
-        mfl = counts.index[counts.argmax()]
+        mfl = counts.index[0]
 
         # Subsample to match the number of the other label.
         ind = np.random.permutation(counts.max())[:counts.min()]
@@ -70,9 +41,110 @@ def binary_metrics(pred_df, balanced=True):
         lfl_pred_df = pred_df[~(pred_df['label'] == mfl)]
         pred_df = (mfl_pred_df.iloc[ind]).append(lfl_pred_df)
 
-    metrics = compute_binary_metrics(pred_df)
+    # Compute metrics.
+    metrics = {}
+
+    results = sklearn.metrics.precision_recall_fscore_support(
+        pred_df['label'], pred_df['pred_bin'])
+    metrics['results_df'] = pd.DataFrame(
+        np.array(results).T,
+        columns=[['precision', 'recall', 'f1-score', 'support']],
+        index=[['False', 'True']])
+
+    metrics['mcc'] = sklearn.metrics.matthews_corrcoef(
+        pred_df['label'], pred_df['pred_bin'])
+
+    metrics['accuracy'] = sklearn.metrics.accuracy_score(
+        pred_df['label'], pred_df['pred_bin'])
+
+    metrics['pr_fig'], prec, rec, metrics['ap'] = \
+        vislab.results_viz.plot_pr_curve(
+            pred_df['label'], pred_df['pred'], name)
+
+    metrics['roc_fig'], fpr, tpr, metrics['auc'] = \
+        vislab.results_viz.plot_roc_curve(
+            pred_df['label'], pred_df['pred'], name)
+
+    name = '{} balanced' if balanced else '{} full'
+    print_metrics(metrics, name.format(name))
+
+    return metrics
+
+
+def multiclass_metrics(mc_pred_df, pred_prefix, balanced=True):
+    """
+    Multiclass classification metrics.
+
+    Parameters
+    ----------
+    mc_pred_df: pandas.DataFrame
+        Contains a 'label' ([1, K] int) column, and K
+        '{}_{}'.format(pred_prefix, label) (float) columns,
+        one for each label.
+    pred_prefix: string
+        The prefix before the name of the label column.
+    balanced: bool [True]
+        If True, the number if instances of each class is equalized.
+    """
+    metrics = {}
+
+    # Get the list of labels.
+    r = re.compile(pred_prefix)
+    pred_cols, label_cols = map(list, zip(*[
+        (col, col.replace(pred_prefix + '_', '')) for col in mc_pred_df.columns
+        if r.match(col)
+    ]))
+
+    # Make two dataframes: for labels and predictions.
+    # Drop those rows that don't have a single positive label.
+    label_df = mc_pred_df[label_cols]
+    ind = label_df.sum(1) > 0
+    label_df = label_df[ind]
+    pred_df = mc_pred_df[pred_cols][ind]
+
+    # Get array of multi-class labels and array of multi-class preds.
+    y_true = label_df.values.argmax(1)
+    y_pred = pred_df.values.argmax(1)
+
+    if balanced:
+        # Balance the labels.
+        counts = np.bincount(y_true)
+        min_count = counts[counts.argmin()]
+
+        permutation = lambda N, K: np.random.permutation(N)[:K]
+        selected_ind = np.concatenate([
+            np.where(y_true == label)[0][permutation(count, min_count)]
+            for label, count in enumerate(counts)
+        ])
+
+        y_true = y_true[selected_ind]
+        y_pred = y_pred[selected_ind]
+
+    # Construct the confusion matrix.
+    conf_df = pd.DataFrame(
+        sklearn.metrics.confusion_matrix(y_true, y_pred),
+        columns=label_cols, index=label_cols)
+
+    metrics['conf_df'] = conf_df
+    total = conf_df.sum().sum()
+    metrics['conf_df_n'] = conf_df.astype(float) / total
+
+    metrics['accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
+
+    results = sklearn.metrics.precision_recall_fscore_support(y_true, y_pred)
+    metrics['results_df'] = pd.DataFrame(
+        np.array(results).T,
+        columns=[['precision', 'recall', 'f1-score', 'support']],
+        index=label_cols)
+
+    metrics['confusion_table_fig'] = \
+        vislab.dataset_viz.plot_conditional_occurrence(
+            metrics['conf_df_n'], sort_by_prior=False)
+
     name = 'balanced dataset' if balanced else 'full dataset'
-    print_binary_metrics(metrics, name)
+    print_metrics(metrics, name)
+
+    return metrics
 
 
 def regression_metrics(pred_df):
@@ -83,3 +155,17 @@ def regression_metrics(pred_df):
         'r2_score': r2_score
     }
     return metrics
+
+
+def print_metrics(metrics, name):
+    print('-'*60)
+    if len(name) > 0:
+        name = 'on the {}'.format(name)
+    print("Classification metrics {}".format(name))
+    if 'results_df' in metrics:
+        print(metrics['results_df'].to_string())
+    if 'accuracy' in metrics:
+        print("Accuracy: {}".format(metrics['accuracy']))
+    if 'mcc' in metrics:
+        print("Matthews' Correlation Coefficient: {}".format(metrics['mcc']))
+    print('')

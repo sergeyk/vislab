@@ -45,8 +45,7 @@ def get_style_dataset(min_pos=1000):
     df = df.dropna(subset=['genre'])
 
     def filter_and_expand(df, prop, min_pos=None):
-        df = df.copy()
-        freqs = df.groupby(prop)['image_id'].nunique()
+        freqs = df[prop].value_counts()
 
         # Filter out vals with less than min_pos examples.
         if min_pos is not None:
