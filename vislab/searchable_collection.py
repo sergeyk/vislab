@@ -9,27 +9,25 @@ import pandas as pd
 import numpy as np
 import time
 import sklearn.metrics.pairwise as metrics
-import aphrodite.flickr
-from vislab import redis_q
+from vislab.utils import redis_q
 import vislab.datasets.wikipaintings
 
 
-data_dir = os.path.expanduser('~/work/aphrodite/data')
+data_dir = os.path.expanduser('~/work/aphrodite-dev/data')
 feat_filenames = {
     'flickr': {
-        'style scores': '/results/flickr_decaf_fc6_preds.h5',
-        # TODO: why arr_df?
+        'style scores': data_dir + '/results/flickr_decaf_fc6_preds.h5',
         'deep fc6': data_dir + '/feats/flickr/decaf_fc6_arr_df.h5',
-        'deep pool5': data_dir + '/feats/flickr/decaf_fc6_flatten.h5'
+        #'deep pool5': data_dir + '/feats/flickr/decaf_fc6_flatten.h5'
     },
     'wikipaintings': {
         'deep fc6': data_dir + '/feats/wikipaintings/decaf_fc6_arr_df.h5',
-        'deep pool5': data_dir + '/feats/wikipaintings/decaf_fc6_flatten.h5'
+        #'deep pool5': data_dir + '/feats/wikipaintings/decaf_fc6_flatten.h5'
     }
 }
 
 dataset_loaders = {
-    'flickr': aphrodite.flickr.load_flickr_df,
+    'flickr': vislab.datasets.flickr.load_flickr_df,
     'wikipaintings': vislab.datasets.wikipaintings.get_basic_dataset
 }
 
@@ -49,13 +47,13 @@ class SearchableCollection(object):
 
         # Load all features.
         self.features = {}
-        for name, filename in feat_filenames[dataset_name]:
+        for feature_name, filename in feat_filenames[dataset_name].iteritems():
             try:
                 feats = pd.read_hdf(filename, 'df')
             except:
                 feats = pd.read_pickle(filename)
             feats = feats.ix[self.images.index]
-            self.features[name] = feats
+            self.features[feature_name] = feats
 
         # Append predictions to the images DataFrame.
         if 'style scores' in self.features:
@@ -67,6 +65,7 @@ class SearchableCollection(object):
         Return several sets of results, each filtered by different
         filter_conditions.
         """
+        print(feature)
         assert(feature in self.features)
         t = time.time()
 
@@ -108,6 +107,7 @@ class SearchableCollection(object):
         """
         Fetch nearest neighbors for image at given id.
         """
+        print feature
         assert(feature in self.features)
         t = time.time()
 
@@ -189,7 +189,7 @@ def run_worker(dataset_name='flickr'):
         'nn_by_id_many_filters': collection.nn_by_id_many_filters
     }
     redis_q.poll_for_jobs(
-        registered_functions, 'similarity_server_{}'.format(dataset_name))
+        registered_functions, 'similarity_server')
 
 
 if __name__ == '__main__':
