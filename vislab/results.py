@@ -8,7 +8,28 @@ import re
 import vislab
 
 
-def binary_metrics(pred_df, name='', balanced=True):
+def all_binary_metrics_df(
+        preds_panel, label_df, selected_pred, pred_prefix, balanced=True):
+    mc_pred_df = preds_panel.minor_xs(selected_pred).join(label_df)
+
+    r = re.compile(pred_prefix)
+    label_cols = [
+        col.replace(pred_prefix + '_', '') for col in mc_pred_df.columns
+        if r.match(col)
+    ]
+
+    all_metrics = {}
+    for label in label_cols:
+        pred_df = preds_panel['{}_{}'.format(pred_prefix, label)]
+        pred_df['pred'] = pred_df[selected_pred]
+        all_metrics[label] = vislab.results.binary_metrics(
+            pred_df, 'name doesnt matter', balanced, with_plot=False)
+    metrics_df = pd.DataFrame(all_metrics).T
+    return metrics_df
+
+
+def binary_metrics(
+        pred_df, name='', balanced=True, with_plot=False, with_print=False):
     """
     Binary classification metrics.
 
@@ -21,6 +42,10 @@ def binary_metrics(pred_df, name='', balanced=True):
     balanced: bool [True]
         If True, the evaluation considers a class-balanced subset of
         the dataset.
+    with_plot: bool [False]
+        If True, plot curves and return handles to figures (otherwise
+        return handles to None).
+    with_print: bool [False]
     """
     # Drop rows without a label and make sure it's a bool.
     pred_df = pred_df.dropna(subset=['label'])
@@ -58,15 +83,14 @@ def binary_metrics(pred_df, name='', balanced=True):
         pred_df['label'], pred_df['pred_bin'])
 
     metrics['pr_fig'], prec, rec, metrics['ap'] = \
-        vislab.results_viz.plot_pr_curve(
-            pred_df['label'], pred_df['pred'], name)
+        get_pr_curve(pred_df['label'], pred_df['pred'], name, with_plot)
 
     metrics['roc_fig'], fpr, tpr, metrics['auc'] = \
-        vislab.results_viz.plot_roc_curve(
-            pred_df['label'], pred_df['pred'], name)
+        get_roc_curve(pred_df['label'], pred_df['pred'], name)
 
-    name = '{} balanced' if balanced else '{} full'
-    print_metrics(metrics, name.format(name))
+    if with_print:
+        name = '{} balanced' if balanced else '{} full'
+        print_metrics(metrics, name.format(name))
 
     return metrics
 
@@ -169,3 +193,48 @@ def print_metrics(metrics, name):
     if 'mcc' in metrics:
         print("Matthews' Correlation Coefficient: {}".format(metrics['mcc']))
     print('')
+
+
+def get_roc_curve(y_true, y_score, title=None, with_plot=True):
+    """
+    Plot the [Receiver Operating Characteristic][roc] curve of the given
+    true labels and confidence scores.
+
+    [roc]: http://en.wikipedia.org/wiki/Receiver_operating_characteristic
+    """
+    fpr, tpr, thresholds = sklearn.metrics.roc_curve(y_true, y_score)
+    auc = np.trapz(tpr, fpr)
+    fig = None
+    if with_plot:
+        fig = vislab.results_viz.plot_curve_with_area(
+            fpr, tpr, auc, 'False Positive Rate', 'True Positive Rate', 'AUC')
+        ax = fig.get_axes()[0]
+        ax.plot([0, 1], [0, 1], 'k--')
+        if title is not None:
+            ax.set_title(title)
+    return fig, fpr, tpr, auc
+
+
+def get_pr_curve(y_true, y_score, title=None, with_plot=True):
+    """
+    Plot Precision-Recall curve of the true labels and confidence scores
+    and return the precision and recall vectors and the average
+    precision.
+
+    Returns
+    -------
+    fig: plt.Figure
+    prec: ndarray
+    rec: ndarray
+    ap: float
+    """
+    prec, rec, thresh = sklearn.metrics.precision_recall_curve(y_true, y_score)
+    # Make sure prec is non-increasing (prec is in reverse order)
+    for i in range(len(prec) - 1):
+        prec[i + 1] = max(prec[i + 1], prec[i])
+    ap = np.trapz(-prec, rec)
+    fig = None
+    if with_plot:
+        fig = vislab.results_viz.plot_curve_with_area(
+            rec, prec, ap, 'Recall', 'Precision', 'AP', title)
+    return fig, prec, rec, ap

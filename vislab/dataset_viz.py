@@ -5,14 +5,14 @@ import numpy as np
 import vislab
 
 
-def plot__frequencies(df, column, top_k=20):
+def plot_column_frequencies(df, column, top_k=20):
     """
     Plot bar chart of frequencies of top_k values of a column in the df.
     """
     column_vals = df[column].value_counts()[:top_k]
     fig = plt.figure(figsize=(12, 4))
-    ax = column_vals.plot(fig, kind='bar', title='{} Frequency'.format(
-        column))
+    ax = fig.add_subplot(111)
+    column_vals.plot(ax=ax, kind='bar', title='{} Frequency'.format(column))
     ax.set_xlabel('')
     fig.autofmt_xdate()
     return fig

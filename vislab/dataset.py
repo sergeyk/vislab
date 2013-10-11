@@ -171,7 +171,7 @@ def load_dataset_with_args(args):
         df = df.ix[style_df.index]
 
     elif args.dataset == 'flickr':
-        df = aphrodite.flickr.load_flickr_df(
+        df = vislab.datasets.flickr.load_flickr_df(
             args.num_images, args.random_seed, args.dataset_force)
 
     elif args.dataset == 'wikipaintings':

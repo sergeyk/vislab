@@ -1,26 +1,35 @@
 ## Doing
 
-- multiclass classifier metrics
-    - top-k accuracy
-    x confusion table
-    - plot P-R curves for all classes
-
-- force layout graph of confusion matrix
-
-- ! plot correlation matrix between objects and styles
-    - classify for objects
-
-- plot confusion matrix for the wikipaintings styles
-    - send email to jessica to check if it makes art historical sense
-    - idea: confusion matrix plotted vs confidence in the time dimension
-
 - get ava dataset up to par
     - add rating_mean_bin and rating_mean_norm_bin labels
     - load style information into AVA by default
-
-- get displays going again
+- update dataset stats page for aphrodite, flickr
+- top-k accuracy multi-class metric
 
 ## Next
+
+- config.json shouldn't be in the git repo; config.json.example instead
+
+- PICK UP AT: re-run AVA experiments: get ava in order, find out what my AP #s are.
+
+- make memorability/interestingness dataset interface (aude's data with extra interestingness scores)
+
+- test on memorability dataset
+
+- multiclass classifier metrics
+    x confusion table
+    - plot P-R curves for all classes
+
+- force-based layout graph of confusion matrix
+
+- ! plot correlation matrix between objects and styles
+
+- classify for objects
+
+- send email to jessica with paper draft
+
+
+- get displays going again
 
 - need util function for syncing up dataframe with mongodb collection. useful for datasets.
 
@@ -78,11 +87,6 @@
 
 - idea: can introduce a third label, NOTSURE, which means that the image should simply not be a part of the training/test set for the concept. this is the label that would be set by the UI to clean up data.
 
-## Notes
-
-- http://0.0.0.0:4000/similar_to/f_9209451148
-    - black and white image of a girl. doesn't find bright-energetic features
-
 ## Done
 
 - link to go to a random image (sep 12)
@@ -98,3 +102,4 @@
 - plot correlation matrix between style and genre
     - dust off the correlation matrix code from pascal days
 - abstract classifier/regression metrics into own module
+- plot confusion matrix for the wikipaintings styles

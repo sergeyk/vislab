@@ -26,8 +26,7 @@ def get_image_urls():
 
 
 def get_ava_dataset(force=False):
-    filename = vislab.config['paths']['shared_data'] + \
-        '/ava.h5'
+    filename = vislab.config['paths']['shared_data'] + '/ava.h5'
     df = vislab.util.load_or_generate_df(filename, load_ava_dataset, force)
     return df
 
@@ -98,7 +97,7 @@ def load_style_df(force=False):
     The provided style labels are split between train and test sets,
     where the latter is multi-label.
     """
-    filename = 'data/ava_style_df.h5'
+    filename = vislab.config['paths']['shared_data'] + '/ava_style.h5'
     if not force and os.path.exists(filename):
         return pd.read_hdf(filename, 'df')
 
