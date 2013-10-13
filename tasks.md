@@ -3,8 +3,10 @@
 - get ava dataset up to par
     - add rating_mean_bin and rating_mean_norm_bin labels
     - load style information into AVA by default
-- update dataset stats page for aphrodite, flickr
-- top-k accuracy multi-class metric
+    - get rid of the url map thing
+- update dataset stats page for aphrodite, flickr, pascal
+- train pascal content classifiers: merge into superclasses
+- get VW oaa working
 
 ## Next
 
@@ -28,36 +30,28 @@
 
 - send email to jessica with paper draft
 
-
 - get displays going again
 
 - need util function for syncing up dataframe with mongodb collection. useful for datasets.
 
 - re-implement data exploration view in vislab and get it working for all datasets
 
-- each dataset should have a notebook page showing some plots and such
-
 - idea: deep learning for telling apart artistic style
 
-- get rid of the url map thing for AVA dataset
-
 - call classifier/regression metrics in results module from vw
-
-- do I need to use the same test set for all classes?
 
 - compute VW classifier performance with the fc6_flatten feature
 
 - what's the order of features in the wikipaintings dataset?
 
+VW:
 - implement oaa mode for vw
-
 - add tests for vw
 
+Wikipaintings:
 - add tests for wikipaintings
 
 - re-implement the single-similarity page in addition to per-style similarity page
-
-- implement data approval view
 
 - aaron's idea to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
 
@@ -103,3 +97,5 @@
     - dust off the correlation matrix code from pascal days
 - abstract classifier/regression metrics into own module
 - plot confusion matrix for the wikipaintings styles
+- top-k accuracy multi-class metric
+- plot AP scores in the balanced whole-set setting from multiclass metrics
