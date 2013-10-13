@@ -4,6 +4,7 @@ import xml.dom.minidom as minidom
 import pandas as pd
 import time
 import joblib
+import operator
 import vislab
 
 
@@ -62,19 +63,53 @@ def load_pascal_annotation(filename):
     return image_series, objects_df
 
 
+def get_clf_df(force=False):
+    """
+    Load the image classification data, with metaclasses.
+    """
+    label_df, objects_df = load_pascal(force)
+    label_df = label_df.fillna(False)
+
+    # Group classes into metaclasses as additional labels.
+    metaclasses = {
+        'mc_animal': [
+            'bird', 'cat', 'cow', 'dog', 'horse', 'sheep'
+        ],
+        'mc_vehicles': [
+            'aeroplane', 'bicycle', 'boat', 'bus', 'car', 'motorbike', 'train'
+        ],
+        'mc_indoor': [
+            'bottle', 'chair', 'diningtable', 'pottedplant', 'sofa',
+            'tvmonitor'
+        ],
+        'mc_person': [
+            'person'
+        ]
+    }
+    for metaclass, classes in metaclasses.iteritems():
+        label_df[metaclass] = reduce(
+            operator.or_, [label_df[c] for c in classes])
+
+    return label_df
+
+
+def get_image_url_for_id(image_id):
+    images_dirname = vislab.config['paths']['VOC'] + '/JPEGImages'
+    return images_dirname + '/{}.jpg'.format(image_id)
+
+
 def load_pascal(force=False):
     """
     Load all the annotations, including object bounding boxes.
     Warning: this takes a good few minutes to load from scratch!
     """
-    filename = vislab.config['data_dir'] + '/pascal_dfs.h5'
+    filename = vislab.config['paths']['shared_data'] + '/pascal_dfs.h5'
     if not force and os.path.exists(filename):
         images_df = pd.read_hdf(filename, 'images_df')
         objects_df = pd.read_hdf(filename, 'objects_df')
         return images_df, objects_df
 
-    annotations = glob.glob(vislab.config['VOC_DIR'] +
-                            '/Annotations/*.xml')
+    annotations = glob.glob(vislab.config['VOC'] + '/Annotations/*.xml')
     t = time.time()
     results = joblib.Parallel(n_jobs=8)(
         joblib.delayed(load_pascal_annotation)(annotation)

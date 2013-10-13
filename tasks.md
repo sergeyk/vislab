@@ -5,7 +5,9 @@
     - load style information into AVA by default
     - get rid of the url map thing
 - update dataset stats page for aphrodite, flickr, pascal
-- train pascal content classifiers: merge into superclasses
+- train pascal content classifiers
+    x merge into superclasses
+    - use 2012: currently downloading to /u/vis/x1/common/PASCAL
 - get VW oaa working
 
 ## Next
