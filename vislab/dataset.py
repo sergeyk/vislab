@@ -74,6 +74,7 @@ def subsample_dataset(df, num_images=-1, random_seed=42):
 
     Note: Does NOT permute images if df is of size num_images.
     """
+    np.random.seed(random_seed)
     if num_images < 0 or num_images >= df.shape[0]:
         return df
     ind = np.random.permutation(df.shape[0])[:num_images]
@@ -117,7 +118,7 @@ def get_df_with_args(args=None):
         raise Exception('Unknown dataset.')
 
     # Subsample number of images if necessary.
-    df = subsample_dataset(df, args.num_images)
+    df = subsample_dataset(df, args.num_images, args.random_seed)
 
     return df
 

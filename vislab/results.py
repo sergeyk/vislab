@@ -8,6 +8,21 @@ import re
 import vislab
 
 
+def regression_metrics(
+        pred_df, name='', balanced=True, with_plot=False, with_print=False):
+    """
+    TODO: write docstring
+    """
+    y_true = pred_df['label']
+    y_pred = pred_df['pred']
+
+    metrics = {}
+    metrics['r2_score'] = sklearn.metrics.r2_score(y_true, y_pred)
+    metrics['mse'] = sklearn.metrics.mean_squared_error(y_true, y_pred)
+
+    return metrics
+
+
 def binary_metrics(
         pred_df, name='', balanced=True, with_plot=False, with_print=False):
     """
@@ -191,16 +206,6 @@ def multiclass_metrics(
         name = 'balanced dataset' if balanced else 'full dataset'
         print_metrics(metrics, name)
 
-    return metrics
-
-
-def regression_metrics(pred_df):
-    # TODO
-    r2_score = sklearn.metrics.r2_score(
-        pred_df['label'].values, pred_df['pred'].values)
-    metrics = {
-        'r2_score': r2_score
-    }
     return metrics
 
 

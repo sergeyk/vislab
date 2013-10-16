@@ -4,6 +4,7 @@ import numpy as np
 import shlex
 import sys
 import subprocess
+import vislab
 from vislab import util
 
 
@@ -97,7 +98,7 @@ def map_through_rq(
         cmd = "rqworker --burst {}".format(name)
         if util.running_on_icsi():
             redis_hostname = 'flapjack'
-            job_log_dirname = util.makedirs('data_shared/rqworkers')
+            job_log_dirname = util.makedirs(vislab.config['paths']['shared_data'] + '/rqworkers')
             cmd = "srun -p vision --cpus-per-task={} --mem={}".format(
                 cpus_per_task, mem)
             cmd += " --time={} --output={}/{}_%j-out.txt".format(

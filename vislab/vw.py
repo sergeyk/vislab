@@ -12,10 +12,11 @@ import sklearn.metrics
 import sklearn.grid_search
 import numpy as np
 import vislab
-from vislab import util
+import vislab.results
 
 # The base VW command: run quiet, compress the cache, and use more than
 # the default 18 bits.
+# TODO: make bit_precision a commandline argument
 vw_cmd = "vw --quiet --compressed --bit_precision=24"
 
 
@@ -72,7 +73,7 @@ def train_and_test(
     document.update(dataset['salient_parts'])
 
     # The results are stored in a Mongo database called 'predict'.
-    client = util.get_mongodb_client()
+    client = vislab.util.get_mongodb_client()
     collection = client['predict'][collection_name]
     if not force:
         result = collection.find_one(document)
@@ -82,7 +83,7 @@ def train_and_test(
             print("(Score was {:.3f})".format(result['score_test']))
             return
 
-    dirname = util.makedirs('data/{}'.format(dataset['name']))
+    dirname = vislab.util.makedirs('data/{}'.format(dataset['name']))
     splits = ['train', 'val', 'test']
 
     # Save the dataset DataFrames for use in filtering examples.
@@ -95,7 +96,8 @@ def train_and_test(
 
     # Set canonical location for VW feature cache files.
     cache_filenames = [
-        'data/feats/{}/{}.txt.gz'.format(dataset['dataset_name'], f)
+        '{}/{}/{}.txt.gz'.format(
+            vislab.config['paths']['feats'], dataset['dataset_name'], f)
         for f in feature_names
     ]
 
@@ -104,7 +106,7 @@ def train_and_test(
     out_dirnames = {}
     for name in splits:
         experiment_name = '_'.join(feature_names) + '_q_{}'.format(quadratic)
-        out_dirnames[name] = util.makedirs(
+        out_dirnames[name] = vislab.util.makedirs(
             '{}/{}/{}'.format(dirname, experiment_name, name))
         _cache_data(
             df_filenames[name], cache_filenames, out_dirnames[name],
@@ -135,7 +137,7 @@ def train_and_test(
     cmd = _train_vw_cmd(
         best_setting, out_dirnames['val'], from_model=best_model_filename)
     cmd_filename = out_dirnames['val'] + '/_train_cmd.sh'
-    util.run_through_bash_script([cmd], cmd_filename, verbose)
+    vislab.util.run_through_bash_script([cmd], cmd_filename, verbose)
 
     print("Running VW prediction")
     pred_cmd = _pred_vw_cmd(
@@ -143,11 +145,12 @@ def train_and_test(
     pred_filename = '{}/{}_pred.txt'.format(
         out_dirnames['test'], _setting_to_name(**best_setting))
     cmd_filename = out_dirnames['test'] + '/_test_cmd.sh'
-    util.run_through_bash_script([pred_cmd], cmd_filename, verbose)
+    vislab.util.run_through_bash_script([pred_cmd], cmd_filename, verbose)
 
     # Test the best model updated with val data on the test set.
     test_pred_df, score = _get_preds_and_score(
-        pred_filename, dataset['test_df'], dataset['task'])
+        pred_filename, dataset['test_df'],
+        dataset['task'], dataset['num_labels'])
 
     # Combine all the predictions into one DataFrame
     train_pred_df['split'] = 'train'
@@ -206,7 +209,7 @@ def _cache_data(
 
     print("Caching data")
     cmd_filename = output_dirname + '/_cache_cmd.sh'
-    util.run_through_bash_script(
+    vislab.util.run_through_bash_script(
         [cache_preview_cmd, cache_cmd], cmd_filename, verbose)
 
 
@@ -319,7 +322,8 @@ def _train_with_val(
     print("Running VW training for {} param settings, {} at a time".format(
         len(grid), num_workers))
     cmd_filename = out_dirnames['train'] + '/_train_cmd.sh'
-    util.run_through_bash_script(parallel_cmds, cmd_filename, verbose=False)
+    vislab.util.run_through_bash_script(
+        parallel_cmds, cmd_filename, verbose=False)
 
     # Load all the model predictions and pick the best settings.
     train_scores = []
@@ -330,12 +334,12 @@ def _train_with_val(
         train_pred_df, train_score = _get_preds_and_score(
             '{}/{}_pred.txt'.format(
                 out_dirnames['train'], _setting_to_name(**setting)),
-            dataset['train_df'], dataset['task'])
+            dataset['train_df'], dataset['task'], dataset['num_labels'])
 
         val_pred_df, val_score = _get_preds_and_score(
             '{}/{}_pred.txt'.format(
                 out_dirnames['val'], _setting_to_name(**setting)),
-            dataset['val_df'], dataset['task'])
+            dataset['val_df'], dataset['task'], dataset['num_labels'])
 
         train_pred_dfs.append(train_pred_df)
         train_scores.append(train_score)
@@ -372,7 +376,7 @@ def _train_with_val(
 
 
 def _get_preds_and_score(
-        pred_filename, dataset_df, task='clf', loss_function='logistic'):
+        pred_filename, dataset_df, task, num_labels, loss_function='logistic'):
     """
     # TODO: actually pass loss_function to this function.
 
@@ -396,11 +400,21 @@ def _get_preds_and_score(
     # Set the true values as a column.
     pred_df['label'] = dataset_df['label']
 
-    if task == 'clf':
-        metrics = vislab.results.classification_metrics(pred_df)
+    if task == 'clf' and num_labels == 2:
+        metrics = vislab.results.binary_metrics(
+            pred_df, name='', balanced=False,
+            with_plot=False, with_print=False)
+        return pred_df, metrics['ap']
+    elif task == 'clf' and num_labels > 2:
+        metrics = vislab.results.multiclass_metrics(
+            pred_df, name='', balanced=False,
+            with_plot=False, with_print=False)
+        return pred_df, metrics['ap']
     elif task == 'regr':
-        metrics = vislab.results.regression_metrics(pred_df)
+        metrics = vislab.results.regression_metrics(
+            pred_df, name='', balanced=False,
+            with_plot=False, with_print=False)
+        return pred_df, metrics['mse']
     else:
-        raise Exception("Unknown task")
-
-    return pred_df, metrics['score']
+        raise Exception("Unknown task/num_labels combo: {}/{}".format(
+            task, num_labels))

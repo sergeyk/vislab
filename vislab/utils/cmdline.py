@@ -18,7 +18,7 @@ def add_cmdline_args(group_name, parser):
         parser.add_argument(
             '--force', default=False)
         parser.add_argument(
-            '--random_seed', default=42)
+            '--random_seed', type=int, default=42)
 
     # Stuff for selecting the dataset and limiting the number of images:
     elif group_name == 'dataset':
@@ -55,19 +55,19 @@ def add_cmdline_args(group_name, parser):
         parser.add_argument(
             '--num_workers',
             help="number of workers to use in processing jobs",
-            default=1)
+            type=int, default=1)
         parser.add_argument(
             '--chunk_size',
             help="number of jobs to assign to a worker at once",
-            default=20)
+            type=int, default=20)
         parser.add_argument(
             '--mem',
             help="amount of memory that a single worker will use",
-            default=3000)
+            type=int, default=3000)
         parser.add_argument(
             '--cpus_per_task',
             help="number of cpus that a single worker will use",
-            default=2)
+            type=int, default=4)
 
     # Forming a prediction dataset and setting properties of predictor.
     elif group_name == 'prediction':
@@ -85,11 +85,11 @@ i.e. 'style_*' will match multiple columns""")
         parser.add_argument(
             '--test_frac',
             help="fraction of dataset to use for testing",
-            default=0.2)
+            type=float, default=0.2)
         parser.add_argument(
             '--min_pos_frac',
             help="minimum fraction of positive examples in training",
-            default=0.1)
+            type=float, default=0.1)
         parser.add_argument(
             '--quadratic',
             help="perform quadratic expansion of the features",
@@ -101,11 +101,11 @@ i.e. 'style_*' will match multiple columns""")
         parser.add_argument(
             '--ava_num_train',
             help="number of training images to use",
-            default=-1)
+            type=int, default=-1)
         parser.add_argument(
             '--ava_delta',
             help="AVA: only use images >= delta from mean rating",
-            default=0.0)
+            type=float, default=0.0)
 
     else:
         raise Exception("Unknown group!")

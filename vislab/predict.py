@@ -17,6 +17,7 @@ import pandas as pd
 import numpy as np
 import vislab.utils.cmdline
 import vislab.dataset
+import vislab.vw
 
 
 def get_multiclass_dataset(
@@ -77,10 +78,9 @@ def _process_df_for_binary_clf(df, test_frac, min_pos_frac):
     test_ids = np.concatenate((test_ids, remaining_ids))
 
     # Convert to +1/-1 labels.
-    labels = np.ones(df.shape[0])
-    labels[~df['label']] = -1
-    df['label'] = labels
-    df = df[['label']]
+    labels = pd.Series(-np.ones(df.shape[0]), index=df.index)
+    labels[df['label']] = 1
+    df['label'] = labels.astype(int)
 
     return df, train_ids, val_ids, test_ids
 
@@ -176,15 +176,12 @@ def _get_importance(df):
     -------
     importances: pandas.Series
     """
-    # TODO: can be replaced by pandas method value_counts()
-    counts = [(df['label'] == label).sum() for label in df['label'].unique()]
-    mfl = df['label'].unique()[np.argmax(counts)]
+    mfl = df['label'].value_counts().argmax()
 
-    importances = np.ones(df.shape[0])
+    importances = pd.Series(np.ones(df.shape[0]), df.index)
     ind = (df['label'] == mfl)
     importances[ind] = 1. * (~ind).sum() / ind.sum()
 
-    importances = pd.Series(importances, df.index)
     return importances
 
 

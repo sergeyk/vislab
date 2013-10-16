@@ -83,6 +83,8 @@ def load_pascal(force=False, args=None):
     )
     images, objects_dfs = zip(*results)
     images_df = pd.DataFrame(list(images))
+    print('load_pascal: finished processing images in {:.3f} s'.format(
+        time.time() - t))
 
     # Get the canonical split information.
     splits_dir = vislab.config['paths']['VOC'] + '/ImageSets/Main'
@@ -93,12 +95,14 @@ def load_pascal(force=False, args=None):
         images_df['_split'].ix[inds] = split
 
     objects_df = objects_dfs[0]
-    for df in objects_dfs[1:]:
-        objects_df = objects_df.append(df)
-    print('load_pascal: finished in {:.3f} s'.format(time.time() - t))
+    # TODO
+    # for df in objects_dfs[1:]:
+    #     objects_df = objects_df.append(df)
+    print('load_pascal: finished processing objects in {:.3f} s'.format(
+        time.time() - t))
 
     images_df.to_hdf(filename, 'images_df', mode='w')
-    objects_df.to_hdf(filename, 'objects_df', mode='w')
+    objects_df.to_hdf(filename, 'objects_df', mode='a')
     return images_df, objects_df
 
 

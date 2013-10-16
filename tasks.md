@@ -1,13 +1,8 @@
 ## Doing
 
-- PICK UP AT:
-Think I finally figured out:
-- `predict_task` is `clf` or `regr`
-- `predict_label` is a string with wildcard expansion that matches column names.
-    if multiple columns are matched, then classification is done in the multi-class, OAA style.
-    if a single column is matched, then classification is done in the binary style.
-
-- PICK UP AT: untangle the dataset loading stuff.... the initial load is done in the dataset-specific module. the load from cache is done from dataset. so no force in dataset. then remove all duplicate logic for constructing datasets for prediction from ava and dataset.
+- I think i got the dataset loading stuff mostly down. still need to deal with multiclass variant, test it out, and potentially deal with ava special delta-fitlering case.
+- launched decaf computation for pascal at 5am
+    : mongo died (out of memory), so only half the jobs completed
 
 - put this list into a google doc where i can highlight lines with different colors. go through and higlight items by importance: "must be done for draft", "must be done for final", "nice to have", "not important". bold items that are currently being worked on.
 
