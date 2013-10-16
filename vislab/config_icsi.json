@@ -1,6 +1,6 @@
 {
     "paths": {
-        "VOC": "~/work/vision_data/VOC2012",
+        "VOC": "/tscratch/tmp/sergeyk/VOCdevkit/VOC2012",
         "AVA": "~/work/vision_data/AVA_dataset",
         "data": "~/work/vislab/data",
         "shared_data": "~/work/vislab/data/shared",

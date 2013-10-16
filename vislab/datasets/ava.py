@@ -1,110 +1,128 @@
 """
 Code to load the AVA dataset.
+Download it from http://www.lucamarchesotti.com/AVA/
 
-Static files for the dataset should be placed into
-config['paths']['static_data']
+The image urls are not part of the above release, and have to be
+scraped from dpchallenge.net.
 """
-import os
 import pandas as pd
 import numpy as np
-import aphrodite
-import aphrodite.image
+import requests
+import bs4
 import vislab
+import vislab.utils
+import vislab.utils.distributed
 
 
-AVA_PATH = vislab.config['paths']['static_data'] + '/AVA_dataset'
-# TODO: get rid of the below, load urls into dataframe once
-URL_MAP_FILENAME = aphrodite.REPO_DIRNAME + '/data_static/ava_id_to_image_url_map.csv.gz'
+## Paths
+AVA_PATH = vislab.config['paths']['AVA']
+AVA_DF_FILENAME = vislab.config['paths']['shared_data'] + '/ava.h5'
+STYLE_DF_FILENAME = vislab.config['paths']['shared_data'] + '/ava_style.h5'
+URL_DF_FILENAME = vislab.config['paths']['shared_data'] + '/ava_urls.h5'
+
+AVA_URL_FOR_ID = 'http://www.dpchallenge.com/image.php?IMAGE_ID={}'
 
 
-def get_image_urls():
-    df = pd.read_csv(
-        URL_MAP_FILENAME, compression='gzip', index_col=0)
-    df.index = df.index.astype(str)
-    df['page_url'] = [aphrodite.image.AVA_URL_FOR_ID.format(x) for x in df.index]
+## Caching loaders of the DataFrames.
+def get_urls_df(force=False, args=None):
+    """
+    Return DataFrame of image_url and page_url.
+
+    NOTE: takes about .4 sec to read from HDF cache.
+    """
+    df = vislab.util.load_or_generate_df(
+        URL_DF_FILENAME, _scrape_image_urls, force, args)
+    df['page_url'] = [AVA_URL_FOR_ID.format(ind) for ind in df.index]
     return df
 
 
-def get_ava_dataset(force=False):
-    filename = vislab.config['paths']['shared_data'] + '/ava.h5'
-    df = vislab.util.load_or_generate_df(filename, load_ava_dataset, force)
-    return df
+def get_ava_df(force=False, args=None):
+    """
+    Return DataFrame of the basic AVA dataset.
+    """
+    return vislab.util.load_or_generate_df(
+        AVA_DF_FILENAME, _load_ava_df, force, args)
 
 
-def load_ava_dataset():
+def get_style_df(force=False, args=None):
+    """
+    Return DataFrame of the AVA style labels: column per label.
+    """
+    return vislab.util.load_or_generate_df(
+        STYLE_DF_FILENAME, _load_style_df, force, args)
+
+
+## From-scratch loaders.
+def _load_ava_df(args=None):
     """
     Load the whole AVA dataset from files as a DataFrame, with columns
         image_id: string
         ratings: list of ints,
-        semantic_tag_X_id:int
+        ratings_mean: float,
+        ratings_mean: float,
         semantic_tag_X_name:string (for X in [1, 2]),
-        challenge_id: int
         challenge_name: string.
 
     Returns
     -------
     df: pandas.DataFrame
     """
+    print("load_ava_dataset: loading from files")
+
     def load_ids_and_names(filename, column_name):
         with open(filename, 'r') as f:
-            lines = f.readlines()
-        # example of an (id, name) line: "37 Diptych / Triptych"
-        data = [(int(l.split()[0]), ' '.join(l.split()[1:])) for l in lines]
+            # example of an (id, name) line: "37 Diptych / Triptych"
+            data = [
+                (int(line.split()[0]), ' '.join(line.split()[1:]))
+                for line in f
+            ]
         ids, names = zip(*data)
-        df = pd.DataFrame(
-            data=list(names), index=list(ids),
-            columns=[column_name], dtype=str)
-        return df
+        return pd.Series(list(names), list(ids), dtype=str)
 
     # Load the tag and challenge id-name mapping.
-    tags_df = load_ids_and_names(
+    tags = load_ids_and_names(
         AVA_PATH + '/tags.txt', 'semantic_tag_name')
-    challenges_df = load_ids_and_names(
+    challenges = load_ids_and_names(
         AVA_PATH + '/challenges.txt', 'challenge_name')
 
     # Load the main data.
     f = AVA_PATH + '/AVA.txt'
     X = pd.read_csv(f, sep=' ', header=None).values.T
+
+    # Compute the mean and standard deviation of the ratings distributions.
     ratings = X[2:12].T
-    rating_mean = (
-        np.arange(1, 11.) * ratings / ratings.sum(1)[:, np.newaxis]).sum(1)
-    rating_std = np.array(list(np.repeat(np.arange(1, 11.), row).std() for row in ratings))
+    values = np.arange(1, 11.)
+    ratings_sums = ratings.sum(1)
+    rating_mean = (ratings * values).sum(1) / ratings_sums
+    rating_std = np.array([np.repeat(values, row).std() for row in ratings])
+
+    # Make DataFrame, using the challenge and semantic tag names
+    # instead of ids.
+    index = pd.Index(X[1].astype(str), name='image_id')
     df = pd.DataFrame({
         'ratings': [row for row in ratings],
-        'rating_mean': rating_mean, 'rating_std': rating_std,
-        'semantic_tag_1_id': X[12], 'semantic_tag_2_id': X[13],
-        'challenge_id': X[14]
-    }, index=X[1].astype(str))
-
-    df.rating_mean = np.round(df.rating_mean, 4)
-    df.rating_std = np.round(df.rating_std, 4)
-
-    # Store the names of the tags and challenges along with the ids.
-    df['semantic_tag_1_name'] = df.join(
-        tags_df, on='semantic_tag_1_id', how='left')['semantic_tag_name']
-    df['semantic_tag_2_name'] = df.join(
-        tags_df, on='semantic_tag_2_id', how='left')['semantic_tag_name']
-    df = df.join(challenges_df, on='challenge_id', how='left')
-
-    df.index.name = 'image_id'
+        'rating_mean': np.round(rating_mean, 4),
+        'rating_std': np.round(rating_std, 4),
+        'semantic_tag_1_name': tags.ix[X[12]].values,
+        'semantic_tag_2_name': tags.ix[X[13]].values,
+        'challenge_name': challenges.ix[X[14]].values
+    }, index)
 
     return df
 
 
-def load_style_df(force=False):
+def _load_style_df(args=None):
     """
     Load the provided style label information as a DataFrame.
     The provided style labels are split between train and test sets,
     where the latter is multi-label.
-    """
-    filename = vislab.config['paths']['shared_data'] + '/ava_style.h5'
-    if not force and os.path.exists(filename):
-        return pd.read_hdf(filename, 'df')
 
+    We load the styles into one DataFrame.
+    """
     # Load the style category labels
     d = AVA_PATH + '/style_image_lists'
     names_df = pd.read_csv(
-        d + '/styles.txt', sep=' ', index_col=0, names=['Style'])
+        d + '/styles.txt', sep=' ', index_col=0, names=['style'])
     styles = names_df.values.flatten()
 
     # Load the multi-label encoded test data.
@@ -122,235 +140,137 @@ def load_style_df(force=False):
     # Expand the single-label to multi-label encoding.
     for style in styles:
         train_df[style] = False
-        index = train_df.index[train_df['Style'] == style]
+        index = train_df.index[train_df['style'] == style]
         train_df[style].ix[index] = True
 
-    # Joni the two multi-label encoded dataframes, and get rid of extra columns
+    # Join the two multi-label encoded dataframes, and get rid of extra columns
     df = train_df.append(test_df)[styles]
-
+    df.index = df.index.astype(str)
     df.index.name = 'image_id'
 
-    df.to_hdf(filename, 'df')
     return df
 
 
-def get_style_dataset(ava_df, random_seed=42):
+def _scrape_image_urls(args):
     """
-    Styles are [
-        'Complementary_Colors', 'Duotones', 'HDR', 'Image_Grain',
-        'Light_On_White', 'Long_Exposure', 'Macro', 'Motion_Blur',
-        'Negative_Image', 'Rule_of_Thirds', 'Shallow_DOF', 'Silhouettes',
-        'Soft_Focus', 'Vanishing_Point']
-
-    The split is as given in the AVA dataset, although it's unclear to me
-    if our test procedure is exactly the same.
-    """
-    d = AVA_PATH + '/style_image_lists'
-    names_df = pd.read_csv(
-        d + '/styles.txt', sep=' ', index_col=0, names=['Style'])
-
-    trainval_df = pd.DataFrame(
-        index=np.loadtxt(d + '/train.jpgl', dtype=str),
-        data={'label': np.loadtxt(d + '/train.lab', dtype=int)})
-    trainval_df['importance'] = 1
-
-    num_labels = len(trainval_df['label'].unique())
-    task = 'clf'
-
-    test_df = pd.DataFrame(
-        index=np.loadtxt(d + '/test.jpgl', dtype=str),
-        data=np.loadtxt(d + '/test.multilab', dtype=bool))
-    ind, style_ind = np.where(test_df)
-    test_df_unrolled = pd.DataFrame(
-        index=test_df.index[ind], data={'label': style_ind + 1})
-    test_df_unrolled['importance'] = 1
-
-    # Shuffle training data and make a validation set.
-    num_train = int(0.7 * trainval_df.shape[0])
-    shuffle_ind = np.random.permutation(trainval_df.shape[0])
-    train_df = trainval_df.iloc[shuffle_ind[:num_train]]
-    val_df = trainval_df.iloc[shuffle_ind[num_train:]]
-
-    name = 'clf_style_train_{}_test_{}'.format(
-        train_df.shape[0], test_df_unrolled.shape[0])
-
-    dataset = {
-        'dataset_name': 'ava',
-        'name': name,
-        'task': task,
-        'salient_parts': {
-            'data': 'style',
-            'num_train': train_df.shape[0],
-            'num_val': val_df.shape[0],
-            'num_test': test_df_unrolled.shape[0]
-        },
-        'names_df': names_df,
-        'num_labels': num_labels,
-        'train_df': train_df,
-        'val_df': val_df,
-        'test_df': test_df_unrolled
-    }
-    return dataset
-
-
-def construct_label_df(df, ids, balance=False):
-    """
-    Construct DataFrames with scores and labels.
-    If balance==True, equalize the number of positive and negative examples.
-    """
-    labels = df['label'].ix[ids]
-
-    # most frequent label
-    mfl = 1
-    if (labels == -1).sum() > (labels == 1).sum():
-        mfl = -1
-
-    importances = np.ones(len(labels))
-    if balance:
-        ind = np.random.permutation((labels == mfl).sum())
-        ind = ind[:(labels != mfl).sum()]
-    else:
-        importances[labels == mfl] = (
-            1. * (labels != mfl).sum() / (labels == mfl).sum())
-
-    df = pd.DataFrame(
-        data={'importance': importances, 'label': labels}, index=ids)
-
-    if balance:
-        df2 = df[labels != mfl]
-        df2 = df2.append(df[labels == mfl].iloc[ind])
-        df = df2
-
-    # Sort by id to have compatibility with feature database.
-    df = df.ix[sorted(df.index)]
-
-    return df
-
-
-def get_rating_dataset(
-        ava_df, task='clf_rating_mean', frac_test=.2, num_train=-1, frac_val=-1,
-        delta=0, random_seed=42):
-    """
-    Return ids, scores, and labels dictionary for prediction of
-    'attractiveness' of a photograph.
-    Depending on the task, the label can be used for classification or
-    regression of either the mean or the standard deviation of the ratings.
+    Construct a mapping from AVA image id to actual URL containing the image.
+    This is run in parallel, using rq.
 
     Parameters
     ----------
-    ava_df: pandas.DataFrame
+    args: from argparse
+    """
+    if args is None:
+        args = {
+            'num_workers': 8,
+            'chunk_size': 20
+        }
 
-    task: string in [
-        'clf_rating_mean', 'clf_rating_std',
-        'regr_rating_mean', 'regr_rating_std'
+    df = get_ava_df()
+    image_ids = df.index.tolist()
+
+    # TODO: only submit jobs that have not already been done
+    vislab.utils.distributed.map_through_rq(
+        function=_get_image_url_for_ava_id,
+        args_list=[(x,) for x in image_ids],
+        name="map_ava_ids_to_urls",
+        num_workers=args['num_workers'],
+        chunk_size=args['chunk_size'])
+
+    collection = _get_url_mongodb_collection()
+    image_ids, urls = zip(*[
+        (x['image_id'], x['url'])
+        for x in collection.find()
+    ])
+    df = pd.DataFrame({'image_url': list(urls)}, list(image_ids))
+    df = df.drop_duplicates()
+    df.index.name = 'image_id'
+
+    df['page_url'] = [
+        AVA_URL_FOR_ID.format(x) for x in df.index
     ]
 
-    frac_test: int [.3]
-        Fraction of images to use for testing.
+    return df
 
-    num_train: int [-1]
-        If < 0, use all remaining images after num_test is subtracted.
 
-    frac_val: int [-1]
-        Fraction of images to use in validation: these come from the training set.
-        If -1, use the same number as test images.
+def _get_image_url_for_ava_id(image_id):
+    """
+    Scrape the dpchallenge page for a given id for the actual image URL.
+    Store into a MongoDB collection.
 
-    delta: float [0]
-        If > 0,  discard from the training set all images with average
-        score in [rating_mean - delta/2, rating_mean + delta/2].
-
-    random_seed: float [42]
+    Parameters
+    ----------
+    image_id: string
 
     Returns
     -------
-    dataset: dict
-        Contains 'train_ids', 'train_scores', 'train_labels',
-                 'test_ids', 'test_scores', 'test_labels'
+    img_url: string or None
+        If the website reports that this id is invalid, return None.
+
+    Raises
+    ------
+    Exception
+        If the request or the BS parse did not complete succesfully.
+        If no image found, yet website did not report invalid id.
+        If multiple image candidates found.
     """
-    assert(delta >= 0)
-    num_images = ava_df.shape[0]
 
-    num_test = int(frac_test * num_images)
-    assert(num_test > 0 and num_test < num_images)
+    image_id = str(image_id)
 
-    if frac_val < 0:
-        num_val = num_test
-    else:
-        num_val = int(frac_val * num_images)
+    collection = _get_url_mongodb_collection()
+    collection.ensure_index('image_id')
+    cursor = collection.find({'image_id': image_id}).limit(1)
+    if cursor.count() > 0:
+        return cursor[0]['url']
 
-    # Set the label
-    ava_df = ava_df.copy()
-    rating_mean_mean = ava_df['rating_mean'].mean()
-    rating_std_mean = ava_df['rating_std'].mean()
-    if task == 'clf_rating_mean':
-        num_labels = 2
-        task_ = 'clf'
-        ava_df['label'] = -1
-        ava_df['label'][ava_df['rating_mean'] > rating_mean_mean] = 1
-    elif task == 'clf_rating_std':
-        num_labels = 2
-        task_ = 'clf'
-        ava_df['label'] = -1
-        ava_df['label'][ava_df['rating_std'] > rating_std_mean] = 1
-    elif task == 'regr_rating_mean':
-        num_labels = -1
-        task_ = 'regr'
-        ava_df['label'] = ava_df['rating_mean']
-    elif task == 'regr_rating_std':
-        num_labels = -1
-        task_ = 'regr'
-        ava_df['label'] = ava_df['rating_std']
-    else:
-        raise Exception("Unimplemented task")
+    url = AVA_URL_FOR_ID.format(image_id)
+    try:
+        r = requests.get(url)
+        soup = bs4.BeautifulSoup(r.text)
+    except Exception as e:
+        raise e
 
-    # Select test images, and leave the rest as train candidates.
-    if num_train < 0 or num_train > (num_images - num_test):
-        num_train = num_images - num_test
+    imgs = soup.findAll(
+        lambda tag:
+        'alt' in tag.attrs and
+        'src' in tag.attrs and
+        tag.attrs['src'].startswith('http://images.dpchallenge.com/')
+        and 'style' in tag.attrs and
+        tag.attrs['src'].find('thumb') < 0
+    )
+    if len(imgs) < 1:
+        if soup.find(text='Invalid IMAGE_ID provided.') is not None:
+            return None
+        raise Exception('No image found at url {}'.format(url))
+    elif len(imgs) > 1:
+        raise Exception('More than one image found at url {}'.format(url))
 
-    np.random.seed(random_seed)
-    ind = np.random.permutation(num_images)
-    test_ids = ava_df.index[ind[:num_test]]
-    val_ids = ava_df.index[ind[num_test:num_test + num_val]]
-    train_candidates_df = ava_df.iloc[ind[num_test + num_val:]]
+    img_url = imgs[0]['src']
+    collection.insert({'image_id': image_id, 'url': img_url})
 
-    # Filter on delta.
-    if delta > 0:
-        train_candidates_df = train_candidates_df[
-            (train_candidates_df['rating_mean'] <= rating_mean_mean - delta / 2.) |
-            (train_candidates_df['rating_mean'] >= rating_mean_mean + delta / 2.)]
-    if train_candidates_df.shape[0] <= 1:
-        raise Exception('Not enough training examples. Try lowering delta.')
-    if train_candidates_df.shape[0] > num_train:
-        ind = np.random.permutation(train_candidates_df.shape[0])
-        train_ids = train_candidates_df.index[ind[:num_train]]
-    else:
-        train_ids = train_candidates_df.index
+    return img_url
 
-    train_df = construct_label_df(ava_df, train_ids, balance=False)
-    val_df = construct_label_df(ava_df, val_ids, balance=True)
-    test_df = construct_label_df(ava_df, test_ids, balance=True)
 
-    name = '{}_train_{}_test_{}_delta_{:.2f}'.format(
-        task, num_train, num_test, delta)
-    data = '_'.join(task.split('_')[1:])  # like 'rating_mean'
+def _get_url_mongodb_collection():
+    """
+    Return the MongoDB collection where image URLs are stored.
+    """
+    return vislab.util.get_mongodb_client()['datasets']['ava_image_urls']
 
-    dataset = {
-        'dataset_name': 'ava',
-        'name': name,
-        'task': task_,
-        'num_labels': num_labels,
-        'salient_parts': {
-            'data': data,
-            'num_test': num_test,
-            'actual_num_test': test_df.shape[0],
-            'num_val': num_val,
-            'actual_num_val': val_df.shape[0],
-            'num_train': num_train,
-            'actual_num_train': train_df.shape[0],
-            'delta': delta
-        },
-        'train_df': train_df,
-        'val_df': val_df,
-        'test_df': test_df
+
+def cmdline_get_urls_df():
+    """
+    Get the image URLs by scraping dpchallenge.net pages.
+    Should do in parallel.
+    """
+    args = vislab.utils.cmdline.get_args(
+        'ava', 'cmdline_get_urls_df', ['datasets', 'processing'])
+    force = args['force_dataset']
+    get_urls_df(force, args)
+
+
+if __name__ == '__main__':
+    possible_functions = {
+        'get_urls_df': cmdline_get_urls_df,
     }
-    return dataset
+    vislab.util.cmdline.run_function_in_file(__file__, possible_functions)

@@ -8,14 +8,6 @@ import cPickle
 import subprocess
 
 
-def add_cmdline_args(parser):
-    """
-    Add commonly used command line arguments to given ArgumentParser.
-    """
-    parser.add_argument(
-        '--random_seed', default=42)
-
-
 def exclude_ids_in_collection(image_ids, collection):
     """
     Exclude ids already stored in the collection.
@@ -31,11 +23,11 @@ def exclude_ids_in_collection(image_ids, collection):
     return image_ids
 
 
-def load_or_generate_df(filename, generator_fn, force=False):
+def load_or_generate_df(filename, generator_fn, force=False, args=None):
     if not force and os.path.exists(filename):
         df = pd.read_hdf(filename, 'df')
     else:
-        df = generator_fn()
+        df = generator_fn(args)
         df.to_hdf(filename, 'df', mode='w')
     return df
 

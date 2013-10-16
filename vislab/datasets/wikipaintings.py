@@ -1,5 +1,9 @@
 """
 Code to scrape the WikiPaintings website to construct a dataset.
+
+To generate from scratch, run
+
+python vislab/datasets/wikipaintings.py load_basic_df
 """
 
 import os
@@ -7,77 +11,71 @@ import requests
 import bs4
 import pandas as pd
 import numpy as np
-
 import vislab
 
 DB_NAME = 'wikipaintings'
 
+_DIRNAME = vislab.config['paths']['shared_data']
+BASIC_DF_FILENAME = _DIRNAME + '/wikipaintings_basic_info.h5'
+DETAILED_DF_FILENAME = _DIRNAME + '/wikipaintings_detailed_info.h5'
+URL_DF_FILENAME = _DIRNAME + '/wikipaintings_urls.h5'
+
 
 def get_image_url_for_id(image_id):
-    # TODO: switch to using a DB instead of loading DataFrame.
-    filename = vislab.config['paths']['shared_data'] + '/wikipaintings_urls.h5'
-
+    filename = URL_DF_FILENAME
     if not os.path.exists(filename):
-        df = get_detailed_dataset()
+        df = get_df()
         dfs = df['image_url']
         dfs.to_hdf(filename, 'df', mode='w')
     else:
         dfs = pd.read_hdf(filename, 'df')
-
-    assert(image_id in dfs.index)
     return dfs.ix[image_id]
 
 
-def get_style_dataset(min_pos=1000):
+def get_basic_df(force=False, args=None):
     """
-    Return DataFrame that is suitable for learning style and genre
-    properties of artworks.
-
-    Filter on:
-    - have more than min_pos examples,
-    - have both a style and a genre.
-
-    Expand the style labels to own columns, with 'style_' prefix.
-    Expand the genre labels to own columns, with 'genre_' prefix.
+    Return DataFrame of image_id -> detailed artwork info, including
+    image URLs.
     """
-    df = get_detailed_dataset()
-    df = df.dropna(subset=['style'])
-    df = df.dropna(subset=['genre'])
+    return vislab.util.load_or_generate_df(
+        BASIC_DF_FILENAME, _fetch_basic_dataset, force, args)
 
-    def filter_and_expand(df, prop, min_pos=None):
-        freqs = df[prop].value_counts()
 
-        # Filter out vals with less than min_pos examples.
-        if min_pos is not None:
-            freqs = freqs[freqs >= min_pos]
-        prop_vals = freqs.index.tolist()
-        df = df[df[prop].apply(lambda x: x in prop_vals)]
-
-        # Expand into own columns, prefixed by property name.
-        for val in prop_vals:
-            ascii_name = val.replace(' ', '_').encode('ascii', 'ignore')
-            df['{}_{}'.format(prop, ascii_name)] = (df[prop] == val)
-        return df
-
-    df = filter_and_expand(df, 'style', min_pos)
-    df = filter_and_expand(df, 'genre', min_pos)
+def get_df(force=False, args=None):
+    """
+    Return DataFrame of image_id -> detailed artwork info, including
+    image URLs.
+    Only keep those artworks with listed style and genre.
+    """
+    df = vislab.util.load_or_generate_df(
+        DETAILED_DF_FILENAME, _fetch_detailed_dataset, force, args)
+    df = df.dropna(how='any', subset=['genre', 'style'])
     return df
 
 
-def get_basic_dataset(force=False):
-    """
-    Return DataFrame of image_id -> page_url, artist_slug, artwork_slug.
-    """
-    filename = vislab.config['paths']['shared_data'] + \
-        '/wikipaintings_basic_info.h5'
-    df = vislab.util.load_or_generate_df(filename, fetch_basic_dataset, force)
-    return df
+def get_style_df(min_positive_examples=1000):
+    return _get_column_label_df('style', min_positive_examples)
 
 
-def fetch_basic_dataset():
+def get_genre_df(min_positive_examples=1000):
+    return _get_column_label_df('genre', min_positive_examples)
+
+
+def get_artist_df(min_positive_examples=1000):
+    return _get_column_label_df('artist', min_positive_examples)
+
+
+def _get_column_label_df(column_name, min_positive_examples=500):
+    df = get_df()
+    return vislab.dataset.get_boolean_df(df, 'style', min_positive_examples)
+
+
+def _fetch_basic_dataset(args=None):
     """
     Fetch basic info and page urls of all artworks by crawling search
     results.
+
+    Not parallelized.
     """
     print("Fetching basic Wikipaintings dataset by scraping search results.")
 
@@ -109,32 +107,29 @@ def fetch_basic_dataset():
     return df
 
 
-def get_detailed_dataset(force=False):
-    """
-    Return DataFrame of image_id -> detailed artwork info, including
-    image URLs.
-    """
-    filename = vislab.config['paths']['shared_data'] + \
-        '/wikipaintings_detailed_info.h5'
-    df = vislab.util.load_or_generate_df(
-        filename, fetch_detailed_dataset, force)
-    return df
-
-
-def fetch_detailed_dataset(
-        force=False, num_workers=1, mem=2000,
-        cpus_per_task=1, async=True):
+def _fetch_detailed_dataset(args=None):
     """
     Fetch detailed info by crawling the detailed artwork pages, using
     the links from the basic dataset.
+
+    Parallelized with vislab.utils.distributed.map_through_rq.
     """
+    basic_df = get_basic_df(args)
+
     print("Fetching detailed Wikipaintings dataset by scraping artwork pages.")
+
+    if args is None:
+        args = {
+            'force_dataset': False,
+            'num_workers': 1, 'mem': 2000,
+            'cpus_per_task': 1, 'async': True
+        }
 
     db = vislab.util.get_mongodb_client()[DB_NAME]
     collection = db['image_info']
     print("Old collection size: {}".format(collection.count()))
 
-    basic_df = get_basic_dataset()
+    force = args.force_dataset
     if not force:
         # Exclude ids that were already computed.
         image_ids = basic_df.index.tolist()
@@ -153,8 +148,8 @@ def fetch_detailed_dataset(
     vislab.utils.distributed.map_through_rq(
         vislab.datasets.wikipaintings._fetch_artwork_infos,
         args_list, 'wikipaintings_info',
-        num_workers=num_workers, mem=mem, cpus_per_task=cpus_per_task,
-        async=async)
+        num_workers=args['num_workers'], mem=args['mem'],
+        cpus_per_task=args['cpus_per_task'], async=args['async'])
     print("Final collection size: {}".format(collection.count()))
 
     # Assemble into DataFrame to return.
@@ -242,8 +237,24 @@ def _fetch_artwork_info(image_id, page_url):
     return info
 
 
+## Command line interface.
+def load_basic_df():
+    args = vislab.utils.cmdline.get_args(
+        'wikipaintings', 'load_basic_dataset', ['datasets', 'processing'])
+    force = args.force_dataset
+    get_basic_df(force, args)
+
+
+def load_df():
+    args = vislab.utils.cmdline.get_args(
+        'wikipaintings', 'load_basic_dataset', ['datasets', 'processing'])
+    force = args.force_dataset
+    get_df(force, args)
+
+
 if __name__ == '__main__':
-    """
-    Run the scraping with a number of workers taking jobs from a queue.
-    """
-    fetch_detailed_dataset(force=True, num_workers=20, async=True)
+    possible_functions = {
+        'load_basic_df': load_basic_df,
+        'load_df': load_df
+    }
+    vislab.util.cmdline.run_function_in_file(__file__, possible_functions)
