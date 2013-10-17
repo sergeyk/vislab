@@ -14,7 +14,7 @@ import operator
 import vislab
 
 
-def get_image_url_for_id(image_id):
+def get_image_filename_for_id(image_id):
     return '{}/JPEGImages/{}.jpg'.format(
         vislab.config['paths']['VOC'], image_id)
 

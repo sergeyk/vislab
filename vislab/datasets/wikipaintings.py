@@ -12,6 +12,7 @@ import bs4
 import pandas as pd
 import numpy as np
 import vislab
+import vislab.dataset
 
 DB_NAME = 'wikipaintings'
 

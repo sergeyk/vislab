@@ -90,10 +90,9 @@ def load_flickr_df(num_images=-1, random_seed=42, force=False):
     return main_df
 
 
-def get_image_url_for_flickr_id(image_id):
+def get_image_url_for_id(image_id):
     df = load_flickr_df()
     url = df['image_url'].ix[image_id]
-    print url
     return url
 
 

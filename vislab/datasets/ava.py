@@ -171,7 +171,7 @@ def _scrape_image_urls(args):
 
     # TODO: only submit jobs that have not already been done
     vislab.utils.distributed.map_through_rq(
-        function=_get_image_url_for_ava_id,
+        function=get_image_url_for_id,
         args_list=[(x,) for x in image_ids],
         name="map_ava_ids_to_urls",
         num_workers=args['num_workers'],
@@ -193,7 +193,7 @@ def _scrape_image_urls(args):
     return df
 
 
-def _get_image_url_for_ava_id(image_id):
+def get_image_url_for_id(image_id):
     """
     Scrape the dpchallenge page for a given id for the actual image URL.
     Store into a MongoDB collection.

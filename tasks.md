@@ -1,50 +1,34 @@
 ## Doing
 
-- I think i got the dataset loading stuff mostly down. still need to deal with multiclass variant, test it out, and potentially deal with ava special delta-fitlering case.
-- launched decaf computation for pascal at 5am
-    : mongo died (out of memory), so only half the jobs completed
+- get image url stuff working robustly for all datasets by adding dataset name to the calling chain. OR: should the feature pipeline be rethought to get the filenames instead of ids?
 
 - put this list into a google doc where i can highlight lines with different colors. go through and higlight items by importance: "must be done for draft", "must be done for final", "nice to have", "not important". bold items that are currently being worked on.
+
+## Next
+
+- get multiclass prediction dataset generator working
 
 - get ava dataset up to par
     - add rating_mean_bin and rating_mean_norm_bin labels
     - load style information into AVA by default
-    - get rid of the url map thing
-
-- update dataset stats notebooks for
-    - ava
-    - flickr
-    x pascal
-    x wikipaintings
-
-- train pascal content classifiers
-    x merge into superclasses
-    - use 2012: currently downloading to /u/vis/x1/common/PASCAL
-    - launch feature computation
-
-- get VW oaa working, with tests
-
-## Next
 
 Prediction
-- fix up the cmd interface: no splitting of a flag
 - compute performance on AVA
 - compute performance with the conv5 feature to compare
 - compute performance with convnet-retrained feature
-- move predict runtime into vislab/predict.py
 
 VW:
-- implement oaa mode for vw
-- add tests for vw
-- call classifier/regression metrics in results module from vw
+- get VW oaa working
+- add tests
 - get vector of weights from VW. (vowpal_porpoise doesnt seem to do this)
     : in fact, need --inverse_hash to do this properly, and that seems to slow things down substantially (haven't tried though)
 - expand parameter space with learning rate
 - revamp cross-validation to write all results to database to allow iterative improvement and visualizing the effects of the parameters
 
+Search
+- make a tag-based search interface
+
 Datasets
-- move the map urls task to ava dataset file, shouldn't be in run
-- update get_url to use db instead of loading dataframe
 - make memorability/interestingness dataset interface (aude's data with extra interestingness scores)
 - increase Flickr style dataset size to 100K
 - store widths and heights in database for awesome layout on client
@@ -52,7 +36,7 @@ Datasets
 
 Features
 - add step to cache features to h5 and vw at the end of a feature computation run
-- move feature runtime stuff into aphrodite/features.py
+- DRY matlab feature code in aphrodite/features/misc.py
 - make featurization server: gets filename, outputs result back on queue
 - implement WHOG
 - compute WHOG on all datasets
@@ -60,10 +44,10 @@ Features
 - compute Labhist on all datasets
 - implement feature computation in vislab that computes multiple levels of decaf feature at once
 - implement using classifier output as a feature
-- compute the pascal metaclass feature for all datasets
 - do additional training of the convnet with the style images
 - implement portrait vs landscape classifier
 - implement presence of text classifier
+- can further improve the url
 
 Analysis
 - plot correlation matrix between objects and styles
@@ -85,9 +69,6 @@ Cluster upkeep
 - launch workers separately from the script that submits jobs for them, but with their own script
     - be able to kill workers with scancel
     - report when workers get killed
-
-Search
-- make a tag-based search interface
 
 Other demos
 - make demo where a brand-new image is processed with the decaf feature, and analyzed for beauty, and with style classifiers.
@@ -137,3 +118,9 @@ Recommendations
 x multiclass classifier metrics
     x confusion table
     x plot P-R curves for all classes
+x call classifier/regression metrics in results module from vw
+x train pascal content classifiers
+- fix up the cmd interface: no splitting of a flag
+- move predict runtime into vislab/predict.py
+- move the map urls task to ava dataset file, shouldn't be in run
+- move feature runtime stuff into aphrodite/features.py

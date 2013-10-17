@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import vislab
+import vislab.dataset_stats
 
 
 def plot_column_frequencies(df, column, top_k=20):

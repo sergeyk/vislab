@@ -63,6 +63,7 @@ def get_boolean_df(df, column_name, min_positive_examples=-1):
     bool_df = pd.DataFrame(index=df.index)
     for val in vals:
         ascii_name = val.replace(' ', '_').encode('ascii', 'ignore')
+        ascii_name = column_name + '_' + ascii_name
         bool_df[ascii_name] = (df[column_name] == val)
     return bool_df
 
@@ -109,7 +110,7 @@ def get_df_with_args(args=None):
             args.num_images, args.random_seed, args.dataset_force)
 
     elif args.dataset == 'wikipaintings':
-        df = vislab.datasets.wikipaintings.get_style_df(min_pos=1000)
+        df = vislab.datasets.wikipaintings.get_style_df()
 
     elif args.dataset == 'pascal':
         df = vislab.datasets.pascal.get_clf_df()

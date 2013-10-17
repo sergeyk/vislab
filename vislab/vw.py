@@ -83,7 +83,8 @@ def train_and_test(
             print("(Score was {:.3f})".format(result['score_test']))
             return
 
-    dirname = vislab.util.makedirs('data/{}'.format(dataset['name']))
+    dirname = vislab.util.makedirs('{}/{}'.format(
+        vislab.config['paths']['predict'], dataset['name']))
     splits = ['train', 'val', 'test']
 
     # Save the dataset DataFrames for use in filtering examples.

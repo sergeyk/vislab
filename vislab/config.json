@@ -5,6 +5,7 @@
         "data": "~/work/vislab/data",
         "shared_data": "~/work/vislab/data/shared",
         "static_data": "~/work/vislab/data/static",
-        "feats": "~/work/aphrodite/data/feats"
+        "feats": "~/work/aphrodite/data/feats",
+        "predict": "~/work/vislab/data/predict"
     }
 }

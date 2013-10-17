@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -7,6 +8,7 @@ def plot_binary_metrics(df):
     df[['ap', 'mcc']].plot(
         ax=ax, kind='bar')
     ax.set_ylim([0, 1])
+    ax.set_yticks(np.arange(11) / 10.)
     fig.autofmt_xdate()
     return fig
 

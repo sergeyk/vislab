@@ -44,20 +44,26 @@ def _process_df_for_regression(df, test_frac):
 
 def _process_df_for_binary_clf(df, test_frac, min_pos_frac):
     # The total number is the number of + examples.
+    N = df.shape[0]
     num_total = df['label'].sum()
     num_test = int(test_frac * num_total)
     num_val = num_test
 
     # Take equal number + and - examples for the test and val sets.
-    ind = np.random.permutation(num_total)
+    pos_ind = np.random.permutation(num_total)
+    neg_ind = np.random.permutation(N - num_total)
+
+    assert(num_test + num_val < len(pos_ind))
+    assert(num_test + num_val < len(neg_ind))
+
     test_ids = np.concatenate((
-        df[df['label']].index[ind[:num_test]],
-        df[~df['label']].index[ind[:num_test]]
+        df[df['label']].index[pos_ind[:num_test]],
+        df[~df['label']].index[neg_ind[:num_test]]
     ))
 
     val_ids = np.concatenate((
-        df[df['label']].index[ind[num_test:num_test + num_val]],
-        df[~df['label']].index[ind[num_test:num_test + num_val]]
+        df[df['label']].index[pos_ind[num_test:num_test + num_val]],
+        df[~df['label']].index[neg_ind[num_test:num_test + num_val]]
     ))
 
     # At first, take all other examples for the training set.
@@ -241,8 +247,8 @@ def predict(args=None):
         force=args.force_predict, num_workers=args.num_workers,
         num_passes=num_passes,
         loss=loss_functions,
-        l1_weight=[0],  # , 1e-5, 1e-7],
-        l2_weight=[0],  # , 1e-5, 1e-7],
+        l1_weight=[0, 1e-5, 1e-7],
+        l2_weight=[0, 1e-5, 1e-7],
         quadratic=quadratic)
 
 

@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import re
 import vislab
+import vislab.results_viz
+import vislab.dataset_viz
 
 
 def regression_metrics(
@@ -150,7 +152,16 @@ def multiclass_metrics(
         }, pred_df.index)
         all_binary_metrics[label] = vislab.results.binary_metrics(
             pdf, 'name doesnt matter', False, False, False)
-    metrics['binary_metrics_df'] = pd.DataFrame(all_binary_metrics).T
+    bin_df = pd.DataFrame(all_binary_metrics).T
+
+    # Add mean of the numeric metrics.
+    mean_df = pd.DataFrame(
+        bin_df[['accuracy', 'ap', 'auc', 'mcc']].mean().to_dict(),
+        index=['_mean']
+    )
+    bin_df = bin_df.append(mean_df)
+
+    metrics['binary_metrics_df'] = bin_df
 
     # Plot binary metrics.
     metrics['binary_metrics_fig'] = None
@@ -195,11 +206,12 @@ def multiclass_metrics(
     ]
 
     # Plot top-k accuracies.
+    top_k = min(5, Y.shape[1])
     metrics['top_k_accuracies_fig'] = None
     if with_plot:
         metrics['top_k_accuracies_fig'] = \
             vislab.results_viz.plot_top_k_accuracies(
-                metrics['top_k_accuracies'], top_k=5)
+                metrics['top_k_accuracies'], top_k)
 
     # Print report.
     if with_print:
@@ -217,6 +229,8 @@ def print_metrics(metrics, name):
     for metric_name, value in metrics.iteritems():
         if metric_name == 'results_df':
             print(value.to_string())
+        # if metric_name == 'binary_metrics_df':
+        #     print(value.to_string())
         if metric_name in ['accuracy', 'top_k_accuracies', 'mcc']:
             print('{}: {}'.format(metric_name, value))
     print('')
