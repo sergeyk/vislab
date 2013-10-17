@@ -4,5 +4,8 @@
         "data": "~/work/vislab-dev/data",
         "shared_data": "~/work/vislab-dev/data/shared",
         "static_data": "~/work/vislab-dev/data/static"
-    }
+    },
+
+    "behanceAPIkey": "PUT_API_KEY_HERE"
+
 }
