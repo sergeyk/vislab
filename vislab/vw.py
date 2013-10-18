@@ -408,12 +408,12 @@ def _get_preds_and_score(
         metrics = vislab.results.binary_metrics(
             pred_df, name='', balanced=False,
             with_plot=False, with_print=False)
-        return pred_df, metrics['ap']
+        return pred_df, metrics['accuracy']
     elif task == 'clf' and num_labels > 2:
         metrics = vislab.results.multiclass_metrics(
             pred_df, name='', balanced=False,
             with_plot=False, with_print=False)
-        return pred_df, metrics['ap']
+        return pred_df, metrics['accuracy']
     elif task == 'regr':
         metrics = vislab.results.regression_metrics(
             pred_df, name='', balanced=False,

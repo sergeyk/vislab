@@ -42,6 +42,44 @@ def _process_df_for_regression(df, test_frac):
     return df, train_ids, test_ids, val_ids
 
 
+def _process_df_for_binary_clf_with_split(df, split_series, test_frac):
+    """
+    Respect the given split information.
+    """
+    assert(split_series.shape[0] == df.shape[0])
+
+    test_ids = split_series[split_series == 'test'].index
+
+    # Split the remaining ids into train and val.
+    # Val should be test_frac of train and be balanced.
+    remaining_ids = split_series[split_series != 'test'].index
+    rdf = df.ix[remaining_ids]
+
+    N = rdf.shape[0]
+    num_total = rdf['label'].sum()
+    num_val = int(test_frac * num_total)
+
+    pos_ind = np.random.permutation(num_total)
+    neg_ind = np.random.permutation(N - num_total)
+
+    assert(num_val < len(pos_ind))
+    assert(num_val < len(neg_ind))
+
+    val_ids = np.concatenate((
+        rdf[rdf['label']].index[pos_ind[:num_val]],
+        rdf[~rdf['label']].index[neg_ind[:num_val]]
+    ))
+
+    train_ids = rdf.index.diff(val_ids.tolist())
+
+    # Convert to +1/-1 labels.
+    labels = pd.Series(-np.ones(df.shape[0]), index=df.index)
+    labels[df['label']] = 1
+    df['label'] = labels.astype(int)
+
+    return df, train_ids, val_ids, test_ids
+
+
 def _process_df_for_binary_clf(df, test_frac, min_pos_frac):
     # The total number is the number of + examples.
     N = df.shape[0]
@@ -126,8 +164,14 @@ def get_binary_or_regression_dataset(
     if df['label'].dtype == bool or df['label'].nunique() == 2:
         task = 'clf'
         num_labels = 2
-        df, train_ids, val_ids, test_ids = _process_df_for_binary_clf(
-            df, test_frac, min_pos_frac)
+
+        if '_split' in source_df.columns:
+            df, train_ids, val_ids, test_ids = \
+                _process_df_for_binary_clf_with_split(
+                    df, source_df['_split'], test_frac)
+        else:
+            df, train_ids, val_ids, test_ids = _process_df_for_binary_clf(
+                df, test_frac, min_pos_frac)
 
     elif df['label'].dtype == float:
         task = 'regr'
@@ -247,8 +291,8 @@ def predict(args=None):
         force=args.force_predict, num_workers=args.num_workers,
         num_passes=num_passes,
         loss=loss_functions,
-        l1_weight=[0, 1e-5, 1e-7],
-        l2_weight=[0, 1e-5, 1e-7],
+        l1_weight=[0, 1e-5, 1e-7, 1e-9],
+        l2_weight=[0, 1e-5, 1e-7, 1e-9],
         quadratic=quadratic)
 
 

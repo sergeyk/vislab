@@ -156,12 +156,14 @@ def _load_style_df(args=None):
         index=np.loadtxt(d + '/test.jpgl', dtype=str),
         data=np.loadtxt(d + '/test.multilab', dtype=bool),
         columns=styles)
+    test_df['_split'] = 'test'
 
     # Load the single-label encoded training data
     train_df = pd.DataFrame(
         index=np.loadtxt(d + '/train.jpgl', dtype=str),
         data={'style_ind': np.loadtxt(d + '/train.lab', dtype=int)})
     train_df = train_df.join(names_df, on='style_ind')
+    train_df['_split'] = 'train'
 
     # Expand the single-label to multi-label encoding.
     for style in styles:
@@ -170,10 +172,13 @@ def _load_style_df(args=None):
         train_df[style].ix[index] = True
 
     # Join the two multi-label encoded dataframes, and get rid of extra columns
-    df = train_df.append(test_df)[styles]
+    df = train_df.append(test_df)[styles.tolist() + ['_split']]
 
-    # Append 'style_' to all column names.
-    df.columns = ['style_' + x for x in df.columns]
+    # Append 'style_' to all style column names.
+    df.columns = [
+        x if x.startswith('_') else 'style_' + x
+        for x in df.columns
+    ]
 
     df.index = df.index.astype(str)
     df.index.name = 'image_id'

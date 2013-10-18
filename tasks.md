@@ -4,10 +4,11 @@ Implementation:
     - whitened HOG feature (wrap Jon's code) [.5 day]
     - lab hist in Python [.25 day]
     - pascal classifiers, style classifiers as feature [.25 day]
-    - portrait and landscape classifiers
+    - portrait and landscape classifiers [.25 day]
     VW:
         - implement and test oaa mode
         - compare oaa mode results to using separate binary classifiers
+    - implement across-feature metric comparison: like the AVA style AP barplot
 
 Tune ConvNet features:
     - tune decaf with flickr style and wikipaintings data (train sets only) [.5 day]
@@ -41,6 +42,13 @@ Image search demo
     - wikipaintings tags?
     - pascal classifiers (seems fine)
 
+
+## Problems
+
+- decaf AVA style results have lower AP than published, and lab_hist is even worse
+    x form dataset respecting the original train/test split
+    - shuffle order of features in the vw text file
+    - better cross-validation, more passes
 
 ## Next
 
