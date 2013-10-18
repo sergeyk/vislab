@@ -44,6 +44,32 @@ def get_ava_df(force=False, args=None):
         AVA_DF_FILENAME, _load_ava_df, force, args)
 
 
+def get_ratings_df(force=False, args=None):
+    """
+    Return DataFrame of raw and binarized ratings mean and std.
+    """
+    df = get_ava_df(force, args)
+
+    # Challenge-binarized mean and std: how does the image compare to
+    # the mean of its challenge?
+    grouped_df = df.groupby('challenge_name').mean()
+    grouped_df.columns = ['challenge_rating_mean', 'challenge_rating_std']
+    df = df.join(grouped_df, on='challenge_name')
+    df['rating_mean_cn_bin'] = df['rating_mean'] > df['challenge_rating_mean']
+    df['rating_std_cn_bin'] = df['rating_std'] > df['challenge_rating_std']
+
+    # Global-binarized mean and std: how does the image compare to
+    # the global mean?
+    df['rating_mean_bin'] = df['rating_mean'] > df['rating_mean'].mean()
+    df['rating_std_bin'] = df['rating_std'] > df['rating_std'].mean()
+
+    return df[[
+        'rating_mean', 'rating_std',
+        'rating_mean_bin', 'rating_std_bin',
+        'rating_mean_cn_bin', 'rating_std_cn_bin'
+    ]]
+
+
 def get_style_df(force=False, args=None):
     """
     Return DataFrame of the AVA style labels: column per label.
@@ -59,7 +85,7 @@ def _load_ava_df(args=None):
         image_id: string
         ratings: list of ints,
         ratings_mean: float,
-        ratings_mean: float,
+        ratings_std: float,
         semantic_tag_X_name:string (for X in [1, 2]),
         challenge_name: string.
 
@@ -145,6 +171,10 @@ def _load_style_df(args=None):
 
     # Join the two multi-label encoded dataframes, and get rid of extra columns
     df = train_df.append(test_df)[styles]
+
+    # Append 'style_' to all column names.
+    df.columns = ['style_' + x for x in df.columns]
+
     df.index = df.index.astype(str)
     df.index.name = 'image_id'
 

@@ -100,10 +100,9 @@ def get_df_with_args(args=None):
         df = vislab.datasets.ava.get_ava_df()
 
     elif args.dataset == 'ava_style':
-        df = vislab.datasets.ava.get_ava_df()
         style_df = vislab.datasets.ava.get_style_df()
-        df = df.ix[style_df.index]
-        df = df.join(style_df)
+        ratings_df = vislab.datasets.ava.get_ratings_df()
+        df = style_df.join(ratings_df)
 
     elif args.dataset == 'flickr':
         df = vislab.datasets.flickr.load_flickr_df(

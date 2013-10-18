@@ -1,21 +1,50 @@
-## Doing
+## Experiments that need to happen for CVPR
 
-- get image url stuff working robustly for all datasets by adding dataset name to the calling chain. OR: should the feature pipeline be rethought to get the filenames instead of ids?
+Implementation:
+    - whitened HOG feature (wrap Jon's code) [.5 day]
+    - lab hist in Python [.25 day]
+    - pascal classifiers, style classifiers as feature [.25 day]
+    - portrait and landscape classifiers
+    VW:
+        - implement and test oaa mode
+        - compare oaa mode results to using separate binary classifiers
 
-- put this list into a google doc where i can highlight lines with different colors. go through and higlight items by importance: "must be done for draft", "must be done for final", "nice to have", "not important". bold items that are currently being worked on.
+Tune ConvNet features:
+    - tune decaf with flickr style and wikipaintings data (train sets only) [.5 day]
+    - process flickr, wikipaintings with new feature
+    - run classification experiments with new feature
+
+AVA Style:
+    - run classification on ava style with decaf_fc6 feature
+    - (maybe) run classification with pascal quadratics
+
+AVA:
+    - re-run classification and regression with decaf_fc6 feature on style subset
+    - (maybe) also run classification and regression for different # of training images, up to 250K, to replicate AVA experiments
+
+Wikipaintings:
+    - classify with lab_hist
+    - classify with pool5 convenet feature
+    - classify with tuned convnet feature
+
+Flickr:
+    - download 50K more flickr style, including 2 more styles (for 20) for 100K total
+    - process with a couple of decaf, lab_hist, hog features
+    - run classification experiments
+    - (maybe) form a clean test set for at least one label to quantify how unclean it is
+
+Image similarity demo
+    - whog
+
+Image search demo
+    - get flickr tags for the flickr set
+    - wikipaintings tags?
+    - pascal classifiers (seems fine)
+
 
 ## Next
 
 - get multiclass prediction dataset generator working
-
-- get ava dataset up to par
-    - add rating_mean_bin and rating_mean_norm_bin labels
-    - load style information into AVA by default
-
-Prediction
-- compute performance on AVA
-- compute performance with the conv5 feature to compare
-- compute performance with convnet-retrained feature
 
 VW:
 - get VW oaa working
@@ -74,7 +103,6 @@ Other demos
 - make demo where a brand-new image is processed with the decaf feature, and analyzed for beauty, and with style classifiers.
 
 Misc
-- config.json shouldn't be in the git repo; config.json.example instead
 - need util function for syncing up dataframe with mongodb collection. useful for datasets.
 - graphically improve the image page table: say TP, FP, TN, FN, and color true/false with green/red as well
     :: Think of this as a general thing: want to be able to format tables with color depending on parameters, in Javacript. Publish blog post on the solution.
@@ -82,7 +110,6 @@ Misc
 - make diagram of data sources and labels and features and publish on blog
 
 Recommendations
-- move fav_user_ids feature to own file for personal recommendations in vislab
 - analyze it and try to form prediction dataset
     - how many images does a user like on average?
     - how many users favorited the average image?
@@ -124,3 +151,6 @@ x train pascal content classifiers
 - move predict runtime into vislab/predict.py
 - move the map urls task to ava dataset file, shouldn't be in run
 - move feature runtime stuff into aphrodite/features.py
+- get image url stuff working robustly for all datasets by adding dataset name to the calling chain. OR: should the feature pipeline be rethought to get the filenames instead of ids?
+- move fav_user_ids feature to own file for personal recommendations in vislab
+- config.json shouldn't be in the git repo; config.json.example instead

@@ -260,7 +260,7 @@ def _train_vw_cmd(setting, dirname, from_model=None):
     if quadratic == 'all':
         quadratic = '::'
     if len(quadratic) > 0:
-        cmd += " --quadratic {}".format(quadratic)
+        cmd += " --quadratic={}".format(quadratic)
 
     return cmd
 
@@ -390,8 +390,11 @@ def _get_preds_and_score(
 
     """
     # Read the prediction file.
-    pred_df = pandas.read_csv(
-        pred_filename, sep=' ', index_col=1, header=None, names=['pred'])
+    try:
+        pred_df = pandas.read_csv(
+            pred_filename, sep=' ', index_col=1, header=None, names=['pred'])
+    except Exception as e:
+        raise Exception("Could not read predictions: {}".format(e))
     pred_df.index = pred_df.index.astype(str)
 
     # If using logisitic loss, convert to [-1, 1].

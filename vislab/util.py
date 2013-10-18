@@ -119,6 +119,37 @@ def run_through_bash_script(cmds, filename=None, verbose=False):
         raise Exception("Script exited with code {}".format(p.returncode))
 
 
+def run_shell_cmd(cmd, echo=True):
+    """
+    Run a command in a sub-shell, capturing stdout and stderr
+    to temporary files that are then read.
+    """
+    _, stdout_f = tempfile.mkstemp()
+    _, stderr_f = tempfile.mkstemp()
+
+    print("Running command")
+    print(cmd)
+    p = subprocess.Popen(
+        '{} >{} 2>{}'.format(cmd, stdout_f, stderr_f), shell=True)
+    p.wait()
+
+    with open(stdout_f) as f:
+        stdout = f.read()
+    os.remove(stdout_f)
+
+    with open(stderr_f) as f:
+        stderr = f.read()
+    os.remove(stderr_f)
+
+    if echo:
+        print("stdout:")
+        print(stdout)
+        print("stderr:")
+        print(stderr)
+
+    return stdout, stderr
+
+
 def makedirs(dirname):
     if os.path.exists(dirname):
         return dirname
