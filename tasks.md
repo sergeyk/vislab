@@ -20,7 +20,6 @@ AVA Style:
     - (maybe) run classification with pascal quadratics
 
 AVA:
-    - re-run classification and regression with decaf_fc6 feature on style subset
     - (maybe) also run classification and regression for different # of training images, up to 250K, to replicate AVA experiments
 
 Wikipaintings:
@@ -35,22 +34,49 @@ Flickr:
     - (maybe) form a clean test set for at least one label to quantify how unclean it is
 
 Image similarity demo
-    - whog
+    - whog for similarity
 
 Image search demo
     - get flickr tags for the flickr set
     - wikipaintings tags?
     - pascal classifiers (seems fine)
 
+Single-person classification accuracy:
+    - how good is a single person at predicting the style classification task? the ava task? should be baseline
 
-## Problems
+Style features
+    - try style features for the ava aesthetic prediction task
+    - for memorability task
+
+Memorability dataset:
+    - write interface
+    - compute features, including style features
+    - run experiments
+
+## Current Tasks/Problems
+
+- Plot the chance performance on the top-k accuracy plot
+
+- AP barplot
+    - be able to display multiple features
+    - add "chance" bar: generate random confidences and see how well that works
+
+- One method for outputting all evaluations of a prediction experiment. takes a collection name, a label_df, and a list of features to compare.
 
 - decaf AVA style results have lower AP than published, and lab_hist is even worse
     x form dataset respecting the original train/test split
+        x re-running experiments, launched oct 17 2145
+             - still bad!
+    - the confounding thing is that lab_hist performs even worse: super bad! but in the paper, it's reported to be super good.
+        - experiment with sklearn classifiers and lab_hist feature to see what the performance is. why is it so bad?
+            - if it is still bad, re-compute the lab hist features and don't standardize them to make them sparse!
     - shuffle order of features in the vw text file
+        - confirming that the order is bad: positive examples are clumped together
     - better cross-validation, more passes
 
 ## Next
+
+- evaluat eon a black & white dataset: strip color before computing feature
 
 - get multiclass prediction dataset generator working
 
@@ -162,3 +188,4 @@ x train pascal content classifiers
 - get image url stuff working robustly for all datasets by adding dataset name to the calling chain. OR: should the feature pipeline be rethought to get the filenames instead of ids?
 - move fav_user_ids feature to own file for personal recommendations in vislab
 - config.json shouldn't be in the git repo; config.json.example instead
+x re-run classification and regression with decaf_fc6 feature on style subset
