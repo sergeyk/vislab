@@ -55,6 +55,10 @@ Memorability dataset:
 
 ## Current Tasks/Problems
 
+- make a method somewhere for saving label_df for vw use. ids must be of string type (for vw_filter) and label must be one of the three accepted types: -1/1, [1,K], or float.
+
+- in the VW tests, should use the Iris dataset and split the feature namespaces into first two and second two. that way should be able to confirm that concatenation works correctly.
+
 - Plot the chance performance on the top-k accuracy plot
 
 - AP barplot
