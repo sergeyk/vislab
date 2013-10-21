@@ -6,6 +6,7 @@ import socket
 import tempfile
 import cPickle
 import subprocess
+import shutil
 
 
 def exclude_ids_in_collection(image_ids, collection):
@@ -160,3 +161,9 @@ def makedirs(dirname):
     except:
         raise
     return dirname
+
+
+def cleardirs(dirname):
+    if os.path.exists(dirname):
+        shutil.rmtree(dirname)
+    return makedirs(dirname)

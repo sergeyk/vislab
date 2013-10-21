@@ -12,10 +12,8 @@ import vislab.vw3
 class TestVW(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.temp_dirname = test_context.temp_dirname + '/test_vw'
-        if os.path.exists(cls.temp_dirname):
-            shutil.rmtree(cls.temp_dirname)
-        vislab.util.makedirs(cls.temp_dirname)
+        cls.temp_dirname = vislab.util.cleardirs(
+            test_context.temp_dirname + '/test_vw')
 
     def test_write_data_in_vw_format_float(self):
         feat_df = pd.DataFrame(
@@ -92,7 +90,8 @@ class TestVW(unittest.TestCase):
             test_context.support_dirname + '/simple/first.txt',
             test_context.support_dirname + '/simple/second.txt.gz'
         ]
-        label_df_filename = test_context.support_dirname + '/simple/label_df.h5'
+        label_df_filename = test_context.support_dirname + \
+            '/simple/label_df.h5'
 
         output_dirname = vislab.util.makedirs(
             self.temp_dirname + '/cache_data')

@@ -31,7 +31,7 @@ def get_multiclass_dataset(
 
 def _process_df_for_regression(df, test_frac):
     N = df.shape[0]
-    num_test = int(test_frac * N)
+    num_test = int(round(test_frac * N))
     num_val = num_test
 
     ind = np.random.permutation(N)
@@ -42,7 +42,8 @@ def _process_df_for_regression(df, test_frac):
     return df, train_ids, test_ids, val_ids
 
 
-def _process_df_for_binary_clf_with_split(df, split_series, test_frac):
+def _process_df_for_binary_clf_with_split(
+        df, split_series, test_frac, min_pos_frac):
     """
     Respect the given split information.
     """
@@ -72,6 +73,15 @@ def _process_df_for_binary_clf_with_split(df, split_series, test_frac):
 
     train_ids = rdf.index.diff(val_ids.tolist())
 
+    # To respect min_pos_frac, have to subsample negative examples.
+    if min_pos_frac > 0:
+        train_df = rdf.ix[train_ids]
+        max_num = 1. / min_pos_frac * train_df['label'].sum()
+        train_ids = np.concatenate((
+            train_df[train_df['label']].index,
+            train_df[~train_df['label']].index[:max_num]
+        ))
+
     # Convert to +1/-1 labels.
     labels = pd.Series(-np.ones(df.shape[0]), index=df.index)
     labels[df['label']] = 1
@@ -84,7 +94,7 @@ def _process_df_for_binary_clf(df, test_frac, min_pos_frac):
     # The total number is the number of + examples.
     N = df.shape[0]
     num_total = df['label'].sum()
-    num_test = int(test_frac * num_total)
+    num_test = int(round(test_frac * num_total))
     num_val = num_test
 
     # Take equal number + and - examples for the test and val sets.
@@ -130,14 +140,12 @@ def _process_df_for_binary_clf(df, test_frac, min_pos_frac):
 
 
 def get_binary_or_regression_dataset(
-        source_df, dataset_name, column_name, test_frac=.2, min_pos_frac=.1,
-        random_seed=42):
+        source_df, dataset_name, column_name,
+        test_frac=.2, min_pos_frac=.1, random_seed=42):
     """
-    Output a dataset dict suitable for the prediction code of binary
+    Return a dataset dict suitable for the prediction code of binary
     or regression data in column_name column of source_df.
     Whether the data is binary or regression is inferred from dtype.
-
-    # NOTE: assumes that negative data is more prevalent than pos.
 
     # TODO: add ability to pass a filter to use for the AVA delta stuff
 
@@ -152,6 +160,7 @@ def get_binary_or_regression_dataset(
     min_pos_frac: float
         Subsample negative data s.t. pos/neg ratio is at least this.
         Only relevant if the data is binary, obviously.
+        Ignored if < 0.
     random_seed: int [42]
     """
     np.random.seed(random_seed)
@@ -168,7 +177,7 @@ def get_binary_or_regression_dataset(
         if '_split' in source_df.columns:
             df, train_ids, val_ids, test_ids = \
                 _process_df_for_binary_clf_with_split(
-                    df, source_df['_split'], test_frac)
+                    df, source_df['_split'], test_frac, min_pos_frac)
         else:
             df, train_ids, val_ids, test_ids = _process_df_for_binary_clf(
                 df, test_frac, min_pos_frac)
@@ -177,21 +186,21 @@ def get_binary_or_regression_dataset(
         task = 'regr'
         num_labels = -1
         df, train_ids, val_ids, test_ids = _process_df_for_regression(
-            df, test_frac, min_pos_frac)
+            df, test_frac)
 
     else:
         raise Exception("Can only deal with binary or float values.")
 
     # Get the train/val/test datasets.
-    def get_split_df(ids):
+    def get_split_df(ids, num_labels):
         split_df = df.ix[ids]
-        split_df['importance'] = _get_importance(split_df)
+        split_df['importance'] = _get_importance(split_df, num_labels)
         return split_df
 
     dataset = {
-        'train_df': get_split_df(train_ids),
-        'val_df': get_split_df(val_ids),
-        'test_df': get_split_df(test_ids)
+        'train_df': get_split_df(train_ids, num_labels),
+        'val_df': get_split_df(val_ids, num_labels),
+        'test_df': get_split_df(test_ids, num_labels)
     }
 
     # Add all relevant info to the data dict to return.
@@ -212,7 +221,7 @@ def get_binary_or_regression_dataset(
     return dataset
 
 
-def _get_importance(df):
+def _get_importance(df, num_labels):
     """
     Get importance weights of data points. The most frequent label gets
     weight < 1, in proportion to its prevalence.
@@ -221,16 +230,19 @@ def _get_importance(df):
     ----------
     df: pandas.DataFrame
         Must have column 'label'
+    num_labels: int
+        If < 0, no importances computed.
 
     Returns
     -------
     importances: pandas.Series
     """
-    mfl = df['label'].value_counts().argmax()
-
     importances = pd.Series(np.ones(df.shape[0]), df.index)
-    ind = (df['label'] == mfl)
-    importances[ind] = 1. * (~ind).sum() / ind.sum()
+
+    if num_labels > 0:
+        mfl = df['label'].value_counts().argmax()
+        ind = (df['label'] == mfl)
+        importances[ind] = 1. * (~ind).sum() / ind.sum()
 
     return importances
 
