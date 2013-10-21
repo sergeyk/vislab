@@ -105,7 +105,7 @@ def run_through_bash_script(cmds, filename=None, verbose=False, num_workers=1):
         remove_file = True
 
     if num_workers > 1:
-        contents = "echo \"{}\" | parallel -j {}".format(
+        contents = "echo \"{}\" | parallel --env PATH -j {}".format(
             '\n'.join(cmds), num_workers)
     else:
         contents = '\n'.join(cmds)

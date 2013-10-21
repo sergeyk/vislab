@@ -95,9 +95,11 @@ class TestVW(unittest.TestCase):
 
         output_dirname = vislab.util.makedirs(
             self.temp_dirname + '/cache_data')
-        vislab.vw3._cache_data(
+        cache_cmd, preview_cmd = vislab.vw3._cache_cmd(
             label_df_filename, feat_filenames, output_dirname,
             bit_precision=18, verbose=False, force=False)
+        vislab.util.run_through_bash_script([cache_cmd, preview_cmd], None, verbose=False)
+
         assert(os.path.exists(output_dirname + '/cache.vw'))
         expected = """\
 1 1.000000 0|first 0:-0.885972 1:-2.772593 |second 0:0.059139

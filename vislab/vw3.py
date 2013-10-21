@@ -103,7 +103,7 @@ def write_data_in_vw_format(feat_df, feat_name, output_filename):
         logging.info('{}: gzip took {:.3f} s'.format(fn_name, time.time() - t))
 
 
-def _cache_data(
+def _cache_cmd(
         label_df_filename, feat_filenames, output_dirname,
         bit_precision=18, verbose=False, force=False):
     """
@@ -157,12 +157,7 @@ def _cache_data(
     cache_cmd += " -k --cache_file {} --bit_precision {} --noop".format(
         cache_filename, bit_precision)
 
-    logging.info("Caching data")
-    t = time.time()
-    cmd_filename = output_dirname + '/_cache_cmd.sh'
-    vislab.util.run_through_bash_script(
-        [cache_preview_cmd, cache_cmd], cmd_filename, verbose)
-    logging.info('Caching data took {:.3f} s'.format(time.time() - t))
+    return cache_cmd, cache_preview_cmd
 
 
 def _get_feat_filenames(feat_names, feat_dirname):
@@ -399,6 +394,8 @@ class VW(object):
         # Cache all splits to VW format.
         split_names = ['train', 'val', 'test']
         output_dirnames = {}
+        cache_cmds = []
+        cache_preview_cmds = []
         for split_name in split_names:
             cache_dirname = '_'.join(feat_names)
             output_dirnames[split_name] = vislab.util.makedirs(
@@ -414,9 +411,21 @@ class VW(object):
                     split_name))
 
             # Cache data by running it through a filter.
-            _cache_data(
+            cache_cmd, cache_preview_cmd = _cache_cmd(
                 df_filename, feat_filenames, output_dirnames[split_name],
                 self.bit_precision, verbose=False, force=force)
+            cache_cmds.append(cache_cmd)
+            cache_preview_cmds.append(cache_preview_cmd)
+
+        logging.info("Caching data")
+        t = time.time()
+        vislab.util.run_through_bash_script(
+            cache_preview_cmds, self.dirname + '/_cache_preview_cmds.sh',
+            verbose=False, num_workers=self.num_workers)
+        vislab.util.run_through_bash_script(
+            cache_cmds, self.dirname + '/_cache_cmds.sh',
+            verbose=False, num_workers=self.num_workers)
+        logging.info('Caching data took {:.3f} s'.format(time.time() - t))
 
         _train_with_val(
             dataset['train_df'], dataset['val_df'], dataset['num_labels'],
