@@ -98,7 +98,8 @@ class TestVW(unittest.TestCase):
         cache_cmd, preview_cmd = vislab.vw3._cache_cmd(
             label_df_filename, feat_filenames, output_dirname,
             bit_precision=18, verbose=False, force=False)
-        vislab.util.run_through_bash_script([cache_cmd, preview_cmd], None, verbose=False)
+        vislab.util.run_through_bash_script(
+            [cache_cmd, preview_cmd], None, verbose=False)
 
         assert(os.path.exists(output_dirname + '/cache.vw'))
         expected = """\
@@ -129,11 +130,26 @@ class TestVW(unittest.TestCase):
         dataset = vislab.predict.get_binary_or_regression_dataset(
             label_df, 'simple', 'label')
 
-        feat_names = ['first', 'second']
         feat_dirname = test_context.support_dirname + '/simple'
-
         vw = vislab.vw3.VW(self.temp_dirname + '/vw')
-        vw.fit(dataset, feat_names, feat_dirname)
+
+        feat_names = ['first']
+        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
+            dataset, feat_names, feat_dirname)
+        print(feat_names, test_score, val_score, train_score)
+        assert(test_score > 0.6 and test_score < 0.8)
+
+        feat_names = ['second']
+        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
+            dataset, feat_names, feat_dirname)
+        print(feat_names, test_score, val_score, train_score)
+        assert(test_score > 0.87)
+
+        feat_names = ['first', 'second']
+        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
+            dataset, feat_names, feat_dirname)
+        print(feat_names, test_score, val_score, train_score)
+        assert(test_score > 0.87)
 
 
 if __name__ == '__main__':

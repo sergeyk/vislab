@@ -208,7 +208,7 @@ def _train_vw_cmd(setting, dirname, from_model=None):
     # then we turn on early termination and set the holdout fraction to
     # 1/8, so that we don't overfit.
     else:
-        cmd += " --early_terminate=3 --holdout_period=8 -i {}".format(
+        cmd += " --early_terminate=3 --holdout_period=6 -i {}".format(
             from_model)
 
     return cmd
@@ -340,7 +340,68 @@ def _train_with_val(
     print('Best setting: {}'.format(best_setting))
     print('Best score: {:.3f}'.format(best_score))
 
-    return best_setting, best_score
+    return best_setting
+
+
+def cache_files(
+        dataset, feat_names, feat_dirname, dirname, bit_precision,
+        num_workers, force=False):
+    """
+    Cache files for splits in the dataset.
+    """
+    # Get actual feature filenames.
+    feat_filenames = _get_feat_filenames(feat_names, feat_dirname)
+
+    split_names = ['train', 'val', 'test']
+    output_dirnames = {}
+    cache_cmds = []
+    cache_preview_cmds = []
+    for split_name in split_names:
+        cache_dirname = '_'.join(feat_names)
+        output_dirnames[split_name] = vislab.util.makedirs(
+            '{}/{}/{}'.format(dirname, cache_dirname, split_name))
+
+        # Save the dataframe with labels for use in filtering examples.
+        df_filename = dirname + '/{}_df.h5'.format(split_name)
+        if force or not os.path.exists(df_filename):
+            dataset[split_name + '_df'].to_hdf(
+                df_filename, 'df', mode='w')
+        else:
+            logging.info("Not writing out DataFrame for {}".format(
+                split_name))
+
+        # Cache data by running it through a filter.
+        cache_cmd, cache_preview_cmd = _cache_cmd(
+            df_filename, feat_filenames, output_dirnames[split_name],
+            bit_precision, verbose=False, force=force)
+        cache_cmds.append(cache_cmd)
+        cache_preview_cmds.append(cache_preview_cmd)
+
+    logging.info("Caching data")
+    t = time.time()
+    vislab.util.run_through_bash_script(
+        cache_preview_cmds, dirname + '/_cache_preview_cmds.sh',
+        verbose=False, num_workers=num_workers)
+    vislab.util.run_through_bash_script(
+        cache_cmds, dirname + '/_cache_cmds.sh',
+        verbose=False, num_workers=num_workers)
+    logging.info('Caching data took {:.3f} s'.format(time.time() - t))
+
+    return output_dirnames
+
+
+def _predict(setting, source_dirname, target_dirname, gt_df, num_labels):
+    pred_cmd = _pred_vw_cmd(
+        setting, source_dirname, target_dirname)
+    vislab.util.run_through_bash_script(
+        [pred_cmd], target_dirname + '/_test_cmd.sh', verbose=False)
+    preds_filename = '{}/{}_pred.txt'.format(
+        target_dirname, _setting_to_name(setting))
+    pred_df = _read_preds(
+        preds_filename, num_labels, setting['loss'])
+    score = _score_preds(
+        pred_df, gt_df, num_labels)
+    return pred_df, score
 
 
 class VW(object):
@@ -369,13 +430,13 @@ class VW(object):
         self.param_grid = {
             'loss': loss,
             'num_passes': num_passes,
-            'l1': l1,
-            'l2': l2
+            'l1': [float(x) for x in l1],
+            'l2': [float(x) for x in l2]
         }
         self.settings = list(
             sklearn.grid_search.ParameterGrid(self.param_grid))
 
-    def fit(self, dataset, feat_names, feat_dirname, force=False):
+    def fit_and_predict(self, dataset, feat_names, feat_dirname, force=False):
         """
         Parameters
         ----------
@@ -388,46 +449,42 @@ class VW(object):
             Contains 'train_df', 'val_df', 'test_df' label DataFrames,
             and 'num_labels': an int.
         """
-        # Get actual feature filenames.
-        feat_filenames = _get_feat_filenames(feat_names, feat_dirname)
-
         # Cache all splits to VW format.
-        split_names = ['train', 'val', 'test']
-        output_dirnames = {}
-        cache_cmds = []
-        cache_preview_cmds = []
-        for split_name in split_names:
-            cache_dirname = '_'.join(feat_names)
-            output_dirnames[split_name] = vislab.util.makedirs(
-                '{}/{}/{}'.format(self.dirname, cache_dirname, split_name))
+        output_dirnames = cache_files(
+            dataset, feat_names, feat_dirname, self.dirname,
+            self.bit_precision, self.num_workers, force=False)
 
-            # Save the dataframe with labels for use in filtering examples.
-            df_filename = self.dirname + '/{}_df.h5'.format(split_name)
-            if force or not os.path.exists(df_filename):
-                dataset[split_name + '_df'].to_hdf(
-                    df_filename, 'df', mode='w')
-            else:
-                logging.info("Not writing out DataFrame for {}".format(
-                    split_name))
-
-            # Cache data by running it through a filter.
-            cache_cmd, cache_preview_cmd = _cache_cmd(
-                df_filename, feat_filenames, output_dirnames[split_name],
-                self.bit_precision, verbose=False, force=force)
-            cache_cmds.append(cache_cmd)
-            cache_preview_cmds.append(cache_preview_cmd)
-
-        logging.info("Caching data")
-        t = time.time()
-        vislab.util.run_through_bash_script(
-            cache_preview_cmds, self.dirname + '/_cache_preview_cmds.sh',
-            verbose=False, num_workers=self.num_workers)
-        vislab.util.run_through_bash_script(
-            cache_cmds, self.dirname + '/_cache_cmds.sh',
-            verbose=False, num_workers=self.num_workers)
-        logging.info('Caching data took {:.3f} s'.format(time.time() - t))
-
-        _train_with_val(
+        # Train models in a grid search over params.
+        best_setting = _train_with_val(
             dataset['train_df'], dataset['val_df'], dataset['num_labels'],
             output_dirnames['train'], output_dirnames['val'], self.settings,
             self.num_workers, verbose=False)
+
+        # Update the best model with validation data.
+        print("Updating best VW model with validation data")
+        best_model_filename = '{}/{}_model.vw'.format(
+            output_dirnames['train'], _setting_to_name(best_setting))
+        cmd = _train_vw_cmd(
+            best_setting, output_dirnames['val'], best_model_filename)
+        cmd_filename = output_dirnames['val'] + '/_train_cmd.sh'
+        vislab.util.run_through_bash_script([cmd], cmd_filename, verbose=False)
+
+        # Predict on all the splits. This is not in parallel but that's fine.
+        print("Running VW prediction on all splits.")
+        train_pred_df, train_score = _predict(
+            best_setting, output_dirnames['val'], output_dirnames['train'],
+            dataset['train_df'], dataset['num_labels'])
+        val_pred_df, val_score = _predict(
+            best_setting, output_dirnames['val'], output_dirnames['val'],
+            dataset['val_df'], dataset['num_labels'])
+        test_pred_df, test_score = _predict(
+            best_setting, output_dirnames['val'], output_dirnames['test'],
+            dataset['test_df'], dataset['num_labels'])
+
+        # Combine all predictions into one DataFrame.
+        train_pred_df['split'] = 'train'
+        val_pred_df['split'] = 'val'
+        test_pred_df['split'] = 'test'
+        pred_df = train_pred_df.append(val_pred_df).append(test_pred_df)
+
+        return pred_df, test_score, val_score, train_score
