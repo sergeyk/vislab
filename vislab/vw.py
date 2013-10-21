@@ -92,7 +92,8 @@ def train_and_test(
     df_filenames = {}
     for name in splits:
         df_filenames[name] = '{}/{}_df.h5'.format(dirname, name)
-        dataset['{}_df'.format(name)].to_hdf(df_filenames[name], 'df')
+        dataset['{}_df'.format(name)].to_hdf(
+            df_filenames[name], 'df', mode='w')
     print('Saving DataFrames for splits took {:.3f} s'.format(time.time() - t))
 
     # Set canonical location for VW feature cache files.

@@ -115,6 +115,11 @@ class TestVW(unittest.TestCase):
             actual = f.read()
         assert(expected == actual)
 
+    def test__get_feat_filenames(self):
+        feat_names = ['first', 'second']
+        feat_dirname = test_context.support_dirname + '/simple'
+        vislab.vw3._get_feat_filenames(feat_names, feat_dirname)
+
     def test_vw_fit(self):
         label_df_filename = test_context.support_dirname + \
             '/simple/label_df.h5'

@@ -81,7 +81,7 @@ def pickle_function_call(func_name, args):
     return c
 
 
-def run_through_bash_script(cmds, filename=None, verbose=False):
+def run_through_bash_script(cmds, filename=None, verbose=False, num_workers=1):
     """
     Write out given commands to a bash script file and execute it.
     This is useful when the commands to run include pipes, or are chained.
@@ -94,20 +94,28 @@ def run_through_bash_script(cmds, filename=None, verbose=False):
         If None, a temporary file is used and deleted after.
     verbose: bool [False]
         If True, output the commands that will be run.
+    num_workers: int [1]
+        If > 1, commands are piped through parallel -j num_workers
     """
-    if verbose:
-        print("Commands that will be run:")
-        for cmd in cmds:
-            print cmd
+    assert(num_workers > 0)
 
     remove_file = False
     if filename is None:
         f, filename = tempfile.mkstemp()
         remove_file = True
 
+    if num_workers > 1:
+        contents = "echo \"{}\" | parallel -j {}".format(
+            '\n'.join(cmds), num_workers)
+    else:
+        contents = '\n'.join(cmds)
+
     with open(filename, 'w') as f:
-        for cmd in cmds:
-            f.write(cmd + '\n')
+        f.write(contents + '\n')
+
+    if verbose:
+        print("Contents of script file about to be run:")
+        print(contents)
 
     p = subprocess.Popen(['bash', filename])
     out, err = p.communicate()
