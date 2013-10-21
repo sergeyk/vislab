@@ -163,6 +163,8 @@ def get_binary_or_regression_dataset(
         Ignored if < 0.
     random_seed: int [42]
     """
+    assert(source_df.index.dtype == object)
+
     np.random.seed(random_seed)
 
     df = pd.DataFrame(
@@ -170,9 +172,16 @@ def get_binary_or_regression_dataset(
 
     # Establish whether the data is for binary or regression,
     # and split the dataset into train/val/test appropriately.
-    if df['label'].dtype == bool or df['label'].nunique() == 2:
+    unique_labels = df['label'].unique()
+    if df['label'].dtype == bool or len(unique_labels) == 2:
         task = 'clf'
         num_labels = 2
+
+        if df['label'].dtype != bool:
+            assert(1 in unique_labels and -1 in unique_labels)
+            df['label'][df['label'] == 1] = True
+            df['label'][df['label'] == -1] = False
+            df['label'] = df['label'].astype(bool)
 
         if '_split' in source_df.columns:
             df, train_ids, val_ids, test_ids = \

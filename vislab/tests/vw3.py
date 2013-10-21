@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 import gzip
 import os
-import shutil
 import test_context
+import vislab.predict
 import vislab.vw3
 
 
@@ -114,6 +114,19 @@ class TestVW(unittest.TestCase):
         with open(output_dirname + '/cache_preview.txt') as f:
             actual = f.read()
         assert(expected == actual)
+
+    def test_vw_fit(self):
+        label_df_filename = test_context.support_dirname + \
+            '/simple/label_df.h5'
+        label_df = pd.read_hdf(label_df_filename, 'df')
+        dataset = vislab.predict.get_binary_or_regression_dataset(
+            label_df, 'simple', 'label')
+
+        feat_names = ['first', 'second']
+        feat_dirname = test_context.support_dirname + '/simple'
+
+        vw = vislab.vw3.VW(self.temp_dirname + '/vw')
+        vw.fit(dataset, feat_names, feat_dirname)
 
 
 if __name__ == '__main__':

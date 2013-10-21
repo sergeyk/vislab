@@ -195,7 +195,8 @@ class VW(object):
             num_passes=[10], loss=['hinge'], l1=[0], l2=[0]):
         # Actual output directory will have bit_precision info in name,
         # because cache files are dependent on the precision.
-        self.dirname = vislab.util.makedirs(dirname + '_b' + bit_precision)
+        self.dirname = vislab.util.makedirs(
+            dirname + '_b{}'.format(bit_precision))
         self.bit_precision = bit_precision
         self.num_passes = num_passes
         self.loss = loss

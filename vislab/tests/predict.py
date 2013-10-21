@@ -120,6 +120,13 @@ class TestPredict(unittest.TestCase):
 
         vislab.tests.util.assert_dicts_equal(expected, actual)
 
+    def test_get_binary_dataset_from_simple_label_df(self):
+        label_df_filename = test_context.support_dirname + \
+            '/simple/label_df.h5'
+        label_df = pd.read_hdf(label_df_filename, 'df')
+        dataset = vislab.predict.get_binary_or_regression_dataset(
+            label_df, 'simple', 'label')
+
     @unittest.skip("not implemented yet")
     def test_get_multiclass_dataset(self):
         pass
