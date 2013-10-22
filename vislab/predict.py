@@ -223,20 +223,25 @@ def get_binary_or_regression_dataset(
 
 
 def get_multiclass_dataset(
-        source_df, dataset_name, column_names, test_frac=.2, random_seed=42):
+        source_df, dataset_name, column_set_name, column_names,
+        test_frac=.2, balanced=False, random_seed=42):
     """
     Return a dataset dict for multi-class data.
 
-    TODO: support multi-label, at least for test.
+    TODO: support multi-label: stick them all in test.
 
     Parameters
     ----------
     source_df: pandas.DataFrame
     dataset_name: string
+    column_set_name: string
+        Name for the given set of columns. For example, 'artists'
     column_names: sequence of string
     test_frac: float
         Use this fraction of the examples to test.
         Will use the same amount for validation.
+    balanced: bool [False]
+        If True, val set will have nearly equal class distribution.
     random_seed: int [42]
     """
     assert(source_df.index.dtype == object)
@@ -244,6 +249,71 @@ def get_multiclass_dataset(
 
     # Assert that each example has only one label.
     assert(np.all(source_df[column_names].sum(1) == 1))
+
+    num_labels = len(column_names)
+    task = 'clf'
+    label = source_df[column_names].values.argmax(1)
+    df = pd.DataFrame({'label': label}, source_df.index)
+
+    N = df.shape[0]
+    num_test = int(round(test_frac * N))
+    num_val = num_test
+    ids = df.index[np.random.permutation(N)]
+
+    if balanced:
+        # Construct a balanced validation set.
+        counts = source_df[column_names].sum(0)
+        min_count = counts[counts.argmin()]
+        permutation = lambda N, K: np.random.permutation(N)[:K]
+        min_size_balanced_set = np.concatenate([
+            np.where(df['label'] == l)[0][permutation(count, min_count)]
+            for l, count in enumerate(counts)
+        ])
+        P = min_size_balanced_set.shape[0]
+        if P < num_val:
+            raise Exception('Not enough balanced data for validation set.')
+        min_size_balanced_set = np.random.permutation(min_size_balanced_set)
+        val_ids = df.index[min_size_balanced_set[:num_val]]
+    else:
+        val_ids = ids[:num_val]
+
+    remaining_ids = ids.diff(val_ids.tolist())
+    remaining_ids = remaining_ids[np.random.permutation(len(remaining_ids))]
+    test_ids = remaining_ids[:num_test]
+    train_ids = remaining_ids[num_test:]
+
+    # Assert that there is no overlap between teh sets.
+    assert(len(train_ids.intersection(val_ids)) == 0)
+    assert(len(train_ids.intersection(test_ids)) == 0)
+    assert(len(val_ids.intersection(test_ids)) == 0)
+
+    # Add 1 to 'label', since VW needs values on [1, K].
+    df['label'] += 1
+
+    # Get the train/val/test datasets.
+    dataset = {
+        'train_df': get_split_df(df, train_ids, num_labels),
+        'val_df': get_split_df(df, val_ids, num_labels),
+        'test_df': get_split_df(df, test_ids, num_labels)
+    }
+
+    # Add all relevant info to the data dict to return.
+    dataset.update({
+        'dataset_name': dataset_name,
+        'name': '{}_{}_train_{}'.format(
+            dataset_name, column_set_name, dataset['train_df'].shape[0]),
+        'task': task,
+        'num_labels': num_labels,
+        'column_names': column_names,
+        'salient_parts': {
+            'data': '{}_{}'.format(dataset_name, column_set_name),
+            'num_train': dataset['train_df'].shape[0],
+            'num_val': dataset['val_df'].shape[0],
+            'num_test': dataset['test_df'].shape[0]
+        }
+    })
+
+    return dataset
 
 
 def _get_importance(df, num_labels):

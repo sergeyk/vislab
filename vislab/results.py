@@ -152,7 +152,6 @@ def multiclass_metrics(
         if balanced:
             counts = np.bincount(y_true)
             min_count = counts[counts.argmin()]
-
             permutation = lambda N, K: np.random.permutation(N)[:K]
             selected_ind = np.concatenate([
                 np.where(y_true == label)[0][permutation(count, min_count)]

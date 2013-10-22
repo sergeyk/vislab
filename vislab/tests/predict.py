@@ -124,12 +124,69 @@ class TestPredict(unittest.TestCase):
         label_df_filename = test_context.support_dirname + \
             '/simple/label_df.h5'
         label_df = pd.read_hdf(label_df_filename, 'df')
-        dataset = vislab.predict.get_binary_or_regression_dataset(
+        _ = vislab.predict.get_binary_or_regression_dataset(
             label_df, 'simple', 'label')
+        # This test just checks for success.
 
-    @unittest.skip("not implemented yet")
-    def test_get_multiclass_dataset(self):
-        pass
+    def test_get_multiclass_dataset_no_multilabel(self):
+        label_df = pd.DataFrame(
+            {
+                'style_Abstract': [
+                    True, True, False, False, False, False, False, True
+                ],
+                'style_Scary': [
+                    False, False, False, True, False, False, True, False
+                ],
+                'style_Doglike': [
+                    False, False, True, False, True, True, False, False
+                ],
+            },
+            ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']
+        )
+        dataset_name = 'boogaloo'
+        column_names = ['style_Abstract', 'style_Scary', 'style_Doglike']
+        column_set_name = 'styles'
+
+        expected = {
+            'column_names': [
+                'style_Abstract', 'style_Scary', 'style_Doglike'
+            ],
+            'dataset_name': 'boogaloo',
+            'name': 'boogaloo_styles_train_4',
+            'num_labels': 3,
+            'salient_parts': {
+                'data': 'boogaloo_styles',
+                'num_test': 2,
+                'num_train': 4,
+                'num_val': 2
+            },
+            'task': 'clf',
+            'test_df': pd.DataFrame(
+                {
+                    'label': [3, 1],
+                    'importance': [1, 1]
+                },
+                ['three', 'eight']
+            ),
+            'val_df': pd.DataFrame(
+                {
+                    'label': [1, 3],
+                    'importance': [1, 1]
+                },
+                ['two', 'six']
+            ),
+            'train_df': pd.DataFrame(
+                {
+                    'label': [1, 2, 2, 3],
+                    'importance': [2, 1, 1, 2]
+                },
+                ['one', 'seven', 'four', 'five']
+            )
+        }
+        actual = vislab.predict.get_multiclass_dataset(
+            label_df, dataset_name, column_set_name, column_names,
+            test_frac=.2, balanced=False, random_seed=42)
+        vislab.tests.util.assert_dicts_equal(expected, actual)
 
 
 if __name__ == '__main__':
