@@ -26,7 +26,7 @@ def regression_metrics(
 
 
 def binary_metrics(
-        pred_df, name='', balanced=True, with_plot=False, with_print=False):
+        pred_df, name='', balanced=False, with_plot=False, with_print=False):
     """
     Binary classification metrics.
 
@@ -82,6 +82,9 @@ def binary_metrics(
     metrics['pr_fig'], prec, rec, metrics['ap'] = \
         get_pr_curve(pred_df['label'], pred_df['pred'], name, with_plot)
 
+    metrics['ap_sklearn'] = sklearn.metrics.average_precision_score(
+        pred_df['label'], pred_df['pred'])
+
     metrics['roc_fig'], fpr, tpr, metrics['auc'] = \
         get_roc_curve(pred_df['label'], pred_df['pred'], name, with_plot)
 
@@ -93,132 +96,157 @@ def binary_metrics(
 
 
 def multiclass_metrics(
-        mc_pred_df, pred_prefix, balanced=True,
+        preds_panel, source_label_df, pred_prefix, features, balanced=True,
         with_plot=False, with_print=False):
     """
     Multiclass classification metrics.
 
     Parameters
     ----------
-    mc_pred_df: pandas.DataFrame
-        Contains K '{}'.format(label)  (bool) columns, and
-        K '{}_{}'.format(pred_prefix, label) (float) columns.
+    preds_panel: pandas.Panel
+        Contains predictions.
+    source_label_df: pandas.DataFrame
+        Contains label information.
     pred_prefix: string
         The prefix before the name of the label column.
+    features: list of string
+        Features to compute metrics for.
     balanced: bool [True]
         If True, the number if instances of each class is equalized.
     with_plot: bool [False]
         If True, also plot and return figures.
+    with_print: bool [False]
+        If True, print the metrics.
     """
-    metrics = {}
+    all_metrics = {}
 
-    # Get the list of labels.
-    r = re.compile(pred_prefix)
-    pred_cols, label_cols = map(list, zip(*[
-        (col, col.replace(pred_prefix + '_', '')) for col in mc_pred_df.columns
-        if r.match(col)
-    ]))
+    for feature in features + ['_random']:
+        metrics = {}
 
-    # Make two dataframes: for labels and predictions.
-    # Drop those rows that don't have a single positive label.
-    label_df = mc_pred_df[label_cols]
-    ind = label_df.sum(1) > 0
-    label_df = label_df[ind]
-    pred_df = mc_pred_df[pred_cols][ind]
+        actual_feature = \
+            features[0] if feature.startswith('_random') else feature
 
-    # Get vector of multi-class labels.
-    y_true = label_df.values.argmax(1)
+        mc_pred_df = preds_panel.minor_xs(actual_feature).join(source_label_df)
+        mc_pred_df = mc_pred_df[mc_pred_df['_split'] == 'test']
 
-    # Balance the labels.
-    if balanced:
-        counts = np.bincount(y_true)
-        min_count = counts[counts.argmin()]
+        # Get the list of labels.
+        r = re.compile(pred_prefix)
+        pred_cols, label_cols = map(list, zip(*[
+            (col, col.replace(pred_prefix + '_', ''))
+            for col in mc_pred_df.columns
+            if r.match(col)
+        ]))
 
-        permutation = lambda N, K: np.random.permutation(N)[:K]
-        selected_ind = np.concatenate([
-            np.where(y_true == label)[0][permutation(count, min_count)]
-            for label, count in enumerate(counts)
-        ])
+        # Make two dataframes: for labels and predictions.
+        # Drop those rows that don't have a single positive label.
+        label_df = mc_pred_df[label_cols]
+        ind = label_df.sum(1) > 0
+        label_df = label_df[ind]
+        pred_df = mc_pred_df[pred_cols][ind]
 
-        y_true = y_true[selected_ind]
-        pred_df = pred_df.iloc[selected_ind]
+        # Get vector of multi-class labels.
+        # TODO: take random argmax if multiple
+        y_true = label_df.values.argmax(1)
 
-    # Get binary metrics for all classes.
-    all_binary_metrics = {}
-    for i, label in enumerate(label_cols):
-        pdf = pd.DataFrame({
-            'pred': pred_df['{}_{}'.format(pred_prefix, label)],
-            'label': label_df[label]
-        }, pred_df.index)
-        all_binary_metrics[label] = vislab.results.binary_metrics(
-            pdf, 'name doesnt matter', False, False, False)
-    bin_df = pd.DataFrame(all_binary_metrics).T
+        # Balance the labels.
+        if balanced:
+            counts = np.bincount(y_true)
+            min_count = counts[counts.argmin()]
 
-    # Add mean of the numeric metrics.
-    mean_df = pd.DataFrame(
-        bin_df[['accuracy', 'ap', 'auc', 'mcc']].mean().to_dict(),
-        index=['_mean']
-    )
-    bin_df = bin_df.append(mean_df)
+            permutation = lambda N, K: np.random.permutation(N)[:K]
+            selected_ind = np.concatenate([
+                np.where(y_true == label)[0][permutation(count, min_count)]
+                for label, count in enumerate(counts)
+            ])
 
-    metrics['binary_metrics_df'] = bin_df
+            y_true = y_true[selected_ind]
+            pred_df = pred_df.iloc[selected_ind]
 
-    # Plot binary metrics.
-    metrics['binary_metrics_fig'] = None
-    if with_plot:
-        metrics['binary_metrics_fig'] = vislab.results_viz.plot_binary_metrics(
-            metrics['binary_metrics_df'])
+        if feature.startswith('_random'):
+            np.random.seed(None)
+            rand_values = np.random.rand(*pred_df.values.shape)
+            pred_df = pd.DataFrame(rand_values, pred_df.index, pred_df.columns)
 
-    # Get vector of multi-class preds.
-    y_pred = pred_df.values.argmax(1)
+        # Get binary metrics for all classes.
+        all_binary_metrics = {}
+        for i, label in enumerate(label_cols):
+            pdf = pd.DataFrame({
+                'pred': pred_df['{}_{}'.format(pred_prefix, label)],
+                'label': label_df[label]
+            }, pred_df.index)
+            all_binary_metrics[label] = binary_metrics(
+                pdf, 'name doesnt matter', False, False, False)
+        bin_df = pd.DataFrame(all_binary_metrics).T
 
-    # Construct the confusion matrix.
-    conf_df = pd.DataFrame(
-        sklearn.metrics.confusion_matrix(y_true, y_pred),
-        columns=label_cols, index=label_cols)
+        # Add mean of the numeric metrics.
+        mean_df = pd.DataFrame(
+            bin_df[['accuracy', 'ap', 'auc', 'mcc']].mean().to_dict(),
+            index=['_mean']
+        )
+        bin_df = bin_df.append(mean_df)
 
-    # Confusion matrix and accuracy.
-    metrics['conf_df'] = conf_df
-    total = conf_df.sum().sum()
-    metrics['conf_df_n'] = conf_df.astype(float) / total
-    metrics['accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
+        metrics['binary_metrics_df'] = bin_df
 
-    # P-R-F1-Support table.
-    results = sklearn.metrics.precision_recall_fscore_support(y_true, y_pred)
-    metrics['results_df'] = pd.DataFrame(
-        np.array(results).T,
-        columns=[['precision', 'recall', 'f1-score', 'support']],
-        index=label_cols)
+        # Plot binary metrics.
+        metrics['binary_metrics_fig'] = None
+        if with_plot:
+            metrics['binary_metrics_fig'] = \
+                vislab.results_viz.plot_binary_metrics(
+                    metrics['binary_metrics_df'])
 
-    # Plot confusion table.
-    metrics['confusion_table_fig'] = None
-    if with_plot:
-        metrics['confusion_table_fig'] = \
-            vislab.dataset_viz.plot_conditional_occurrence(
-                metrics['conf_df_n'], sort_by_prior=False)
+        # Get vector of multi-class preds.
+        y_pred = pred_df.values.argmax(1)
 
-    # Compute top-k accuracies.
-    ordered_preds = np.argsort(-pred_df.values, axis=1)
-    Y = np.cumsum(ordered_preds == y_true[:, np.newaxis], axis=1)
-    metrics['top_k_accuracies'] = [
-        round(float(Y[:, k].sum()) / Y.shape[0], 3)
-        for k in range(Y.shape[1])
-    ]
+        # Construct the confusion matrix.
+        conf_df = pd.DataFrame(
+            sklearn.metrics.confusion_matrix(y_true, y_pred),
+            columns=label_cols, index=label_cols)
 
-    # Plot top-k accuracies.
-    top_k = min(5, Y.shape[1])
-    metrics['top_k_accuracies_fig'] = None
-    if with_plot:
-        metrics['top_k_accuracies_fig'] = \
-            vislab.results_viz.plot_top_k_accuracies(
-                metrics['top_k_accuracies'], top_k)
+        # Confusion matrix and accuracy.
+        metrics['conf_df'] = conf_df
+        total = conf_df.sum().sum()
+        metrics['conf_df_n'] = conf_df.astype(float) / total
+        metrics['accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
 
-    # Print report.
-    if with_print:
-        name = 'balanced dataset' if balanced else 'full dataset'
-        print_metrics(metrics, name)
+        # P-R-F1-Support table.
+        results = sklearn.metrics.precision_recall_fscore_support(
+            y_true, y_pred)
+        metrics['results_df'] = pd.DataFrame(
+            np.array(results).T,
+            columns=[['precision', 'recall', 'f1-score', 'support']],
+            index=label_cols)
 
-    return metrics
+        # Plot confusion table.
+        metrics['confusion_table_fig'] = None
+        if with_plot:
+            metrics['confusion_table_fig'] = \
+                vislab.dataset_viz.plot_conditional_occurrence(
+                    metrics['conf_df_n'], sort_by_prior=False)
+
+        # Compute top-k accuracies.
+        ordered_preds = np.argsort(-pred_df.values, axis=1)
+        Y = np.cumsum(ordered_preds == y_true[:, np.newaxis], axis=1)
+        metrics['top_k_accuracies'] = [
+            round(float(Y[:, k].sum()) / Y.shape[0], 3)
+            for k in range(Y.shape[1])
+        ]
+
+        # Plot top-k accuracies.
+        top_k = min(5, Y.shape[1])
+        metrics['top_k_accuracies_fig'] = None
+        if with_plot:
+            metrics['top_k_accuracies_fig'] = \
+                vislab.results_viz.plot_top_k_accuracies(
+                    metrics['top_k_accuracies'], top_k)
+
+        # Print report.
+        if with_print:
+            name = 'balanced dataset' if balanced else 'full dataset'
+            print_metrics(metrics, name)
+
+        all_metrics[feature] = metrics
+
+    return all_metrics
 
 
 def print_metrics(metrics, name):
@@ -231,7 +259,10 @@ def print_metrics(metrics, name):
             print(value.to_string())
         # if metric_name == 'binary_metrics_df':
         #     print(value.to_string())
-        if metric_name in ['accuracy', 'top_k_accuracies', 'mcc']:
+        metrics_to_print = [
+            'accuracy', 'top_k_accuracies', 'mcc', 'ap', 'ap_sklearn'
+        ]
+        if metric_name in metrics_to_print:
             print('{}: {}'.format(metric_name, value))
     print('')
 
@@ -279,3 +310,17 @@ def get_pr_curve(y_true, y_score, title=None, with_plot=True):
         fig = vislab.results_viz.plot_curve_with_area(
             rec, prec, ap, 'Recall', 'Precision', 'AP', title)
     return fig, prec, rec, ap
+
+
+if __name__ == '__main__':
+    import vislab.datasets
+    import aphrodite.results
+    label_df = vislab.datasets.ava.get_style_df()
+    results_df, preds_panel = aphrodite.results.load_pred_results(
+        'ava_style_oct21', '/Users/sergeyk/work/aphrodite/data/results2',
+        force=True)
+    pred_prefix = 'clf ava_style'
+    mc_metrics = multiclass_metrics(
+        preds_panel, label_df, pred_prefix, features=['lab_hist  vw'],
+        balanced=False,
+        with_plot=True, with_print=True)

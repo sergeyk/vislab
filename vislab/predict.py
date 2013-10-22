@@ -20,15 +20,6 @@ import vislab.dataset
 import vislab.vw
 
 
-def get_multiclass_dataset(
-        source_df, dataset_name, column_labels, test_frac=.2,
-        random_seed=42):
-    pass
-    # TODO
-    # main gotcha here is when multiple labels are on.
-    # solution is probably to replicate the example with less weight
-
-
 def _process_df_for_regression(df, test_frac):
     N = df.shape[0]
     num_test = int(round(test_frac * N))
@@ -139,6 +130,12 @@ def _process_df_for_binary_clf(df, test_frac, min_pos_frac):
     return df, train_ids, val_ids, test_ids
 
 
+def get_split_df(df, ids, num_labels):
+    split_df = df.ix[ids]
+    split_df['importance'] = _get_importance(split_df, num_labels)
+    return split_df
+
+
 def get_binary_or_regression_dataset(
         source_df, dataset_name, column_name,
         test_frac=.2, min_pos_frac=.1, random_seed=42):
@@ -201,15 +198,10 @@ def get_binary_or_regression_dataset(
         raise Exception("Can only deal with binary or float values.")
 
     # Get the train/val/test datasets.
-    def get_split_df(ids, num_labels):
-        split_df = df.ix[ids]
-        split_df['importance'] = _get_importance(split_df, num_labels)
-        return split_df
-
     dataset = {
-        'train_df': get_split_df(train_ids, num_labels),
-        'val_df': get_split_df(val_ids, num_labels),
-        'test_df': get_split_df(test_ids, num_labels)
+        'train_df': get_split_df(df, train_ids, num_labels),
+        'val_df': get_split_df(df, val_ids, num_labels),
+        'test_df': get_split_df(df, test_ids, num_labels)
     }
 
     # Add all relevant info to the data dict to return.
@@ -228,6 +220,30 @@ def get_binary_or_regression_dataset(
     })
 
     return dataset
+
+
+def get_multiclass_dataset(
+        source_df, dataset_name, column_names, test_frac=.2, random_seed=42):
+    """
+    Return a dataset dict for multi-class data.
+
+    TODO: support multi-label, at least for test.
+
+    Parameters
+    ----------
+    source_df: pandas.DataFrame
+    dataset_name: string
+    column_names: sequence of string
+    test_frac: float
+        Use this fraction of the examples to test.
+        Will use the same amount for validation.
+    random_seed: int [42]
+    """
+    assert(source_df.index.dtype == object)
+    np.random.seed(random_seed)
+
+    # Assert that each example has only one label.
+    assert(np.all(source_df[column_names].sum(1) == 1))
 
 
 def _get_importance(df, num_labels):
@@ -249,9 +265,11 @@ def _get_importance(df, num_labels):
     importances = pd.Series(np.ones(df.shape[0]), df.index)
 
     if num_labels > 0:
-        mfl = df['label'].value_counts().argmax()
-        ind = (df['label'] == mfl)
-        importances[ind] = 1. * (~ind).sum() / ind.sum()
+        counts = df['label'].value_counts()
+        mfl_count = float(counts.max())
+        for label in counts.index:
+            ind = df['label'] == label
+            importances[ind] = mfl_count / ind.sum()
 
     return importances
 
@@ -294,7 +312,7 @@ def predict(args=None):
     if dataset['task'] == 'regr':
         loss_functions = ['squared']
     else:
-        loss_functions = ['logistic']
+        loss_functions = ['hinge', 'logistic']
 
     # Set the number of passes. Less passes for quadratic features.
     n_train = dataset['train_df'].shape[0]
@@ -312,8 +330,8 @@ def predict(args=None):
         force=args.force_predict, num_workers=args.num_workers,
         num_passes=num_passes,
         loss=loss_functions,
-        l1_weight=[0, 1e-5, 1e-7, 1e-9],
-        l2_weight=[0, 1e-5, 1e-7, 1e-9],
+        l1=[0, 1e-7, 1e-9],
+        l2=[0, 1e-7, 1e-9],
         quadratic=quadratic)
 
 

@@ -41,7 +41,7 @@ class TestPredict(unittest.TestCase):
             'train_df': pd.DataFrame(
                 {
                     'label': [1, 1, 1, -1],
-                    'importance': [1/3., 1/3., 1/3., 1.]
+                    'importance': [1., 1., 1., 3.]
                 },
                 ['five', 'one', 'six', 'three']
             ),

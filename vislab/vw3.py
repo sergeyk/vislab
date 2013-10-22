@@ -131,7 +131,7 @@ def _cache_cmd(
     cache_preview_filename = output_dirname + '/cache_preview.txt'
     if not force and os.path.exists(cache_filename):
         print("Cache file exists, not doing anything.")
-        return
+        return None, None
 
     # Concatenate the feature files horizontally.
     for f in feat_filenames:
@@ -197,7 +197,7 @@ def _train_vw_cmd(setting, dirname, from_model=None):
     # The basic command.
     cmd = vw_cmd + " --cache_file={}/cache.vw -f {}".format(
         dirname, model_filename)
-    cmd += " --l1={:.9f} --l2={:.9f} --passes={} --loss_function={}".format(
+    cmd += " --l1={} --l2={} --passes={} --loss_function={}".format(
         setting['l1'], setting['l2'], setting['num_passes'], setting['loss'])
 
     # If we are training from scratch, then we will use all data.
@@ -206,7 +206,7 @@ def _train_vw_cmd(setting, dirname, from_model=None):
 
     # If we are training with the val data starting with the best model,
     # then we turn on early termination and set the holdout fraction to
-    # 1/8, so that we don't overfit.
+    # 1/6, so that we don't overfit.
     else:
         cmd += " --early_terminate=3 --holdout_period=6 -i {}".format(
             from_model)
@@ -231,6 +231,7 @@ def _pred_vw_cmd(setting, model_dirname, pred_dirname):
     """
     name = _setting_to_name(setting)
     model_filename = '{}/{}_model.vw'.format(model_dirname, name)
+    assert(os.path.exists(model_filename))
     pred_filename = '{}/{}_pred.txt'.format(pred_dirname, name)
     cmd = vw_cmd + " -t -i {} --cache_file={}/cache.vw -r {}".format(
         model_filename, pred_dirname, pred_filename)
@@ -244,49 +245,16 @@ def _setting_to_name(setting):
     )
 
 
-def _read_preds(pred_filename, num_labels, loss_function):
-    try:
-        pred_df = pd.read_csv(
-            pred_filename, sep=' ', index_col=1, header=None, names=['pred'])
-    except Exception as e:
-        raise Exception("Could not read predictions: {}".format(e))
-    pred_df.index = pred_df.index.astype(str)
-
-    # If using logisitic loss, convert to [-1, 1].
-    if loss_function == 'logistic':
-        pred_df['pred'] = (2. / (1. + np.exp(-pred_df['pred'])) - 1.)
-
-    return pred_df
-
-
-def _score_preds(pred_df, gt_df, num_labels):
-    pred_df = pred_df.join(gt_df)
-
-    if num_labels < 0:
-        metrics = vislab.results.regression_metrics(
-            pred_df, name='', balanced=False,
-            with_plot=False, with_print=False)
-        return metrics['mse']
-
-    elif num_labels == 2:
-        metrics = vislab.results.binary_metrics(
-            pred_df, name='', balanced=False,
-            with_plot=False, with_print=False)
-        return metrics['ap']
-
-    elif num_labels > 2:
-        metrics = vislab.results.multiclass_metrics(
-            pred_df, name='', balanced=False,
-            with_plot=False, with_print=False)
-        return metrics['binary_metrics_df'].ix['_mean']['ap']
-
-    else:
-        raise ValueError("Illegal num_labels")
-
-
 def _train_with_val(
-        train_df, val_df, num_labels, train_dir, val_dir, settings,
-        num_workers=1, verbose=False):
+        dataset, output_dirnames, settings, num_workers=1, verbose=False):
+    #train_df = dataset['train_df']
+    val_df = dataset['val_df']
+    test_df = dataset['test_df']
+    num_labels = dataset['num_labels']
+    train_dir = output_dirnames['train']
+    val_dir = output_dirnames['val']
+    test_dir = output_dirnames['test']
+
     print("Running VW training for {} param settings, {} at a time".format(
         len(settings), num_workers))
 
@@ -307,26 +275,36 @@ def _train_with_val(
         False, num_workers
     )
 
-    # Load all the model predictions and pick the best settings.
-    val_pred_dfs = []
-    val_scores = []
-    for setting in settings:
-        preds_filename = '{}/{}_pred.txt'.format(
-            val_dir, _setting_to_name(setting))
-        val_pred_df = _read_preds(
-            preds_filename, num_labels, setting['loss'])
-        val_score = _score_preds(val_pred_df, val_df, num_labels)
+    # Run prediction commands on the test data in parallel.
+    vislab.util.run_through_bash_script(
+        [_pred_vw_cmd(setting, train_dir, test_dir) for setting in settings],
+        test_dir + '/_test_pred_cmds.sh',
+        False, num_workers
+    )
 
-        val_pred_dfs.append(val_pred_df)
+    # Load all the model predictions and pick the best settings.
+    val_scores = []
+    test_scores = []
+    for setting in settings:
+        _, val_score = _score_predict(setting, val_dir, num_labels, val_df)
         val_scores.append(val_score)
+        _, test_score = _score_predict(setting, test_dir, num_labels, test_df)
+        test_scores.append(test_score)
+
+        # test_pred_df = _read_preds(
+        #     '{}/{}_pred.txt'.format(test_dir, _setting_to_name(setting)),
+        #     num_labels, setting['loss'])
+        # test_scores.append(_score_preds(test_pred_df, num_labels))
 
     df = pd.DataFrame(settings)
     df['val_score'] = val_scores
+    df['test_score'] = test_scores
 
-    df_str = df.to_string(formatters={
-        'l1': lambda x: '%.1e' % x,
-        'l2': lambda x: '%.1e' % x,
-        'val_score': lambda x: '%.3f' % x}
+    df_str = df.to_string(
+        formatters={
+            'val_score': lambda x: '%.3f' % x,
+            'test_score': lambda x: '%.3f' % x
+        }
     )
     print(df_str)
     with open(val_dir + '/_results.txt', 'w') as f:
@@ -335,6 +313,7 @@ def _train_with_val(
     best_ind = df['val_score'].argmax()
     best_score = df['val_score'].max()
     del df['val_score']
+    del df['test_score']
     best_setting = dict(df.iloc[best_ind])
 
     print('Best setting: {}'.format(best_setting))
@@ -374,8 +353,10 @@ def cache_files(
         cache_cmd, cache_preview_cmd = _cache_cmd(
             df_filename, feat_filenames, output_dirnames[split_name],
             bit_precision, verbose=False, force=force)
-        cache_cmds.append(cache_cmd)
-        cache_preview_cmds.append(cache_preview_cmd)
+        if cache_cmd is not None:
+            cache_cmds.append(cache_cmd)
+        if cache_preview_cmd is not None:
+            cache_preview_cmds.append(cache_preview_cmd)
 
     logging.info("Caching data")
     t = time.time()
@@ -395,13 +376,60 @@ def _predict(setting, source_dirname, target_dirname, gt_df, num_labels):
         setting, source_dirname, target_dirname)
     vislab.util.run_through_bash_script(
         [pred_cmd], target_dirname + '/_test_cmd.sh', verbose=False)
-    preds_filename = '{}/{}_pred.txt'.format(
-        target_dirname, _setting_to_name(setting))
-    pred_df = _read_preds(
-        preds_filename, num_labels, setting['loss'])
-    score = _score_preds(
-        pred_df, gt_df, num_labels)
+    return _score_predict(setting, target_dirname, num_labels, gt_df)
+
+
+def _score_predict(setting, dirname, num_labels, gt_df):
+    pred_filename = '{}/{}_pred.txt'.format(dirname, _setting_to_name(setting))
+    pred_df = _read_preds(pred_filename, num_labels, setting['loss'])
+    pred_df = pred_df.join(gt_df)
+    score = _score_preds(pred_df, num_labels)
     return pred_df, score
+
+
+def _read_preds(pred_filename, num_labels, loss_function):
+    try:
+        pred_df = pd.read_csv(
+            pred_filename, sep=' ', index_col=1, header=None, names=['pred'])
+    except Exception as e:
+        raise Exception("Could not read predictions: {}".format(e))
+    pred_df.index = pred_df.index.astype(str)
+
+    # If using logisitic loss, convert to [-1, 1].
+    if loss_function == 'logistic':
+        pred_df['pred'] = (2. / (1. + np.exp(-pred_df['pred'])) - 1.)
+
+    return pred_df
+
+
+def _score_preds(pred_df, num_labels):
+    """
+    Parameters
+    ----------
+    pred_df: pandas.DataFrame
+        Must have both 'pred' and 'label' columns.
+    """
+    if num_labels < 0:
+        metrics = vislab.results.regression_metrics(
+            pred_df, name='', balanced=False,
+            with_plot=False, with_print=False)
+        return metrics['mse']
+
+    elif num_labels == 2:
+        metrics = vislab.results.binary_metrics(
+            pred_df, name='', balanced=True,
+            with_plot=False, with_print=False)
+        return metrics['accuracy']
+
+    elif num_labels > 2:
+        metrics = vislab.results.multiclass_metrics(
+            pred_df, name='', balanced=False,
+            with_plot=False, with_print=False)
+        # TODO: does this metric make sense for cross-validation?
+        return metrics['binary_metrics_df'].ix['_mean']['ap']
+
+    else:
+        raise ValueError("Illegal num_labels")
 
 
 class VW(object):
@@ -417,24 +445,29 @@ class VW(object):
     """
     def __init__(
             self, dirname, num_workers=6, bit_precision=18,
-            num_passes=[10],
+            num_passes=[25],
             loss=['hinge', 'logistic'],
-            l1=[0, 1e-3, 1e-6],
-            l2=[0, 1e-3, 1e-6]):
+            l1=['0', '1e-6', '1e-9'],
+            l2=['0', '1e-6', '1e-9']):
         # Actual output directory will have bit_precision info in name,
         # because cache files are dependent on the precision.
         self.dirname = vislab.util.makedirs(
             dirname + '_b{}'.format(bit_precision))
         self.bit_precision = bit_precision
         self.num_workers = num_workers
+
+        # Set the parameter grid, ordering it such that same number of
+        # passes are ordered together, for more efficient parallelism.
         self.param_grid = {
             'loss': loss,
             'num_passes': num_passes,
-            'l1': [float(x) for x in l1],
-            'l2': [float(x) for x in l2]
+            'l1': [str(x) for x in l1],
+            'l2': [str(x) for x in l2]
         }
-        self.settings = list(
-            sklearn.grid_search.ParameterGrid(self.param_grid))
+        settings_df = pd.DataFrame(
+            list(sklearn.grid_search.ParameterGrid(self.param_grid))
+        ).sort(['num_passes', 'loss'])
+        self.settings = [dict(row) for ind, row in settings_df.iterrows()]
 
     def fit_and_predict(self, dataset, feat_names, feat_dirname, force=False):
         """
@@ -452,12 +485,11 @@ class VW(object):
         # Cache all splits to VW format.
         output_dirnames = cache_files(
             dataset, feat_names, feat_dirname, self.dirname,
-            self.bit_precision, self.num_workers, force=False)
+            self.bit_precision, self.num_workers, force)
 
         # Train models in a grid search over params.
         best_setting = _train_with_val(
-            dataset['train_df'], dataset['val_df'], dataset['num_labels'],
-            output_dirnames['train'], output_dirnames['val'], self.settings,
+            dataset, output_dirnames, self.settings,
             self.num_workers, verbose=False)
 
         # Update the best model with validation data.
@@ -467,9 +499,10 @@ class VW(object):
         cmd = _train_vw_cmd(
             best_setting, output_dirnames['val'], best_model_filename)
         cmd_filename = output_dirnames['val'] + '/_train_cmd.sh'
-        vislab.util.run_through_bash_script([cmd], cmd_filename, verbose=False)
+        vislab.util.run_through_bash_script(
+            [cmd], cmd_filename, verbose=False)
 
-        # Predict on all the splits. This is not in parallel but that's fine.
+        # Get predictions from all the splits. Need to predict on train.
         print("Running VW prediction on all splits.")
         train_pred_df, train_score = _predict(
             best_setting, output_dirnames['val'], output_dirnames['train'],
@@ -480,6 +513,17 @@ class VW(object):
         test_pred_df, test_score = _predict(
             best_setting, output_dirnames['val'], output_dirnames['test'],
             dataset['test_df'], dataset['num_labels'])
+
+        # TODO: keeping this around in case retraining starts messing up
+        # train_pred_df, train_score = _predict(
+        #     best_setting, output_dirnames['train'], output_dirnames['train'],
+        #     dataset['train_df'], dataset['num_labels'])
+        # val_pred_df, val_score = _score_predict(
+        #     best_setting, output_dirnames['val'],
+        #     dataset['num_labels'], dataset['val_df'])
+        # test_pred_df, test_score = _score_predict(
+        #     best_setting, output_dirnames['test'],
+        #     dataset['num_labels'], dataset['test_df'])
 
         # Combine all predictions into one DataFrame.
         train_pred_df['split'] = 'train'
