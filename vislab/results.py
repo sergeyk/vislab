@@ -5,6 +5,7 @@ import sklearn.metrics
 import numpy as np
 import pandas as pd
 import re
+import logging
 import vislab
 import vislab.results_viz
 import vislab.dataset_viz
@@ -95,157 +96,203 @@ def binary_metrics(
     return metrics
 
 
-def multiclass_metrics(
-        preds_panel, source_label_df, pred_prefix, features, balanced=True,
-        with_plot=False, with_print=False):
+def multiclass_metrics_feat_comparison(
+        preds_panel, source_label_df, pred_prefix, features,
+        balanced=False, with_plot=False, with_print=False):
     """
-    Multiclass classification metrics.
+    Multiclass classification metrics for a set of feature channels.
 
     Parameters
     ----------
-    preds_panel: pandas.Panel
-        Contains predictions.
-    source_label_df: pandas.DataFrame
-        Contains label information.
+    features: sequence of string
+        If includes feature '_random', also evaluate chance performance.
+    """
+    feat_metrics = {}
+    for feature in features:
+
+        # To evaluate chance performance, we need to pass any feature
+        # channel with the random_preds flag so that they get replaced.
+        if feature == '_random':
+            actual_feature = features[0]
+            random_preds = True
+        else:
+            actual_feature = feature
+            random_preds = False
+
+        # Need the feature channel predictions, and true labels.
+        mc_pred_df = preds_panel.minor_xs(actual_feature).join(source_label_df)
+
+        if '_split' in mc_pred_df.columns:
+            logging.info("Only taking 'test' split predictions.")
+            mc_pred_df = mc_pred_df[mc_pred_df['_split'] == 'test']
+
+        feat_metrics[feature] = multiclass_metrics(
+            mc_pred_df, pred_prefix, balanced, random_preds,
+            with_plot, with_print)
+
+    all_metrics = {'feat_metrics': feat_metrics}
+
+    # Across-feature AP comparison.
+    all_metrics['ap_df'] = pd.DataFrame(dict(
+        (feature_name, feat_metrics[feature_name]['binary_metrics_df']['ap'])
+        for feature_name in features
+    ))
+    all_metrics['ap_fig'] = vislab.results_viz.plot_df_bar(
+        all_metrics['ap_df'], features)
+
+    # # Across-feature top-k accuracy comparison.
+    all_metrics['acc_df'] = pd.DataFrame(
+        [feat_metrics[f]['top_k_accuracies'] for f in feat_metrics.keys()],
+        index=feat_metrics.keys()
+    ).T
+    all_metrics['top_k_fig'] = vislab.results_viz.plot_top_k_accuracies(
+        all_metrics['acc_df'])
+
+    return all_metrics
+
+
+def multiclass_metrics(
+        mc_pred_df, pred_prefix, balanced=True, random_preds=False,
+        with_plot=False, with_print=False):
+    """
+    Multiclass classification metrics for a single set of predictions.
+
+    Parameters
+    ----------
+    mc_pred_df: pandas.DataFrame
+        Has columns for True/False labels, and same columns,
+        with a prefix, with float pred values.
     pred_prefix: string
-        The prefix before the name of the label column.
-    features: list of string
-        Features to compute metrics for.
-    balanced: bool [True]
+        The prefix before the name of a pred-containing column.
+    balanced: bool [False]
         If True, the number if instances of each class is equalized.
+    random_preds: bool [False]
+        If True, preds are replaced with random values.
+        (For seeing random performance).
     with_plot: bool [False]
         If True, also plot and return figures.
     with_print: bool [False]
         If True, print the metrics.
     """
-    all_metrics = {}
+    metrics = {}
 
-    for feature in features + ['_random']:
-        metrics = {}
+    # Get the list of labels.
+    r = re.compile(pred_prefix)
+    pred_cols, label_cols = map(list, zip(*[
+        (col, col.replace(pred_prefix + '_', ''))
+        for col in mc_pred_df.columns
+        if r.match(col)
+    ]))
 
-        actual_feature = \
-            features[0] if feature.startswith('_random') else feature
+    # Make two dataframes: for labels and predictions.
+    # Drop those rows that don't have a single positive label.
+    label_df = mc_pred_df[label_cols]
+    ind = label_df.sum(1) > 0
+    label_df = label_df[ind]
+    pred_df = mc_pred_df[pred_cols][ind]
 
-        mc_pred_df = preds_panel.minor_xs(actual_feature).join(source_label_df)
-        mc_pred_df = mc_pred_df[mc_pred_df['_split'] == 'test']
+    # Get vector of multi-class labels.
+    # TODO: take random argmax if multiple
+    y_true = label_df.values.argmax(1)
 
-        # Get the list of labels.
-        r = re.compile(pred_prefix)
-        pred_cols, label_cols = map(list, zip(*[
-            (col, col.replace(pred_prefix + '_', ''))
-            for col in mc_pred_df.columns
-            if r.match(col)
-        ]))
+    # Balance the labels.
+    if balanced:
+        counts = np.bincount(y_true)
+        min_count = counts[counts.argmin()]
+        permutation = lambda N, K: np.random.permutation(N)[:K]
+        selected_ind = np.concatenate([
+            np.where(y_true == label)[0][permutation(count, min_count)]
+            for label, count in enumerate(counts)
+        ])
 
-        # Make two dataframes: for labels and predictions.
-        # Drop those rows that don't have a single positive label.
-        label_df = mc_pred_df[label_cols]
-        ind = label_df.sum(1) > 0
-        label_df = label_df[ind]
-        pred_df = mc_pred_df[pred_cols][ind]
+        y_true = y_true[selected_ind]
+        pred_df = pred_df.iloc[selected_ind]
 
-        # Get vector of multi-class labels.
-        # TODO: take random argmax if multiple
-        y_true = label_df.values.argmax(1)
+    if random_preds:
+        np.random.seed(None)
+        rand_values = np.random.rand(*pred_df.values.shape)
+        pred_df = pd.DataFrame(rand_values, pred_df.index, pred_df.columns)
 
-        # Balance the labels.
-        if balanced:
-            counts = np.bincount(y_true)
-            min_count = counts[counts.argmin()]
-            permutation = lambda N, K: np.random.permutation(N)[:K]
-            selected_ind = np.concatenate([
-                np.where(y_true == label)[0][permutation(count, min_count)]
-                for label, count in enumerate(counts)
-            ])
+    # Get binary metrics for all classes.
+    all_binary_metrics = {}
+    for i, label in enumerate(label_cols):
+        pdf = pd.DataFrame({
+            'pred': pred_df['{}_{}'.format(pred_prefix, label)],
+            'label': label_df[label]
+        }, pred_df.index)
+        all_binary_metrics[label] = binary_metrics(
+            pdf, 'name doesnt matter', False, False, False)
+    bin_df = pd.DataFrame(all_binary_metrics).T
 
-            y_true = y_true[selected_ind]
-            pred_df = pred_df.iloc[selected_ind]
+    # Add mean of the numeric metrics.
+    mean_df = pd.DataFrame(
+        bin_df[['accuracy', 'ap', 'auc', 'mcc']].mean().to_dict(),
+        index=['_mean']
+    )
+    bin_df = bin_df.append(mean_df)
 
-        if feature.startswith('_random'):
-            np.random.seed(None)
-            rand_values = np.random.rand(*pred_df.values.shape)
-            pred_df = pd.DataFrame(rand_values, pred_df.index, pred_df.columns)
+    metrics['binary_metrics_df'] = bin_df
 
-        # Get binary metrics for all classes.
-        all_binary_metrics = {}
-        for i, label in enumerate(label_cols):
-            pdf = pd.DataFrame({
-                'pred': pred_df['{}_{}'.format(pred_prefix, label)],
-                'label': label_df[label]
-            }, pred_df.index)
-            all_binary_metrics[label] = binary_metrics(
-                pdf, 'name doesnt matter', False, False, False)
-        bin_df = pd.DataFrame(all_binary_metrics).T
+    # Plot binary metrics.
+    metrics['binary_metrics_fig'] = None
+    if with_plot:
+        metrics['binary_metrics_fig'] = vislab.results_viz.plot_df_bar(
+            metrics['binary_metrics_df'], ['ap', 'mcc'])
 
-        # Add mean of the numeric metrics.
-        mean_df = pd.DataFrame(
-            bin_df[['accuracy', 'ap', 'auc', 'mcc']].mean().to_dict(),
-            index=['_mean']
-        )
-        bin_df = bin_df.append(mean_df)
+    # Get vector of multi-class preds.
+    y_pred = pred_df.values.argmax(1)
 
-        metrics['binary_metrics_df'] = bin_df
+    # Construct the confusion matrix.
+    conf_df = pd.DataFrame(
+        sklearn.metrics.confusion_matrix(y_true, y_pred),
+        columns=label_cols, index=label_cols)
 
-        # Plot binary metrics.
-        metrics['binary_metrics_fig'] = None
-        if with_plot:
-            metrics['binary_metrics_fig'] = \
-                vislab.results_viz.plot_binary_metrics(
-                    metrics['binary_metrics_df'])
+    # Confusion matrix and accuracy.
+    metrics['conf_df'] = conf_df
+    total = conf_df.sum().sum()
+    metrics['conf_df_n'] = conf_df.astype(float) / total
+    metrics['accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
 
-        # Get vector of multi-class preds.
-        y_pred = pred_df.values.argmax(1)
+    # P-R-F1-Support table.
+    results = sklearn.metrics.precision_recall_fscore_support(
+        y_true, y_pred)
+    metrics['results_df'] = pd.DataFrame(
+        np.array(results).T,
+        columns=[['precision', 'recall', 'f1-score', 'support']],
+        index=label_cols)
 
-        # Construct the confusion matrix.
-        conf_df = pd.DataFrame(
-            sklearn.metrics.confusion_matrix(y_true, y_pred),
-            columns=label_cols, index=label_cols)
+    # Plot confusion table.
+    metrics['confusion_table_fig'] = None
+    if with_plot:
+        metrics['confusion_table_fig'] = \
+            vislab.dataset_viz.plot_conditional_occurrence(
+                metrics['conf_df_n'], sort_by_prior=False)
 
-        # Confusion matrix and accuracy.
-        metrics['conf_df'] = conf_df
-        total = conf_df.sum().sum()
-        metrics['conf_df_n'] = conf_df.astype(float) / total
-        metrics['accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
-
-        # P-R-F1-Support table.
-        results = sklearn.metrics.precision_recall_fscore_support(
-            y_true, y_pred)
-        metrics['results_df'] = pd.DataFrame(
-            np.array(results).T,
-            columns=[['precision', 'recall', 'f1-score', 'support']],
-            index=label_cols)
-
-        # Plot confusion table.
-        metrics['confusion_table_fig'] = None
-        if with_plot:
-            metrics['confusion_table_fig'] = \
-                vislab.dataset_viz.plot_conditional_occurrence(
-                    metrics['conf_df_n'], sort_by_prior=False)
-
-        # Compute top-k accuracies.
-        ordered_preds = np.argsort(-pred_df.values, axis=1)
-        Y = np.cumsum(ordered_preds == y_true[:, np.newaxis], axis=1)
-        metrics['top_k_accuracies'] = [
+    # Compute top-k accuracies.
+    ordered_preds = np.argsort(-pred_df.values, axis=1)
+    Y = np.cumsum(ordered_preds == y_true[:, np.newaxis], axis=1)
+    metrics['top_k_accuracies'] = pd.Series(
+        [
             round(float(Y[:, k].sum()) / Y.shape[0], 3)
             for k in range(Y.shape[1])
-        ]
+        ],
+        np.arange(Y.shape[1]) + 1
+    )
 
-        # Plot top-k accuracies.
-        top_k = min(5, Y.shape[1])
-        metrics['top_k_accuracies_fig'] = None
-        if with_plot:
-            metrics['top_k_accuracies_fig'] = \
-                vislab.results_viz.plot_top_k_accuracies(
-                    metrics['top_k_accuracies'], top_k)
+    # Plot top-k accuracies.
+    top_k = min(5, Y.shape[1])
+    metrics['top_k_accuracies_fig'] = None
+    if with_plot:
+        metrics['top_k_accuracies_fig'] = \
+            vislab.results_viz.plot_top_k_accuracies(
+                metrics['top_k_accuracies'], top_k)
 
-        # Print report.
-        if with_print:
-            name = 'balanced dataset' if balanced else 'full dataset'
-            print_metrics(metrics, name)
+    # Print report.
+    if with_print:
+        name = 'balanced dataset' if balanced else 'full dataset'
+        print_metrics(metrics, name)
 
-        all_metrics[feature] = metrics
-
-    return all_metrics
+    return metrics
 
 
 def print_metrics(metrics, name):

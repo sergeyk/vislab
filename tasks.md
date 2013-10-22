@@ -8,7 +8,6 @@ Implementation:
     VW:
         - implement and test oaa mode
         - compare oaa mode results to using separate binary classifiers
-    - implement across-feature metric comparison: like the AVA style AP barplot
 
 Tune ConvNet features:
     - tune decaf with flickr style and wikipaintings data (train sets only) [.5 day]
@@ -16,7 +15,6 @@ Tune ConvNet features:
     - run classification experiments with new feature
 
 AVA Style:
-    - run classification on ava style with decaf_fc6 feature
     - (maybe) run classification with pascal quadratics
 
 AVA:
@@ -55,38 +53,14 @@ Memorability dataset:
 
 ## Current Tasks/Problems
 
-- make a method somewhere for saving label_df for vw use. ids must be of string type (for vw_filter) and label must be one of the three accepted types: -1/1, [1,K], or float.
-
-- in the VW tests, should use the Iris dataset and split the feature namespaces into first two and second two. that way should be able to confirm that concatenation works correctly.
-
-- Plot the chance performance on the top-k accuracy plot
-
-- AP barplot
-    - be able to display multiple features
-    - add "chance" bar: generate random confidences and see how well that works
-
 - One method for outputting all evaluations of a prediction experiment. takes a collection name, a label_df, and a list of features to compare.
-
-- decaf AVA style results have lower AP than published, and lab_hist is even worse
-    x form dataset respecting the original train/test split
-        x re-running experiments, launched oct 17 2145
-             - still bad!
-    - the confounding thing is that lab_hist performs even worse: super bad! but in the paper, it's reported to be super good.
-        - experiment with sklearn classifiers and lab_hist feature to see what the performance is. why is it so bad?
-            - if it is still bad, re-compute the lab hist features and don't standardize them to make them sparse!
-    - shuffle order of features in the vw text file
-        - confirming that the order is bad: positive examples are clumped together
-    - better cross-validation, more passes
 
 ## Next
 
-- evaluat eon a black & white dataset: strip color before computing feature
-
-- get multiclass prediction dataset generator working
+- evaluate on a black & white dataset: strip color before computing feature
 
 VW:
 - get VW oaa working
-- add tests
 - get vector of weights from VW. (vowpal_porpoise doesnt seem to do this)
     : in fact, need --inverse_hash to do this properly, and that seems to slow things down substantially (haven't tried though)
 - expand parameter space with learning rate
@@ -102,17 +76,8 @@ Datasets
 - weight AVA examples according to inverse distance to mean (should work better than the delta method)
 
 Features
-- add step to cache features to h5 and vw at the end of a feature computation run
-- DRY matlab feature code in aphrodite/features/misc.py
 - make featurization server: gets filename, outputs result back on queue
-- implement WHOG
-- compute WHOG on all datasets
-- implement Labhist in Python
-- compute Labhist on all datasets
 - implement feature computation in vislab that computes multiple levels of decaf feature at once
-- implement using classifier output as a feature
-- do additional training of the convnet with the style images
-- implement portrait vs landscape classifier
 - implement presence of text classifier
 - can further improve the url
 
@@ -193,3 +158,21 @@ x train pascal content classifiers
 - move fav_user_ids feature to own file for personal recommendations in vislab
 - config.json shouldn't be in the git repo; config.json.example instead
 x re-run classification and regression with decaf_fc6 feature on style subset
+- implement across-feature metric comparison: like the AVA style AP barplot
+- run classification on ava style with decaf_fc6 feature
+- Plot the chance performance on the top-k accuracy plot
+- AP barplot
+    - be able to display multiple features
+    - add "chance" bar: generate random confidences and see how well that works
+- decaf AVA style results have lower AP than published, and lab_hist is even worse
+    x form dataset respecting the original train/test split
+        x re-running experiments, launched oct 17 2145
+             - still bad!
+    - the confounding thing is that lab_hist performs even worse: super bad! but in the paper, it's reported to be super good.
+        - experiment with sklearn classifiers and lab_hist feature to see what the performance is. why is it so bad?
+            - if it is still bad, re-compute the lab hist features and don't standardize them to make them sparse!
+    - shuffle order of features in the vw text file
+        - confirming that the order is bad: positive examples are clumped together
+    - better cross-validation, more passes
+- get multiclass prediction dataset generator working
+- add vw tests

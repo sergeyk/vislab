@@ -2,21 +2,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_binary_metrics(df):
+def plot_df_bar(df, columns=None):
+    """
+    Used to plot AP vs MCC for a single feature, or AP between features.
+    """
     fig = plt.figure(figsize=(16, 4))
     ax = fig.add_subplot(111)
-    df[['ap', 'mcc']].plot(
-        ax=ax, kind='bar')
+    if columns is not None:
+        df = df[columns]
+    df.plot(ax=ax, kind='bar')
     ax.set_ylim([0, 1])
     ax.set_yticks(np.arange(11) / 10.)
     fig.autofmt_xdate()
     return fig
 
 
-def plot_top_k_accuracies(accuracies, top_k):
+def plot_top_k_accuracies(accuracies_df, top_k=5):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(range(1, top_k + 1), accuracies[:top_k], 's--')
+    accuracies_df.ix[range(top_k + 1)].plot(ax=ax, style='s--')
     ax.set_xlim([1, top_k])
     ax.set_xticks(range(1, top_k + 1))
     ax.set_xlabel('K')
