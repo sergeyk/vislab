@@ -103,16 +103,16 @@ class TestVW(unittest.TestCase):
 
         assert(os.path.exists(output_dirname + '/cache.vw'))
         expected = """\
-1 1.000000 0|first 0:-0.885972 1:-2.772593 |second 0:0.059139
-1 1.000000 1|first 0:-1.376205 1:-0.390953 |second 0:0.857275
--1 1.000000 2|first 0:-0.160053 1:0.141953 |second 0:1.067757
--1 1.000000 3|first 0:-1.053145 1:0.521065 |second 0:-0.281805
-1 1.000000 4|first 0:0.548937 1:0.0974 |second 0:-0.331867
-1 1.000000 5|first 0:0.762685 1:0.523891 |second 0:0.680036
--1 1.000000 6|first 0:-0.298776 1:-1.676004 |second 0:1.156621
--1 1.000000 7|first 0:-0.896211 1:-0.345982 |second 0:-0.309105
-1 1.000000 8|first 0:0.09446 1:0.390093 |second 0:-0.824078
--1 1.000000 9|first 0:-0.829799 1:-0.466419 |second 0:0.064953
+-1 1.000000 0|first 0:0.907699 1:0.910662 |second 0:1.057998
+-1 1.000000 1|first 0:-0.375222 1:2.900907 |second 0:0.831044
+-1 1.000000 2|first 0:-0.276823 1:1.717314 |second 0:-0.345345
+-1 1.000000 3|first 0:0.596906 1:1.522828 |second 0:-0.766781
+-1 1.000000 4|first 0:0.540094 1:0.094393 |second 0:-0.919987
+1 1.000000 5|first 0:-0.972403 1:2.213648 |second 0:-0.0831
+-1 1.000000 6|first 0:0.098378 1:0.200471 |second 0:-0.9833
+1 1.000000 7|first 0:-0.755463 1:2.802532 |second 0:-0.642245
+1 1.000000 8|first 0:-0.326318 1:0.74197 |second 0:1.21393
+1 1.000000 9|first 0:-2.115056 1:0.353851 |second 0:1.62912
 """
         with open(output_dirname + '/cache_preview.txt') as f:
             actual = f.read()
@@ -123,7 +123,7 @@ class TestVW(unittest.TestCase):
         feat_dirname = test_context.support_dirname + '/simple'
         vislab.vw3._get_feat_filenames(feat_names, feat_dirname)
 
-    def test_vw_fit(self):
+    def test_vw_fit_simple(self):
         label_df_filename = test_context.support_dirname + \
             '/simple/label_df.h5'
         label_df = pd.read_hdf(label_df_filename, 'df')
@@ -137,19 +137,48 @@ class TestVW(unittest.TestCase):
         pred_df, test_score, val_score, train_score = vw.fit_and_predict(
             dataset, feat_names, feat_dirname)
         print(feat_names, test_score, val_score, train_score)
-        assert(test_score > 0.6 and test_score < 0.8)
+        assert(test_score > 0.6 and test_score < 0.7)
 
         feat_names = ['second']
         pred_df, test_score, val_score, train_score = vw.fit_and_predict(
             dataset, feat_names, feat_dirname)
         print(feat_names, test_score, val_score, train_score)
-        assert(test_score > 0.87)
+        assert(test_score > 0.9)
 
         feat_names = ['first', 'second']
         pred_df, test_score, val_score, train_score = vw.fit_and_predict(
             dataset, feat_names, feat_dirname)
         print(feat_names, test_score, val_score, train_score)
-        assert(test_score > 0.87)
+        assert(test_score > 0.9)
+
+    @unittest.skip("not implemented yet")
+    def test_vw_fit_iris(self):
+        label_df_filename = test_context.support_dirname + \
+            '/iris/label_df.h5'
+        label_df = pd.read_hdf(label_df_filename, 'df')
+        dataset = vislab.predict.get_binary_or_regression_dataset(
+            label_df, 'simple', 'label')
+
+        feat_dirname = test_context.support_dirname + '/simple'
+        vw = vislab.vw3.VW(self.temp_dirname + '/vw')
+
+        feat_names = ['first']
+        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
+            dataset, feat_names, feat_dirname)
+        print(feat_names, test_score, val_score, train_score)
+#        assert(test_score > 0.6 and test_score < 0.8)
+
+        feat_names = ['second']
+        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
+            dataset, feat_names, feat_dirname)
+        print(feat_names, test_score, val_score, train_score)
+#        assert(test_score > 0.87)
+
+        feat_names = ['first', 'second']
+        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
+            dataset, feat_names, feat_dirname)
+        print(feat_names, test_score, val_score, train_score)
+#        assert(test_score > 0.87)
 
 
 if __name__ == '__main__':
