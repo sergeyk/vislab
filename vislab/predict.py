@@ -13,6 +13,7 @@ Possible experiments:
 - AVA style, binary
 - AVA style, OAA
 """
+import logging
 import pandas as pd
 import numpy as np
 import vislab.utils.cmdline
@@ -247,22 +248,54 @@ def get_multiclass_dataset(
     assert(source_df.index.dtype == object)
     np.random.seed(random_seed)
 
-    # Assert that each example has only one label.
-    assert(np.all(source_df[column_names].sum(1) == 1))
+    # Drop rows with no positive labels (ava_style has these...)
+    ind = source_df[column_names].sum(1) == 0
+    logging.info('Dropping {} rows with no positive labels.'.format(ind.sum()))
+    source_df = source_df[~ind]
 
-    num_labels = len(column_names)
-    task = 'clf'
-    label = source_df[column_names].values.argmax(1)
-    df = pd.DataFrame({'label': label}, source_df.index)
-
-    N = df.shape[0]
+    N = source_df.shape[0]
     num_test = int(round(test_frac * N))
     num_val = num_test
-    ids = df.index[np.random.permutation(N)]
+    num_labels = len(column_names)
+    task = 'clf'
+
+    # If source_df does not have split info, do the split here.
+    if '_split' not in source_df.columns:
+        multilabel_ind = np.where(source_df[column_names].sum(1) > 1)[0]
+        test_ind = []
+        if len(multilabel_ind) > 0:
+            # Put all multi-label examples in test, even if
+            # test_frac is exceeded.
+            test_ind = multilabel_ind.tolist()
+        num_remaining = num_test - len(test_ind)
+        if num_remaining > 0:
+            singlelabel_ind = np.where(source_df[column_names].sum(1) == 1)[0]
+            test_ind += np.random.choice(
+                singlelabel_ind, num_remaining, replace=False).tolist()
+        test_ids = source_df.index[test_ind]
+
+    # Otherwise, just take the given test ids.
+    else:
+        test_ids = source_df[source_df['_split'] == 'test'].index
+
+    trainval_ids = source_df.index - test_ids
+
+    # Split into single-label trainval and possible multi-label test.
+    test_df = source_df[column_names].ix[test_ids]
+    # test_df needs a dummy 'label' column for vw_filter
+    test_df['label'] = 0
+    trainval_df = source_df[column_names].ix[trainval_ids]
+    assert(np.all(trainval_df.sum(1) == 1))
+
+    # Split trainval into train and val.
+    label = trainval_df.values.argmax(1)
+    df = pd.DataFrame({'label': label}, trainval_df.index)
+
+    ids = df.index[np.random.permutation(df.shape[0])]
 
     if balanced:
         # Construct a balanced validation set.
-        counts = source_df[column_names].sum(0)
+        counts = trainval_df.sum(0)
         min_count = counts[counts.argmin()]
         permutation = lambda N, K: np.random.permutation(N)[:K]
         min_size_balanced_set = np.concatenate([
@@ -277,12 +310,10 @@ def get_multiclass_dataset(
     else:
         val_ids = ids[:num_val]
 
-    remaining_ids = ids.diff(val_ids.tolist())
-    remaining_ids = remaining_ids[np.random.permutation(len(remaining_ids))]
-    test_ids = remaining_ids[:num_test]
-    train_ids = remaining_ids[num_test:]
+    train_ids = ids.diff(val_ids.tolist())
+    train_ids = train_ids[np.random.permutation(len(train_ids))]
 
-    # Assert that there is no overlap between teh sets.
+    # Assert that there is no overlap between the sets.
     assert(len(train_ids.intersection(val_ids)) == 0)
     assert(len(train_ids.intersection(test_ids)) == 0)
     assert(len(val_ids.intersection(test_ids)) == 0)
@@ -294,7 +325,7 @@ def get_multiclass_dataset(
     dataset = {
         'train_df': get_split_df(df, train_ids, num_labels),
         'val_df': get_split_df(df, val_ids, num_labels),
-        'test_df': get_split_df(df, test_ids, num_labels)
+        'test_df': test_df
     }
 
     # Add all relevant info to the data dict to return.
