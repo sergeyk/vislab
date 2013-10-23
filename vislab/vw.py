@@ -14,7 +14,7 @@ def train_and_test(
         collection_name, dataset, feature_names,
         force=False, num_workers=6,
         num_passes=[10], loss=['logistic'], l1=[0], l2=[0],
-        quadratic='', verbose=False):
+        quadratic='', bit_precision=18, verbose=False):
     """
     Train and test using VW with the given features and quadratic
     expansion.
@@ -79,7 +79,6 @@ def train_and_test(
     # Run VW.
     feat_dirname = \
         vislab.config['paths']['feats'] + '/' + dataset['dataset_name']
-    bit_precision = 18
     vw = vislab.vw3.VW(
         dirname, num_workers, bit_precision, num_passes, loss, l1, l2)
     pred_df, test_score, val_score, train_score = vw.fit_and_predict(

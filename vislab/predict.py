@@ -388,9 +388,12 @@ def get_prediction_dataset_with_args(args):
     # If we are matching multiple columns, then we need to construct
     # a multi-class dataset.
     if '*' in args.prediction_label:
+        column_set_name = args.prediction_label.replace('*', 'ALL')
         prefix = args.prediction_label.split('*')[0]
-        label_cols = [col for col in df.columns if col.startswith(prefix)]
-        get_multiclass_dataset(df, label_cols, args)
+        column_names = [col for col in df.columns if col.startswith(prefix)]
+        dataset = get_multiclass_dataset(
+            df, args.dataset, column_set_name, column_names,
+            args.test_frac, args.balanced, args.random_seed)
 
     # Otherwise, we are matching either a binary or regression label.
     else:
@@ -422,10 +425,6 @@ def predict(args=None):
     # Rule of thumb: 3M examples.
     n_iter = max(2, min(int(np.ceil(3e6 / n_train)), 180))
     num_passes = sorted(set([n_iter / 3, n_iter]))
-    if args.quadratic:
-        num_passes = sorted(set([2, n_iter / 4]))
-
-    quadratic = 'all' if args.quadratic else ''
 
     vislab.vw.train_and_test(
         args.collection_name, dataset, args.features,
@@ -434,7 +433,8 @@ def predict(args=None):
         loss=loss_functions,
         l1=[0, 1e-7, 1e-9],
         l2=[0, 1e-7, 1e-9],
-        quadratic=quadratic)
+        quadratic=args.quadratic,
+        bit_precision=args.bit_precision)
 
 
 if __name__ == '__main__':

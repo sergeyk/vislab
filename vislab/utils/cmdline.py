@@ -87,6 +87,10 @@ i.e. 'style_*' will match multiple columns""")
             help="fraction of dataset to use for testing",
             type=float, default=0.2)
         parser.add_argument(
+            '--balanced',
+            help="should the validation set be balanced for multiclass",
+            action="store_true", default=False)
+        parser.add_argument(
             '--min_pos_frac',
             help="minimum fraction of positive examples in training",
             type=float, default=0.1)
@@ -94,6 +98,10 @@ i.e. 'style_*' will match multiple columns""")
             '--quadratic',
             help="perform quadratic expansion of the features",
             action="store_true", default=False)
+        parser.add_argument(
+            '--bit_precision',
+            help="bit precision of the VW classifier",
+            type=int, default=18)
         parser.add_argument(
             '--force_predict',
             help="force overwrite of existing results",
