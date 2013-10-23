@@ -104,7 +104,7 @@ def write_data_in_vw_format(feat_df, feat_name, output_filename):
 
 
 def _cache_cmd(
-        label_df_filename, feat_filenames, output_dirname,
+        label_df_filename, feat_filenames, output_dirname, num_labels,
         bit_precision=18, verbose=False, force=False):
     """
     Run the labels and feature data through VW once to output to cache.
@@ -118,6 +118,7 @@ def _cache_cmd(
         have different namespaces.
         These files must end in '.txt' or '.gz'.
     output_dirname: string
+    num_labels: int
     bit_precision: int [18]
         Number of bits used in the hashing function.
         If the product of features and classes (for OAA mode) is greater
@@ -156,6 +157,8 @@ def _cache_cmd(
         paste_cmd, filter_cmd, vw_cmd)
     cache_cmd += " -k --cache_file {} --bit_precision {} --noop".format(
         cache_filename, bit_precision)
+    if num_labels > 2:
+        cache_cmd += ' --oaa {}'.format(num_labels)
 
     return cache_cmd, cache_preview_cmd
 
@@ -178,7 +181,7 @@ def _get_feat_filenames(feat_names, feat_dirname):
     return feat_filenames
 
 
-def _train_vw_cmd(setting, dirname, from_model=None):
+def _train_vw_cmd(setting, dirname, num_labels, from_model=None):
     """
     Return command to train VW.
 
@@ -188,6 +191,7 @@ def _train_vw_cmd(setting, dirname, from_model=None):
         Parameters for VW.
     dirname: string
         Directory containing cached data.
+    num_labels: int
     from_model: string or None [None]
         If given, begins training from this model.
     """
@@ -199,6 +203,11 @@ def _train_vw_cmd(setting, dirname, from_model=None):
         dirname, model_filename)
     cmd += " --l1={} --l2={} --passes={} --loss_function={}".format(
         setting['l1'], setting['l2'], setting['num_passes'], setting['loss'])
+
+    if num_labels < 0:
+        assert(setting['loss'] not in ['hinge', 'logistic'])
+    elif num_labels > 2:
+        cmd += ' --oaa {}'.format(num_labels)
 
     # If we are training from scratch, then we will use all data.
     if from_model is None:
@@ -263,7 +272,10 @@ def _train_with_val(
     # can run in parallel with other instances. Since the instances
     # read data at roughly the same rate, OS caching should work.
     vislab.util.run_through_bash_script(
-        [_train_vw_cmd(setting, train_dir) for setting in settings],
+        [
+            _train_vw_cmd(setting, train_dir, dataset['num_labels'])
+            for setting in settings
+        ],
         train_dir + '/_train_cmds.sh',
         False, num_workers
     )
@@ -310,8 +322,10 @@ def _train_with_val(
     with open(val_dir + '/_results.txt', 'w') as f:
         f.write(df_str)
 
-    best_ind = df['val_score'].argmax()
+    # In case of ties of best val score, take a random setting.
     best_score = df['val_score'].max()
+    best_ind = np.random.choice(
+        np.where(df['val_score'] == best_score)[0], 1)[0]
     del df['val_score']
     del df['test_score']
     best_setting = dict(df.iloc[best_ind])
@@ -336,7 +350,8 @@ def cache_files(
     cache_cmds = []
     cache_preview_cmds = []
     for split_name in split_names:
-        cache_dirname = '_'.join(feat_names)
+        cache_dirname = '_'.join(feat_names) + \
+                        '_{}'.format(dataset['num_labels'])
         output_dirnames[split_name] = vislab.util.makedirs(
             '{}/{}/{}'.format(dirname, cache_dirname, split_name))
 
@@ -352,7 +367,7 @@ def cache_files(
         # Cache data by running it through a filter.
         cache_cmd, cache_preview_cmd = _cache_cmd(
             df_filename, feat_filenames, output_dirnames[split_name],
-            bit_precision, verbose=False, force=force)
+            dataset['num_labels'], bit_precision, verbose=False, force=force)
         if cache_cmd is not None:
             cache_cmds.append(cache_cmd)
         if cache_preview_cmd is not None:
@@ -382,54 +397,59 @@ def _predict(setting, source_dirname, target_dirname, gt_df, num_labels):
 def _score_predict(setting, dirname, num_labels, gt_df):
     pred_filename = '{}/{}_pred.txt'.format(dirname, _setting_to_name(setting))
     pred_df = _read_preds(pred_filename, num_labels, setting['loss'])
+
+    # For multi-class evaluation, need to have column names.
+    if num_labels > 2:
+        pred_df.columns = [
+            'pred_' + x for x in gt_df.columns
+            if x not in ['label', 'importance']
+        ]
     pred_df = pred_df.join(gt_df)
-    score = _score_preds(pred_df, num_labels)
-    return pred_df, score
 
-
-def _read_preds(pred_filename, num_labels, loss_function):
-    try:
-        pred_df = pd.read_csv(
-            pred_filename, sep=' ', index_col=1, header=None, names=['pred'])
-    except Exception as e:
-        raise Exception("Could not read predictions: {}".format(e))
-    pred_df.index = pred_df.index.astype(str)
-
-    # If using logisitic loss, convert to [-1, 1].
-    if loss_function == 'logistic':
-        pred_df['pred'] = (2. / (1. + np.exp(-pred_df['pred'])) - 1.)
-
-    return pred_df
-
-
-def _score_preds(pred_df, num_labels):
-    """
-    Parameters
-    ----------
-    pred_df: pandas.DataFrame
-        Must have both 'pred' and 'label' columns.
-    """
     if num_labels < 0:
         metrics = vislab.results.regression_metrics(
             pred_df, name='', balanced=False,
             with_plot=False, with_print=False)
-        return metrics['mse']
+        score = metrics['mse']
 
     elif num_labels == 2:
         metrics = vislab.results.binary_metrics(
             pred_df, name='', balanced=True,
             with_plot=False, with_print=False)
-        return metrics['accuracy']
+        score = metrics['accuracy']
 
     elif num_labels > 2:
         metrics = vislab.results.multiclass_metrics(
-            pred_df, name='', balanced=False,
+            pred_df, pred_prefix='pred', balanced=True, random_preds=False,
             with_plot=False, with_print=False)
-        # TODO: does this metric make sense for cross-validation?
-        return metrics['binary_metrics_df'].ix['_mean']['ap']
+        score = metrics['accuracy']
 
     else:
         raise ValueError("Illegal num_labels")
+
+    return pred_df, score
+
+
+def _read_preds(filename, num_labels, loss_function):
+    # TODO: should multiclass names be passed into here?
+    try:
+        if num_labels > 2:
+            df = pd.read_csv(filename, sep=' ', index_col=-1, header=None)
+            df = df.apply(
+                lambda x: [float(y.split(':')[1]) for y in x], raw=True)
+        else:
+            df = pd.read_csv(
+                filename, sep=' ', index_col=1, header=None, names=['pred'])
+    except Exception as e:
+        raise Exception("Could not read predictions: {}".format(e))
+
+    df.index = df.index.astype(str)
+
+    # If using logisitic loss, convert to [-1, 1].
+    if loss_function == 'logistic':
+        df = df.apply(lambda x: (2. / (1. + np.exp(-x)) - 1.), raw=True)
+
+    return df
 
 
 class VW(object):
@@ -497,7 +517,9 @@ class VW(object):
         best_model_filename = '{}/{}_model.vw'.format(
             output_dirnames['train'], _setting_to_name(best_setting))
         cmd = _train_vw_cmd(
-            best_setting, output_dirnames['val'], best_model_filename)
+            best_setting, output_dirnames['val'],
+            dataset['num_labels'], best_model_filename
+        )
         cmd_filename = output_dirnames['val'] + '/_train_cmd.sh'
         vislab.util.run_through_bash_script(
             [cmd], cmd_filename, verbose=False)

@@ -282,8 +282,9 @@ def get_multiclass_dataset(
 
     # Split into single-label trainval and possible multi-label test.
     test_df = source_df[column_names].ix[test_ids]
-    # test_df needs a dummy 'label' column for vw_filter
-    test_df['label'] = 0
+    # test_df needs dummy 'label' and 'importance' columns for vw_filter
+    test_df['label'] = 1
+    test_df['importance'] = 1.
     trainval_df = source_df[column_names].ix[trainval_ids]
     assert(np.all(trainval_df.sum(1) == 1))
 
@@ -323,8 +324,8 @@ def get_multiclass_dataset(
 
     # Get the train/val/test datasets.
     dataset = {
-        'train_df': get_split_df(df, train_ids, num_labels),
-        'val_df': get_split_df(df, val_ids, num_labels),
+        'train_df': get_split_df(df, train_ids, num_labels).join(trainval_df),
+        'val_df': get_split_df(df, val_ids, num_labels).join(trainval_df),
         'test_df': test_df
     }
 

@@ -164,7 +164,8 @@ class TestPredict(unittest.TestCase):
             'task': 'clf',
             'test_df': pd.DataFrame(
                 {
-                    'label': [0, 0],
+                    'label': [1, 1],
+                    'importance': [1, 1],
                     'style_Abstract': [True, False],
                     'style_Scary': [False, False],
                     'style_Doglike': [False, True],
@@ -174,14 +175,20 @@ class TestPredict(unittest.TestCase):
             'val_df': pd.DataFrame(
                 {
                     'label': [3, 1],
-                    'importance': [1, 1]
+                    'importance': [1, 1],
+                    'style_Abstract': [False, True],
+                    'style_Scary': [False, False],
+                    'style_Doglike': [True, False],
                 },
                 ['three', 'eight']
             ),
             'train_df': pd.DataFrame(
                 {
                     'label': [1, 2, 2, 3],
-                    'importance': [2, 1, 1, 2]
+                    'importance': [2, 1, 1, 2],
+                    'style_Abstract': [True, False, False, False],
+                    'style_Scary': [False, True, True, False],
+                    'style_Doglike': [False, False, False, True],
                 },
                 ['one', 'seven', 'four', 'five']
             )
@@ -226,7 +233,8 @@ class TestPredict(unittest.TestCase):
             'task': 'clf',
             'test_df': pd.DataFrame(
                 {
-                    'label': [0, 0, 0],
+                    'label': [1, 1, 1],
+                    'importance': [1, 1, 1],
                     'style_Abstract': [True, True, False],
                     'style_Scary': [True, False, True],
                     'style_Doglike': [False, True, True],
@@ -236,14 +244,20 @@ class TestPredict(unittest.TestCase):
             'val_df': pd.DataFrame(
                 {
                     'label': [2, 3],
-                    'importance': [1, 1]
+                    'importance': [1, 1],
+                    'style_Abstract': [False, False],
+                    'style_Scary': [True, False],
+                    'style_Doglike': [False, True],
                 },
                 ['four', 'three']
             ),
             'train_df': pd.DataFrame(
                 {
                     'label': [2, 3, 1],
-                    'importance': [1, 1, 1]
+                    'importance': [1, 1, 1],
+                    'style_Abstract': [False, False, True],
+                    'style_Scary': [True, False, False],
+                    'style_Doglike': [False, True, False],
                 },
                 ['seven', 'six', 'eight']
             )
@@ -292,7 +306,8 @@ class TestPredict(unittest.TestCase):
             'task': 'clf',
             'test_df': pd.DataFrame(
                 {
-                    'label': [0, 0, 0, 0],
+                    'label': [1, 1, 1, 1],
+                    'importance': [1, 1, 1, 1],
                     'style_Abstract': [True, True, False, False],
                     'style_Scary': [True, False, True, False],
                     'style_Doglike': [False, True, True, True],
@@ -302,14 +317,20 @@ class TestPredict(unittest.TestCase):
             'val_df': pd.DataFrame(
                 {
                     'label': [2, 3],
-                    'importance': [1, 1]
+                    'importance': [1, 1],
+                    'style_Abstract': [False, False],
+                    'style_Scary': [True, False],
+                    'style_Doglike': [False, True],
                 },
                 ['four', 'three']
             ),
             'train_df': pd.DataFrame(
                 {
                     'label': [2, 1],
-                    'importance': [1, 1]
+                    'importance': [1, 1],
+                    'style_Abstract': [False, True],
+                    'style_Scary': [True, False],
+                    'style_Doglike': [False, False],
                 },
                 ['seven', 'eight']
             )

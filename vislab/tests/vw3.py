@@ -97,7 +97,7 @@ class TestVW(unittest.TestCase):
             self.temp_dirname + '/cache_data')
         cache_cmd, preview_cmd = vislab.vw3._cache_cmd(
             label_df_filename, feat_filenames, output_dirname,
-            bit_precision=18, verbose=False, force=False)
+            2, bit_precision=18, verbose=False, force=False)
         vislab.util.run_through_bash_script(
             [cache_cmd, preview_cmd], None, verbose=False)
 
@@ -131,7 +131,7 @@ class TestVW(unittest.TestCase):
             label_df, 'simple', 'label')
 
         feat_dirname = test_context.support_dirname + '/simple'
-        vw = vislab.vw3.VW(self.temp_dirname + '/vw')
+        vw = vislab.vw3.VW(self.temp_dirname + '/vw_simple')
 
         feat_names = ['first']
         pred_df, test_score, val_score, train_score = vw.fit_and_predict(
@@ -151,34 +151,23 @@ class TestVW(unittest.TestCase):
         print(feat_names, test_score, val_score, train_score)
         #assert(test_score > 0.9)
 
-    @unittest.skip("not implemented yet")
     def test_vw_fit_iris(self):
         label_df_filename = test_context.support_dirname + \
             '/iris/label_df.h5'
         label_df = pd.read_hdf(label_df_filename, 'df')
-        dataset = vislab.predict.get_binary_or_regression_dataset(
-            label_df, 'simple', 'label')
 
-        feat_dirname = test_context.support_dirname + '/simple'
-        vw = vislab.vw3.VW(self.temp_dirname + '/vw')
+        dataset = vislab.predict.get_multiclass_dataset(
+            label_df, 'iris', 'labels', ['label_0', 'label_1', 'label_2'])
 
-        feat_names = ['first']
+        feat_dirname = test_context.support_dirname + '/iris'
+        vw = vislab.vw3.VW(self.temp_dirname + '/vw_iris', num_passes=[10, 50, 100])
+
+        feat_names = ['all']
         pred_df, test_score, val_score, train_score = vw.fit_and_predict(
             dataset, feat_names, feat_dirname)
         print(feat_names, test_score, val_score, train_score)
-        assert(test_score > 0.5 and test_score < 0.65)
-
-        feat_names = ['second']
-        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
-            dataset, feat_names, feat_dirname)
-        print(feat_names, test_score, val_score, train_score)
-        assert(test_score > 0.75 and test_score < 0.85)
-
-        feat_names = ['first', 'second']
-        pred_df, test_score, val_score, train_score = vw.fit_and_predict(
-            dataset, feat_names, feat_dirname)
-        print(feat_names, test_score, val_score, train_score)
-        assert(test_score > 0.85)
+        assert(test_score > 0.8)
+        # TODO: really want > .9 accuracy!
 
 
 if __name__ == '__main__':
