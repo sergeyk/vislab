@@ -120,7 +120,12 @@ def multiclass_metrics_feat_comparison(
             random_preds = False
 
         # Need the feature channel predictions, and true labels.
-        mc_pred_df = preds_panel.minor_xs(actual_feature).join(source_label_df)
+        mc_pred_df = preds_panel.minor_xs(actual_feature)
+
+        try:
+            mc_pred_df.join(source_label_df)
+        except ValueError:
+            logging.debug('Looks like the preds frame already has gt info.')
 
         if '_split' in mc_pred_df.columns:
             logging.info("Only taking 'test' split predictions.")
