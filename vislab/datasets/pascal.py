@@ -92,12 +92,21 @@ def load_pascal(force=False, args=None):
     for split in ['train', 'val']:
         with open(splits_dir + '/{}.txt'.format(split)) as f:
             inds = [x.strip() for x in f.readlines()]
+
+        # Post VOC2007, the 'val' split is the de-facto test split for
+        # local development.
+        if split == 'val':
+            split = 'test'
         images_df['_split'].ix[inds] = split
 
+    # Drop images without a split: the VOC2007 images.
+    images_df = images_df.dropna(subset=['_split'])
+
+    images_df = images_df.fillna(False)
+
     objects_df = objects_dfs[0]
-    # TODO
-    # for df in objects_dfs[1:]:
-    #     objects_df = objects_df.append(df)
+    for df in objects_dfs[1:1000]:
+        objects_df = objects_df.append(df)
     print('load_pascal: finished processing objects in {:.3f} s'.format(
         time.time() - t))
 
@@ -110,8 +119,6 @@ def _load_pascal_annotation(filename):
     """
     Load image and bounding boxes info from the PASCAL VOC XML format.
     """
-    print(filename)
-
     def get_data_from_tag(node, tag):
         if tag is "bndbox":
             bbox = node.getElementsByTagName(tag)[0]
@@ -165,3 +172,7 @@ def _load_pascal_annotation(filename):
     image_series = pd.Series(image_info, name=name)
 
     return image_series, objects_df
+
+
+if __name__ == '__main__':
+    get_clf_df(force=True)
