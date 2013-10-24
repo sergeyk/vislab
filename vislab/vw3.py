@@ -26,7 +26,7 @@ def _feat_for_vw(id_, feat_name, feat, decimals=6):
     if feat.dtype == 'bool':
         s = ' '.join(str(x) for x in np.where(feat)[0])
 
-    elif feat.dtype in [float, int]:
+    elif feat.dtype in [float, np.float32, int]:
         # Round to the specified number of decimals.
         feat = np.around(feat, decimals)
 

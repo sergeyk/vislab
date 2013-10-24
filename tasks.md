@@ -1,13 +1,24 @@
 ## Experiments that need to happen for CVPR
 
+- try --ect instead of --oaa: might get a boost in performance!
+
+- compute more features on all datasets and put them into the visual similarity app
+
+- generate _split at dataset creation time for flickr and wikipaintings
+
+- rerun flickr and wikipaintings experiments with OAA mode
+
+- plot per-feature confusion matrices in a visible place: just print less from mc_metrics_feat_comparison, and title images and should be good
+
+- run mc_bit feature on all datasets!
+
+- i'm seeing examples in wikipaintings that are not part of any label! what's going on?
+
 Implementation:
     - whitened HOG feature (wrap Jon's code) [.5 day]
     - lab hist in Python [.25 day]
     - pascal classifiers, style classifiers as feature [.25 day]
     - portrait and landscape classifiers [.25 day]
-    VW:
-        - implement and test oaa mode
-        - compare oaa mode results to using separate binary classifiers
 
 Tune ConvNet features:
     - tune decaf with flickr style and wikipaintings data (train sets only) [.5 day]
@@ -16,9 +27,6 @@ Tune ConvNet features:
 
 AVA Style:
     - (maybe) run classification with pascal quadratics
-
-AVA:
-    - (maybe) also run classification and regression for different # of training images, up to 250K, to replicate AVA experiments
 
 Wikipaintings:
     - classify with lab_hist
@@ -60,7 +68,6 @@ Memorability dataset:
 - evaluate on a black & white dataset: strip color before computing feature
 
 VW:
-- get VW oaa working
 - get vector of weights from VW. (vowpal_porpoise doesnt seem to do this)
     : in fact, need --inverse_hash to do this properly, and that seems to slow things down substantially (haven't tried though)
 - expand parameter space with learning rate
@@ -176,3 +183,5 @@ x re-run classification and regression with decaf_fc6 feature on style subset
     - better cross-validation, more passes
 - get multiclass prediction dataset generator working
 - add vw tests
+- implement and test vw oaa mode
+- compare vw oaa mode results to using separate binary classifiers

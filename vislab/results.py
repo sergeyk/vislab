@@ -123,12 +123,12 @@ def multiclass_metrics_feat_comparison(
         mc_pred_df = preds_panel.minor_xs(actual_feature)
 
         try:
-            mc_pred_df.join(source_label_df)
+            mc_pred_df = mc_pred_df.join(source_label_df)
         except ValueError:
-            logging.debug('Looks like the preds frame already has gt info.')
+            print("Looks like the preds frame already has gt info.")
 
         if '_split' in mc_pred_df.columns:
-            logging.info("Only taking 'test' split predictions.")
+            print("Only taking 'test' split predictions.")
             mc_pred_df = mc_pred_df[mc_pred_df['_split'] == 'test']
 
         feat_metrics[feature] = multiclass_metrics(
@@ -369,9 +369,8 @@ if __name__ == '__main__':
     label_df = vislab.datasets.ava.get_style_df()
     results_df, preds_panel = aphrodite.results.load_pred_results(
         'ava_style_oct21', '/Users/sergeyk/work/aphrodite/data/results2',
-        force=True)
+        force=False)
     pred_prefix = 'clf ava_style'
-    mc_metrics = multiclass_metrics(
+    mc_metrics = multiclass_metrics_feat_comparison(
         preds_panel, label_df, pred_prefix, features=['lab_hist  vw'],
-        balanced=False,
-        with_plot=True, with_print=True)
+        balanced=False, with_plot=True, with_print=True)
