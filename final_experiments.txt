@@ -1,0 +1,63 @@
+All final experiments are done in the multi-class way.
+If a feature is checked off, then it is confirmed to be standardized.
+
+AVA Style
+---------
+collection_name = 'ava_style_oct22'
+
+gist_256:
+    x h5: on local only, 14079, standardized
+    x txt.gz: on local only, 14079, standardized
+    x OAA result
+lab_hist:
+    x h5: on local only, 13994, not standardized but small values
+    x txt.gz: on local only, 13994, not standardized but small values
+    x OAA result
+mc_bit:
+    - h5: can't find
+    x txt.gz: on local only, 13999, binary
+    x OAA result
+decaf_fc6:
+    x h5: on flapjack, 14079, standardized
+    x txt.gz: on both, 14079, standardized, shuffled
+    x OAA result: ran on local (started oct 24 1630, finished at 1930)
+decaf_fc6_flatten:
+    x h5: on flapjack, 14066, standardized
+    x txt.gz: on flapjack, 14066, standardized, shuffled (downloading to local oct 24 1740)
+    x OAA result: running on flapjack (started oct 24 1900, 36 workers, finished at 2200)
+        transferred result to local mongo
+
+Flickr
+------
+[ ] generate split information
+collection_name = ?
+
+decaf_fc6:
+    x h5: on flapjack, 50198, standardized
+    x vw: on flapjack, 50198, standardized
+    - OAA result
+lab_hist:
+    k h5: on flapjack, 49688, standardized (which is bad, because it should be mostly 0)
+    k txt.gz: on flapjack, 49688, standardized (which is bad, because it should be mostly 0)
+gbvs_saliency:
+    b txt.gz: on flapjack, only 16408
+mc_bit:
+    x txt.gz: on flapjack, 50152, binary, not sure if shuffled?
+    - OAA result
+
+Wikipaintings
+-------------
+[ ] generate split information
+collection_name = ?
+
+decaf_fc6:
+    x h5: on flapjack, 81868, standardized
+    x txt.gz: on flapjack, 75831, standardized, seems shuffled
+decaf_fc6_flatten:
+    x h5: on flapjack, 82141, standardized
+    x txt.gz: on flapjack, 82141, standardized, shuffled
+mc_bit:
+    [ ] COMPUTE THIS: launched with 30 works at 1715 on oct 24
+        - needs more than 6000 memory; also, I think that not all machines have the mc_bit parameters. syncing that folder...
+        - restarted 2020
+        - update 2210: added lots of workers, should finish in 2 hours

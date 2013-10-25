@@ -1,5 +1,11 @@
 ## Experiments that need to happen for CVPR
 
+- store bit_precision in the results table somewhere. can definetely influence performance!
+
+- make the colors used in the ap bar plot and the top k plot be the same (order the columns the same way)
+
+- amend the cache_to_h5 thing that if the feature sums to 1 across rows, don't standardize
+
 - try --ect instead of --oaa: might get a boost in performance!
 
 - compute more features on all datasets and put them into the visual similarity app
@@ -103,8 +109,6 @@ Similarity
 - mode to sort images by proximity in weighted or unweighted feature space (need weights)
 
 Cluster upkeep
-- remove features from mongo and cache to blosc-compressed h5 or iopro csv
-- aggregate all the downloaded AVA photos from all the machines onto /u/vis/x1
 - launch workers separately from the script that submits jobs for them, but with their own script
     - be able to kill workers with scancel
     - report when workers get killed
@@ -129,8 +133,6 @@ Recommendations
 
 - "Similar image, but less beautiful."
 - "Similar image, but more hazy."
-
-- similarity ratings interface: this image is closer than this one
 
 - idea: can introduce a third label, NOTSURE, which means that the image should simply not be a part of the training/test set for the concept. this is the label that would be set by the UI to clean up data.
 
