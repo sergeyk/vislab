@@ -35,6 +35,36 @@ import vislab.utils.distributed
 import vislab.datasets
 
 
+def get_train_test_split(df_, test_frac=0.2, random_seed=42):
+    np.random.seed(random_seed)
+
+    N = df_.shape[0]
+    df_ = df_.iloc[np.random.permutation(N)]
+
+    # Get equal amount of test_frac of each label
+    counts = df_.sum(0)
+    min_count = int(round(counts[counts.argmin()] * test_frac))
+    test_balanced_set = np.concatenate([
+        df_.index[np.where(df_[l])[0][:min_count]]
+        for l, count in counts.iteritems()
+    ]).tolist()
+
+    # Then add enough of the rest to get to test_frac of total.
+    remaining_ind = df_.index.diff(test_balanced_set).tolist()
+    np.random.shuffle(remaining_ind)
+    num_test = int(round(N * test_frac))
+    num_to_add = num_test - len(test_balanced_set)
+    if num_to_add > 0:
+        test_balanced_set += remaining_ind[:num_to_add]
+    else:
+        test_balanced_set = np.random.choice(
+            test_balanced_set, num_test, replace=False)
+
+    split = pd.Series('train', index=df_.index, name='_split')
+    split.ix[test_balanced_set] = 'test'
+    return split
+
+
 def get_boolean_df(df, column_name, min_positive_examples=-1):
     """
     Return a boolean DataFrame whose columns consist of unique
@@ -106,7 +136,7 @@ def get_df_with_args(args=None):
 
     elif args.dataset == 'flickr':
         df = vislab.datasets.flickr.load_flickr_df(
-            args.num_images, args.random_seed, args.dataset_force)
+            args.num_images, args.random_seed)
 
     elif args.dataset == 'wikipaintings':
         df = vislab.datasets.wikipaintings.get_style_df()

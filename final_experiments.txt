@@ -36,9 +36,13 @@ decaf_fc6:
     x h5: on flapjack, 50198, standardized
     x vw: on flapjack, 50198, standardized
     - OAA result
+decaf_fc6_flatten:
+    - compute: launched oct 25 0020
+        : python vislab/feature.py compute --dataset=flickr --features=decaf_fc6_flatten --num_workers=25 && python vislab/feature.py cache_to_h5 --dataset=flickr --features=decaf_fc6_flatten && python vislab/feature.py cache_to_vw --dataset=flickr --features=decaf_fc6_flatten
 lab_hist:
     k h5: on flapjack, 49688, standardized (which is bad, because it should be mostly 0)
     k txt.gz: on flapjack, 49688, standardized (which is bad, because it should be mostly 0)
+    - OAA result
 gbvs_saliency:
     b txt.gz: on flapjack, only 16408
 mc_bit:
@@ -48,16 +52,22 @@ mc_bit:
 Wikipaintings
 -------------
 [ ] generate split information
-collection_name = ?
+collection_name = wikipaintings_oct25
 
 decaf_fc6:
     x h5: on flapjack, 81868, standardized
     x txt.gz: on flapjack, 75831, standardized, seems shuffled
+    - OAA result: launched on flapjack oct 25 0015
+        : srun -p vision --cpus-per-task=22 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_fc6 --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
 decaf_fc6_flatten:
     x h5: on flapjack, 82141, standardized
     x txt.gz: on flapjack, 82141, standardized, shuffled
+    - OAA result: launched oct 25 0016
+        : srun -p vision --cpus-per-task=22 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_fc6_flatten --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
+        : WHOA! some kind of cache error going on on orange1. deal with tomorrow.
 mc_bit:
     [ ] COMPUTE THIS: launched with 30 works at 1715 on oct 24
         - needs more than 6000 memory; also, I think that not all machines have the mc_bit parameters. syncing that folder...
         - restarted 2020
         - update 2210: added lots of workers, should finish in 2 hours
+        - updated 0015: almost done, killed and restarted with only 15 workers and follow-up caching jobs

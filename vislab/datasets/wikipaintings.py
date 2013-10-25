@@ -55,7 +55,9 @@ def get_df(force=False, args=None):
 
 
 def get_style_df(min_positive_examples=1000):
-    return _get_column_label_df('style', min_positive_examples)
+    df = _get_column_label_df('style', min_positive_examples)
+    df['_split'] = vislab.dataset.get_train_test_split(df)
+    return df
 
 
 def get_genre_df(min_positive_examples=1000):

@@ -202,16 +202,17 @@ def multiclass_metrics(
 
     # Balance the labels.
     if balanced:
-        counts = np.bincount(y_true)
-        min_count = counts[counts.argmin()]
+        counts = label_df.sum(0)
+        min_count = counts[counts.argmin()] + 1
         permutation = lambda N, K: np.random.permutation(N)[:K]
-        selected_ind = np.concatenate([
-            np.where(y_true == label)[0][permutation(count, min_count)]
-            for label, count in enumerate(counts)
-        ])
+        selected_ind = np.unique(np.concatenate([
+            np.where(label_df[label])[0][permutation(count, min_count)]
+            for label, count in counts.iteritems()
+        ]))
 
         y_true = y_true[selected_ind]
         pred_df = pred_df.iloc[selected_ind]
+        label_df = label_df.iloc[selected_ind]
 
     if random_preds:
         np.random.seed(None)
