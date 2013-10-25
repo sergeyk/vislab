@@ -30,7 +30,9 @@ def exclude_ids_in_collection(image_ids, collection):
         num_ids - len(image_ids), num_ids))
     return image_ids
 
-
+# Gather data by calling generator_fn into "filename", if it doesn't already exist.
+# If it does exist, just reload it from the file.
+# Use force=True to force regenerating the data.
 def load_or_generate_df(filename, generator_fn, force=False):
     if not force and os.path.exists(filename):
         df = pd.read_hdf(filename, 'df')

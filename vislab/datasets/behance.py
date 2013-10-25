@@ -3,8 +3,9 @@ Code to call the Behance API to construct a dataset.
 """
 
 #import os
+import sys
 import requests
-#import bs4
+import bs4
 import pandas as pd
 #import numpy as np
 import random
@@ -26,7 +27,12 @@ def get_basic_dataset(force=False):
     df = vislab.util.load_or_generate_df(filename, fetch_basic_dataset, force)
     return df
 
-def _getSmallest(sizeList):
+def _getSmallest(imageModule):
+    if not imageModule.has_key('sizes'):
+        return imageModule['src']
+
+    sizeList = imageModule['sizes']
+
     knownSizes = ['max_1240','max_1920','original']
 
     for s in knownSizes:
@@ -36,17 +42,25 @@ def _getSmallest(sizeList):
     print(sizeList)
     raise Exception
 
-def fetch_single_project_image_URLs(projectNum):
+def fetch_single_project_image_URLs_via_API(projectNum):
     query = 'http://www.behance.net/v2/projects/'+str(projectNum)+'?api_key='+vislab.config['behanceAPIkey']
-    print('fetching project %d, query %s'%(projectNum,query))
+#    print('fetching project %d, query: %s'%(projectNum,query))
 
     r = requests.get(query)
     projectInfo = r.json()['project']
     imageData = filter(lambda x:x['type'] == 'image', projectInfo['modules'])
-    return map(lambda x:_getSmallest(x['sizes']), imageData)
+    return map(lambda x:_getSmallest(x), imageData)
+
+def fetch_single_project_image_URLs_via_scraping(page_url):
+    r = requests.get(page_url)
+    soup = bs4.BeautifulSoup(r.text)
+    all_imgs = []
+    for li in soup.select('li.module.image'):
+        all_imgs += [img.attrs['src'] for img in li.find_all('img')]
+    return all_imgs
 
 # set maximums to -1 in order to not have a maximum
-def fetch_basic_dataset(maxRequests = 10, maxImagesPerProject=2):
+def fetch_basic_dataset(maxRequests = 10, maxImagesPerProject=2, useAPI=True):
     """
     Fetch basic info and page urls from a collection of projects.  
     Results are returned as a DataFrame.
@@ -63,11 +77,19 @@ def fetch_basic_dataset(maxRequests = 10, maxImagesPerProject=2):
     imageData = []
 
     for index,row in projectList.iterrows():
+        if numRequests % 10 == 0:
+            sys.stdout.write('Fetching project %d / %d   \r'%(numRequests,len(projectList.index)))
+            sys.stdout.flush()
+            
         projectNum = row.name
         URL = row[1]
         label = row[2]
 
-        imageURLs = fetch_single_project_image_URLs(projectNum)
+        if useAPI:
+            imageURLs = fetch_single_project_image_URLs_via_API(projectNum)
+        else:
+            imageURLs = fetch_single_project_image_URLs_via_scraping(URL)
+
         if len(imageURLs) <= maxImagesPerProject or maxImagesPerProject <= 0:
             pickedImageURLs = imageURLs
         else:
@@ -77,7 +99,7 @@ def fetch_basic_dataset(maxRequests = 10, maxImagesPerProject=2):
             imageData.append({'projectNum':projectNum,'projectURL':URL,'label':label,'imageURL':u})
 
         numRequests = numRequests + 1
-        if maxRequests > 0 and numRequests==maxRequests:
+        if maxRequests > 0 and numRequests>=maxRequests:
             break
 
     df = pd.DataFrame(imageData)
@@ -88,5 +110,6 @@ if __name__ == '__main__':
     """
     Run the scraping with a number of workers taking jobs from a queue.
     """
-    df = fetch_basic_dataset(maxRequests = 2, maxImagesPerProject=2)
+    df = fetch_basic_dataset(maxRequests = -1, maxImagesPerProject=-1, useAPI=False)
+    df.to_csv('behanceImages.csv')
     print(df)

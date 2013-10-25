@@ -2,6 +2,8 @@
 Code to scrape the WikiPaintings website to construct a dataset.
 """
 
+# Behance API details: http://www.behance.net/dev
+
 import os
 import requests
 import bs4
@@ -78,7 +80,7 @@ def get_basic_dataset(force=False):
 def fetch_basic_dataset():
     """
     Fetch basic info and page urls of all artworks by crawling search
-    results.
+    results.  Results are returned as a DataFrame.
     """
     print("Fetching basic Wikipaintings dataset by scraping search results.")
 
