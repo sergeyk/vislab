@@ -1,60 +1,32 @@
 ## Experiments that need to happen for CVPR
 
+Features
+- whitened HOG feature (wrap Jon's code) [.5 day]
+- lab hist in Python [.25 day]
+- figure out framework for pascal classifiers, style classifiers as feature [.25 day]
+- portrait and landscape classifiers [.25 day]
+- [ ] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them.
+
+Datasets
+- add 2 more styles to Flickr set for total of 20
+
+Experiments
+- generate _split at dataset creation time for flickr
 - store bit_precision in the results table somewhere. can definetely influence performance!
 
-- make the colors used in the ap bar plot and the top k plot be the same (order the columns the same way)
-
-- amend the cache_to_h5 thing that if the feature sums to 1 across rows, don't standardize
-
-- try --ect instead of --oaa: might get a boost in performance!
-
-- compute more features on all datasets and put them into the visual similarity app
-
-- generate _split at dataset creation time for flickr and wikipaintings
-
-- rerun flickr and wikipaintings experiments with OAA mode
-
-- plot per-feature confusion matrices in a visible place: just print less from mc_metrics_feat_comparison, and title images and should be good
-
-- run mc_bit feature on all datasets!
-
-- i'm seeing examples in wikipaintings that are not part of any label! what's going on?
-
-Implementation:
-    - whitened HOG feature (wrap Jon's code) [.5 day]
-    - lab hist in Python [.25 day]
-    - pascal classifiers, style classifiers as feature [.25 day]
-    - portrait and landscape classifiers [.25 day]
-
-Tune ConvNet features:
-    - tune decaf with flickr style and wikipaintings data (train sets only) [.5 day]
-    - process flickr, wikipaintings with new feature
-    - run classification experiments with new feature
-
-AVA Style:
-    - (maybe) run classification with pascal quadratics
-
-Wikipaintings:
-    - classify with lab_hist
-    - classify with pool5 convenet feature
-    - classify with tuned convnet feature
-
-Flickr:
-    - download 50K more flickr style, including 2 more styles (for 20) for 100K total
-    - process with a couple of decaf, lab_hist, hog features
-    - run classification experiments
-    - (maybe) form a clean test set for at least one label to quantify how unclean it is
+Results
 
 Image similarity demo
-    - whog for similarity
+    - get it going with more features: simple matter of loading
 
 Image search demo
     - get flickr tags for the flickr set
+    - classify with PASCAL
     - wikipaintings tags?
     - pascal classifiers (seems fine)
 
 Single-person classification accuracy:
-    - how good is a single person at predicting the style classification task? the ava task? should be baseline
+    - how good is a single person at predicting the style classification task? the ava task?
 
 Style features
     - try style features for the ava aesthetic prediction task
@@ -65,22 +37,13 @@ Memorability dataset:
     - compute features, including style features
     - run experiments
 
-## Current Tasks/Problems
-
-- One method for outputting all evaluations of a prediction experiment. takes a collection name, a label_df, and a list of features to compare.
-
 ## Next
-
-- evaluate on a black & white dataset: strip color before computing feature
 
 VW:
 - get vector of weights from VW. (vowpal_porpoise doesnt seem to do this)
     : in fact, need --inverse_hash to do this properly, and that seems to slow things down substantially (haven't tried though)
-- expand parameter space with learning rate
+- expand parameter space with initial learning rate
 - revamp cross-validation to write all results to database to allow iterative improvement and visualizing the effects of the parameters
-
-Search
-- make a tag-based search interface
 
 Datasets
 - make memorability/interestingness dataset interface (aude's data with extra interestingness scores)
@@ -99,7 +62,7 @@ Analysis
 - force-based layout graph of confusion matrix
 - could be a good figure: sort imagenet images for each category by beauty
 - aaron's idea to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
--  see examples where Deep Learning works, and other features fail. For example, it seems like color histograms and object recognition ought to work in a lot of cases. And, indeed, they do. What is Deep Learning doing that the other features aren't?
+-  see examples where Deep Learning works, and other features fail. For example, it seems like color histograms and object recognition ought to work in a lot of cases. What is Deep Learning doing that the other features aren't?
 
 Similarity
 - get similarity display for paintings
@@ -131,10 +94,7 @@ Recommendations
 
 ## Ideas
 
-- "Similar image, but less beautiful."
-- "Similar image, but more hazy."
-
-- idea: can introduce a third label, NOTSURE, which means that the image should simply not be a part of the training/test set for the concept. this is the label that would be set by the UI to clean up data.
+- can introduce a third label, NOTSURE, which means that the image should simply not be a part of the training/test set for the concept. this is the label that would be set by the UI to clean up data.
 
 ## Done
 
@@ -187,3 +147,14 @@ x re-run classification and regression with decaf_fc6 feature on style subset
 - add vw tests
 - implement and test vw oaa mode
 - compare vw oaa mode results to using separate binary classifiers
+- One method for outputting all evaluations of a prediction experiment. takes a collection name, a label_df, and a list of features to compare.
+- make the colors used in the ap bar plot and the top k plot be the same (order the columns the same way)
+- plot per-feature confusion matrices in a visible place: just print less from mc_metrics_feat_comparison, and title images and should be good
+- Adding Murray-CVPR-2012 results:
+    mc_metrics['ap_df']['Murray-CVPR-2012'] = 0
+    mc_metrics['ap_df']['Murray-CVPR-2012'].iloc[:-1] = [
+        .44, .51, .64, .74, .73, .43, .50, .40, .69, .30, .48, .72, .39, .57]
+    mc_metrics['ap_df']['Murray-CVPR-2012'].iloc[-1] = mc_metrics['ap_df']['Murray-CVPR-2012'].iloc[:-1].mean()
+- debug mc_bit feature: seems to always be true. then re-run mc_bit computation
+- amend the cache_to_h5 thing that if the feature sums to 1 across rows, don't standardize (for histograms)
+- save the results and predictions panel just to filesystem in common space instead of database. size limit...

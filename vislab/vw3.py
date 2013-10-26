@@ -536,17 +536,6 @@ class VW(object):
             best_setting, output_dirnames['val'], output_dirnames['test'],
             dataset['test_df'], dataset['num_labels'])
 
-        # TODO: keeping this around in case retraining starts messing up
-        # train_pred_df, train_score = _predict(
-        #     best_setting, output_dirnames['train'], output_dirnames['train'],
-        #     dataset['train_df'], dataset['num_labels'])
-        # val_pred_df, val_score = _score_predict(
-        #     best_setting, output_dirnames['val'],
-        #     dataset['num_labels'], dataset['val_df'])
-        # test_pred_df, test_score = _score_predict(
-        #     best_setting, output_dirnames['test'],
-        #     dataset['num_labels'], dataset['test_df'])
-
         # Combine all predictions into one DataFrame.
         train_pred_df['split'] = 'train'
         val_pred_df['split'] = 'val'

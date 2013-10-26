@@ -5,7 +5,6 @@ import sklearn.metrics
 import numpy as np
 import pandas as pd
 import re
-import logging
 import vislab
 import vislab.results_viz
 import vislab.dataset_viz
@@ -45,6 +44,8 @@ def binary_metrics(
         return handles to None).
     with_print: bool [False]
     """
+    name = '{} balanced' if balanced else '{}'
+
     # Drop rows without a label and make sure it's a bool.
     pred_df = pred_df.dropna(subset=['label'])
     pred_df['label'] = pred_df['label'] > 0
@@ -90,7 +91,6 @@ def binary_metrics(
         get_roc_curve(pred_df['label'], pred_df['pred'], name, with_plot)
 
     if with_print:
-        name = '{} balanced' if balanced else '{} full'
         print_metrics(metrics, name.format(name))
 
     return metrics
@@ -109,7 +109,6 @@ def multiclass_metrics_feat_comparison(
     """
     feat_metrics = {}
     for feature in features:
-
         # To evaluate chance performance, we need to pass any feature
         # channel with the random_preds flag so that they get replaced.
         if feature == '_random':
@@ -131,6 +130,7 @@ def multiclass_metrics_feat_comparison(
             print("Only taking 'test' split predictions.")
             mc_pred_df = mc_pred_df[mc_pred_df['_split'] == 'test']
 
+        print('*'*20 + feature + '*'*20)
         feat_metrics[feature] = multiclass_metrics(
             mc_pred_df, pred_prefix, balanced, random_preds,
             with_plot, with_print)
@@ -147,11 +147,11 @@ def multiclass_metrics_feat_comparison(
 
     # # Across-feature top-k accuracy comparison.
     all_metrics['acc_df'] = pd.DataFrame(
-        [feat_metrics[f]['top_k_accuracies'] for f in feat_metrics.keys()],
-        index=feat_metrics.keys()
+        [feat_metrics[f]['top_k_accuracies'] for f in features],
+        index=features
     ).T
     all_metrics['top_k_fig'] = vislab.results_viz.plot_top_k_accuracies(
-        all_metrics['acc_df'])
+        all_metrics['acc_df'][features])
 
     return all_metrics
 
@@ -202,7 +202,7 @@ def multiclass_metrics(
 
     # Balance the labels.
     if balanced:
-        counts = label_df.sum(0)
+        counts = label_df.sum(0).astype(int)
         min_count = counts[counts.argmin()] + 1
         permutation = lambda N, K: np.random.permutation(N)[:K]
         selected_ind = np.unique(np.concatenate([
@@ -239,11 +239,11 @@ def multiclass_metrics(
 
     metrics['binary_metrics_df'] = bin_df
 
-    # Plot binary metrics.
-    metrics['binary_metrics_fig'] = None
-    if with_plot:
-        metrics['binary_metrics_fig'] = vislab.results_viz.plot_df_bar(
-            metrics['binary_metrics_df'], ['ap', 'mcc'])
+    # # Plot binary metrics.
+    # metrics['binary_metrics_fig'] = None
+    # if with_plot:
+    #     metrics['binary_metrics_fig'] = vislab.results_viz.plot_df_bar(
+    #         metrics['binary_metrics_df'], ['ap', 'mcc'])
 
     # Get vector of multi-class preds.
     y_pred = pred_df.values.argmax(1)
@@ -285,17 +285,17 @@ def multiclass_metrics(
         np.arange(Y.shape[1]) + 1
     )
 
-    # Plot top-k accuracies.
-    top_k = min(5, Y.shape[1])
-    metrics['top_k_accuracies_fig'] = None
-    if with_plot:
-        metrics['top_k_accuracies_fig'] = \
-            vislab.results_viz.plot_top_k_accuracies(
-                metrics['top_k_accuracies'], top_k)
+    # # Plot top-k accuracies.
+    # top_k = min(5, Y.shape[1])
+    # metrics['top_k_accuracies_fig'] = None
+    # if with_plot:
+    #     metrics['top_k_accuracies_fig'] = \
+    #         vislab.results_viz.plot_top_k_accuracies(
+    #             metrics['top_k_accuracies'], top_k)
 
     # Print report.
     if with_print:
-        name = 'balanced dataset' if balanced else 'full dataset'
+        name = '{} balanced' if balanced else '{}'
         print_metrics(metrics, name)
 
     return metrics
@@ -304,15 +304,13 @@ def multiclass_metrics(
 def print_metrics(metrics, name):
     print('-'*60)
     if len(name) > 0:
-        name = 'on the {}'.format(name)
+        name = 'on {}'.format(name)
     print("Classification metrics {}".format(name))
     for metric_name, value in metrics.iteritems():
         if metric_name == 'results_df':
             print(value.to_string())
-        # if metric_name == 'binary_metrics_df':
-        #     print(value.to_string())
         metrics_to_print = [
-            'accuracy', 'top_k_accuracies', 'mcc', 'ap', 'ap_sklearn'
+            'accuracy', 'mcc', 'ap', 'ap_sklearn'
         ]
         if metric_name in metrics_to_print:
             print('{}: {}'.format(metric_name, value))
@@ -369,9 +367,9 @@ if __name__ == '__main__':
     import aphrodite.results
     label_df = vislab.datasets.ava.get_style_df()
     results_df, preds_panel = aphrodite.results.load_pred_results(
-        'ava_style_oct21', '/Users/sergeyk/work/aphrodite/data/results2',
+        'ava_style_oct22', '/Users/sergeyk/work/aphrodite/data/results3',
         force=False)
-    pred_prefix = 'clf ava_style'
+    pred_prefix = 'pred'
     mc_metrics = multiclass_metrics_feat_comparison(
-        preds_panel, label_df, pred_prefix, features=['lab_hist  vw'],
-        balanced=False, with_plot=True, with_print=True)
+        preds_panel, label_df, pred_prefix, features=preds_panel.minor_axis,
+        balanced=True, with_plot=True, with_print=True)

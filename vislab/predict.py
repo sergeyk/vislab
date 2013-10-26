@@ -296,7 +296,7 @@ def get_multiclass_dataset(
 
     if balanced:
         # Construct a balanced validation set.
-        counts = trainval_df.sum(0)
+        counts = trainval_df.sum(0).astype(int)
         min_count = counts[counts.argmin()]
         permutation = lambda N, K: np.random.permutation(N)[:K]
         min_size_balanced_set = np.concatenate([

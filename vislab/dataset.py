@@ -42,7 +42,7 @@ def get_train_test_split(df_, test_frac=0.2, random_seed=42):
     df_ = df_.iloc[np.random.permutation(N)]
 
     # Get equal amount of test_frac of each label
-    counts = df_.sum(0)
+    counts = df_.sum(0).astype(int)
     min_count = int(round(counts[counts.argmin()] * test_frac))
     test_balanced_set = np.concatenate([
         df_.index[np.where(df_[l])[0][:min_count]]

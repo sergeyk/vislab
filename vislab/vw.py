@@ -3,8 +3,6 @@ Train and test Vowpal Wabbit classifier or regressor on data.
 Training includes cross-validation over parameters.
 """
 import socket
-import cPickle
-import bson
 import vislab
 import vislab.results
 import vislab.vw3
@@ -84,11 +82,18 @@ def train_and_test(
     pred_df, test_score, val_score, train_score = vw.fit_and_predict(
         dataset, feature_names, feat_dirname, force)
 
+    # Write out results to filesystem.
+    results_name = '_'.join(
+        '{}_{}'.format(k, v) for k, v in sorted(document.iteritems()))
+    pred_df_filename = '{}/{}.h5'.format(
+        vislab.config['paths']['results'], results_name)
+    pred_df.to_hdf(pred_df_filename, 'df', mode='w')
+
     original_document = document.copy()
     document.update({
         'score_test': test_score,
         'score_val': val_score,
-        'pred_df': bson.Binary(cPickle.dumps(pred_df, protocol=2))
+        'results_name': results_name
     })
     collection.update(original_document, document, upsert=True)
     print("Final score: {:.3f}".format(test_score))
