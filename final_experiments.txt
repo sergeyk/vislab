@@ -59,13 +59,15 @@ mc_bit:
 
 Wikipaintings
 -------------
-collection_name = wikipaintings_oct25
+collection_name = wikipaintings_oct25, wikipaintings_artist_oct25
 
 decaf_fc6:
     x h5: on flapjack, 81868, standardized
     x txt.gz: on flapjack, 75831, standardized, seems shuffled
     x style OAA result: done oct25 0015
     - artist OAA result
+        oct 25 1950
+        srun -p vision --cpus-per-task=22 --mem=24000 python vislab/predict.py predict --dataset=wikipaintings --label=artist --features=decaf_fc6 --collection_name=wikipaintings_artist_oct25 --num_workers=18 --prediction_label=artist_* --bit_precision=20
 
 decaf_fc6_flatten:
     x h5: on flapjack, 82141, standardized
@@ -74,6 +76,8 @@ decaf_fc6_flatten:
         : srun -p vision --cpus-per-task=22 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_fc6_flatten --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
         : WHOA! some kind of cache error going on on orange1. deal with tomorrow.
     - artist OAA result
+        oct 25 1950
+        srun -p vision --cpus-per-task=22 --mem=24000 python vislab/predict.py predict --dataset=wikipaintings --label=artist --features=decaf_fc6 --collection_name=wikipaintings_artist_oct25 --num_workers=18 --prediction_label=artist_* --bit_precision=20
 
 mc_bit:
     x h5: on flapjack, 82438, binary
@@ -81,3 +85,5 @@ mc_bit:
     - style OAA results
         : srun -p vision --cpus-per-task=22 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --features=mc_bit --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
     - artist OAA result
+        oct 25 1950
+        srun -p vision --cpus-per-task=22 --mem=24000 python vislab/predict.py predict --dataset=wikipaintings --label=artist --features=mc_bit --collection_name=wikipaintings_artist_oct25 --num_workers=18 --prediction_label=artist_* --bit_precision=20

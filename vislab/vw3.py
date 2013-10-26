@@ -181,7 +181,7 @@ def _get_feat_filenames(feat_names, feat_dirname):
     return feat_filenames
 
 
-def _train_vw_cmd(setting, dirname, num_labels, from_model=None):
+def _train_vw_cmd(setting, dirname, num_labels, bit_precision, from_model=None):
     """
     Return command to train VW.
 
@@ -203,6 +203,7 @@ def _train_vw_cmd(setting, dirname, num_labels, from_model=None):
         dirname, model_filename)
     cmd += " --l1={} --l2={} --passes={} --loss_function={}".format(
         setting['l1'], setting['l2'], setting['num_passes'], setting['loss'])
+    cmd += " --bit_precision {}".format(bit_precision)
 
     if num_labels < 0:
         assert(setting['loss'] not in ['hinge', 'logistic'])
@@ -255,7 +256,8 @@ def _setting_to_name(setting):
 
 
 def _train_with_val(
-        dataset, output_dirnames, settings, num_workers=1, verbose=False):
+        dataset, output_dirnames, settings, bit_precision,
+        num_workers=1, verbose=False):
     #train_df = dataset['train_df']
     val_df = dataset['val_df']
     test_df = dataset['test_df']
@@ -273,7 +275,8 @@ def _train_with_val(
     # read data at roughly the same rate, OS caching should work.
     vislab.util.run_through_bash_script(
         [
-            _train_vw_cmd(setting, train_dir, dataset['num_labels'])
+            _train_vw_cmd(
+                setting, train_dir, dataset['num_labels'], bit_precision)
             for setting in settings
         ],
         train_dir + '/_train_cmds.sh',
@@ -511,7 +514,7 @@ class VW(object):
 
         # Train models in a grid search over params.
         best_setting = _train_with_val(
-            dataset, output_dirnames, self.settings,
+            dataset, output_dirnames, self.settings, self.bit_precision,
             self.num_workers, verbose=False)
 
         # Update the best model with validation data.
@@ -520,7 +523,7 @@ class VW(object):
             output_dirnames['train'], _setting_to_name(best_setting))
         cmd = _train_vw_cmd(
             best_setting, output_dirnames['val'],
-            dataset['num_labels'], best_model_filename
+            dataset['num_labels'], self.bit_precision, best_model_filename
         )
         cmd_filename = output_dirnames['val'] + '/_train_cmd.sh'
         vislab.util.run_through_bash_script(
