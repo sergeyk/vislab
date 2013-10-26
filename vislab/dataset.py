@@ -139,7 +139,13 @@ def get_df_with_args(args=None):
             args.num_images, args.random_seed)
 
     elif args.dataset == 'wikipaintings':
-        df = vislab.datasets.wikipaintings.get_style_df()
+        if args.label == 'artist':
+            df = vislab.datasets.wikipaintings.get_artist_df()
+        else:
+            df = vislab.datasets.wikipaintings.get_style_df()
+
+    elif args.dataset == 'wikipaintings_artist':
+        df = vislab.datasets.wikipaintings.get_artist_df()
 
     elif args.dataset == 'pascal':
         df = vislab.datasets.pascal.get_clf_df()

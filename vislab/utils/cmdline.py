@@ -25,8 +25,12 @@ def add_cmdline_args(group_name, parser):
         parser.add_argument(
             '--dataset',
             help="select which dataset to use",
-            required=True,
-            choices=['ava', 'ava_style', 'flickr', 'wikipaintings', 'pascal'])
+            required=True)
+        parser.add_argument(
+            '--label',
+            help="which label space to load for the dataset",
+            default='style',
+            required=False)
         parser.add_argument(
             '--num_images',
             help="number of images to use from the dataset (-1 for all)",

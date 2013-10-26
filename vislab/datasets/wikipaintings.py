@@ -64,13 +64,17 @@ def get_genre_df(min_positive_examples=1000):
     return _get_column_label_df('genre', min_positive_examples)
 
 
-def get_artist_df(min_positive_examples=1000):
-    return _get_column_label_df('artist', min_positive_examples)
+def get_artist_df(min_positive_examples=200):
+    df = get_df()
+    df['artist'] = df['artist_slug']
+    df = vislab.dataset.get_boolean_df(df, 'artist', min_positive_examples)
+    df['_split'] = vislab.dataset.get_train_test_split(df)
+    return df
 
 
 def _get_column_label_df(column_name, min_positive_examples=500):
     df = get_df()
-    return vislab.dataset.get_boolean_df(df, 'style', min_positive_examples)
+    return vislab.dataset.get_boolean_df(df, column_name, min_positive_examples)
 
 
 def _fetch_basic_dataset(args=None):

@@ -342,6 +342,8 @@ def cache_files(
     """
     Cache files for splits in the dataset.
     """
+    vislab.util.makedirs(dirname)
+
     # Get actual feature filenames.
     feat_filenames = _get_feat_filenames(feat_names, feat_dirname)
 
