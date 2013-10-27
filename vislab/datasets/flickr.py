@@ -34,7 +34,8 @@ styles = {
     'Vintage': ['1222306@N25'],
 }
 style_names = styles.keys()
-underscored_style_names = [style.replace(' ', '_') for style in styles.keys()]
+underscored_style_names = [
+    'style_' + style.replace(' ', '_') for style in styles.keys()]
 
 # TODO: store in file that is not checked into github
 # Get from http://www.flickr.com/services/apps/by/<username>
@@ -62,7 +63,7 @@ def load_flickr_df(num_images=-1, random_seed=42, force=False):
                 'page_url': df.apply(lambda row: get_page_url(row), axis=1),
             })
             df2.index = df['image_id'].astype(str)
-            style_str = style.replace(' ', '_')
+            style_str = 'style_' + style.replace(' ', '_')
             df2[style_str] = True
             dfs.append(df2)
 
@@ -84,8 +85,11 @@ def load_flickr_df(num_images=-1, random_seed=42, force=False):
     else:
         main_df = pd.read_pickle(filename)
 
-    if num_images > 0:
-        main_df = main_df.iloc[:num_images]
+    # Assign split information
+    main_df['_split'] = vislab.dataset.get_train_test_split(
+        main_df[underscored_style_names])
+    # Also assign the few images that have multiple labels to test.
+    main_df['_split'][main_df[underscored_style_names].sum(1) > 1] = 'test'
 
     return main_df
 

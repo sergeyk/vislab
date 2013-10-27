@@ -8,6 +8,9 @@ gist_256:
     x OAA result
     - aesthetic result
 
+gbvs_saliency:
+    - computing started on flapjack oct 26 2145
+
 lab_hist:
     x h5: on local only, 13994, not standardized but small values
     x txt.gz: on local only, 13994, not standardized but small values
@@ -35,18 +38,21 @@ decaf_fc6_flatten:
 
 Flickr
 ------
-[ ] generate split information
-collection_name = ?
+collection_name = flickr_oct26
 
 decaf_fc6:
     x h5: on flapjack, 50198, standardized
-    x vw: on flapjack, 50198, standardized
+    x vw: on flapjack, 50198, standardized, shuffled?
     - OAA result
+        started on orange1 oct 26 2115
+        srun -p vision --cpus-per-task=22 --mem=16000 python vislab/predict.py predict --dataset=flickr --features=decaf_fc6 --collection_name=flickr_oct26 --num_workers=18 --prediction_label=style_*
 
 decaf_fc6_flatten:
     x h5: on flapjack, 50197, standardized
     x vw: on flapjack, 50197, standardized, shuffled
     - OAA result
+        started on orange2 oct 26 2115
+        srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=flickr --features=decaf_fc6_flatten --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
 
 lab_hist:
     k h5: on flapjack, 49688, standardized (which is bad, because it should be mostly 0)
@@ -56,6 +62,8 @@ lab_hist:
 mc_bit:
     x txt.gz: on flapjack, 50152, binary, not sure if shuffled?
     - OAA result
+        started on orange5 oct 26 2120
+        srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=flickr --features=mc_bit --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
 
 Wikipaintings
 -------------
@@ -64,7 +72,7 @@ collection_name = wikipaintings_oct25, wikipaintings_artist_oct25
 decaf_fc6:
     x h5: on flapjack, 81868, standardized
     x txt.gz: on flapjack, 75831, standardized, seems shuffled
-    x style OAA result: done oct25 0015
+    x style OAA result: done on cluster oct25 0015
     - artist OAA result
         oct 25 1950
         srun -p vision --cpus-per-task=22 --mem=24000 python vislab/predict.py predict --dataset=wikipaintings --label=artist --features=decaf_fc6 --collection_name=wikipaintings_artist_oct25 --num_workers=18 --prediction_label=artist_* --bit_precision=20
@@ -82,8 +90,7 @@ decaf_fc6_flatten:
 mc_bit:
     x h5: on flapjack, 82438, binary
     x txt.gz: on flapjack, 82438, binary, shuffled
-    - style OAA results
-        : srun -p vision --cpus-per-task=22 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --features=mc_bit --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
+    x style OAA results: done on cluster oct26 some time
     - artist OAA result
         oct 25 1950
         srun -p vision --cpus-per-task=22 --mem=24000 python vislab/predict.py predict --dataset=wikipaintings --label=artist --features=mc_bit --collection_name=wikipaintings_artist_oct25 --num_workers=18 --prediction_label=artist_* --bit_precision=20
