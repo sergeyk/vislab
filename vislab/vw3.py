@@ -517,6 +517,11 @@ class VW(object):
             dataset, output_dirnames, self.settings, self.bit_precision,
             self.num_workers, verbose=False)
 
+        # best_setting = {
+        #     'loss': 'logistic', 'l2': '1e-09',
+        #     'num_passes': 121, 'l1': '0'
+        # }
+
         # Update the best model with validation data.
         print("Updating best VW model with validation data")
         best_model_filename = '{}/{}_model.vw'.format(

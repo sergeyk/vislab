@@ -1,17 +1,23 @@
 ## Experiments that need to happen for CVPR
 
+oct 28
+- [x] write out gbvs_saliency results for ava_style: bug in cache_to_h5
+- [x] get artist experiments results to load: fix some bug
+    : now getting updated with validation data
+- [ ] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
+- [ ] run pascal content classifiers on all datasets
+- [ ] generate the content-style co-occurrence matrix
+- [ ] test quadratic expansion with content classifiers
+- [ ] aesthetic prediction results: do locally
+
 Features
 - whitened HOG feature (wrap Jon's code) [.5 day]
-- lab hist in Python [.25 day]
-- figure out framework for pascal classifiers, style classifiers as feature [.25 day]
 - portrait and landscape classifiers [.25 day]
-- [ ] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them.
 
 Datasets
 - add 2 more styles to Flickr set for total of 20
 
 Experiments
-- generate _split at dataset creation time for flickr
 - store bit_precision in the results table somewhere. can definetely influence performance!
 
 Results
@@ -21,9 +27,6 @@ Image similarity demo
 
 Image search demo
     - get flickr tags for the flickr set
-    - classify with PASCAL
-    - wikipaintings tags?
-    - pascal classifiers (seems fine)
 
 Single-person classification accuracy:
     - how good is a single person at predicting the style classification task? the ava task?

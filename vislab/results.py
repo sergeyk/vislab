@@ -158,7 +158,7 @@ def multiclass_metrics_feat_comparison(
 
 def multiclass_metrics(
         mc_pred_df, pred_prefix, balanced=True, random_preds=False,
-        with_plot=False, with_print=False):
+        with_plot=False, with_print=False, min_pos=20):
     """
     Multiclass classification metrics for a single set of predictions.
 
@@ -178,6 +178,8 @@ def multiclass_metrics(
         If True, also plot and return figures.
     with_print: bool [False]
         If True, print the metrics.
+    min_pos: int [20]
+        Minimum number of positive examples needed to evaluate metrics.
     """
     metrics = {}
 
@@ -195,6 +197,15 @@ def multiclass_metrics(
     ind = label_df.sum(1) > 0
     label_df = label_df[ind]
     pred_df = mc_pred_df[pred_cols][ind]
+
+    # Get rid of those labels with less than min_pos examples
+    good_cols = label_df.sum(0) >= min_pos
+    good_cols = good_cols[good_cols].index.tolist()
+    good_pred_cols = [pred_prefix + '_' + x for x in good_cols]
+    label_df = label_df[good_cols]
+    pred_df = pred_df[good_pred_cols]
+
+    label_cols = label_df.columns.tolist()
 
     # Get vector of multi-class labels.
     # TODO: take random argmax if multiple
