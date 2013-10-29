@@ -5,12 +5,16 @@ oct 28
 - [x] gbvs experiment on ava_style
 - [x] get artist experiments results to load: fix some bug
     : now getting updated with validation data
-- [ ] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
+- [-] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
+    - 0045: launched script to copy all files to durian. run again when collection finishes.
+- [ ] launch pascal clf training again -- can't find models. not OAA, don't want to mess with evaluation code that I'd have to change. although i guess i wouldn't have to change it, it would just be unreliable on the train set.
 - [ ] sync up results on all datasets such that local mongo has up to date info
+- [ ] aesthetic prediction results: test locally, launch on cluster overnight
+
+oct 29
 - [ ] run pascal content classifiers on all datasets
+- [ ] test and launch quadratic expansion with content classifiers experiments
 - [ ] generate the content-style co-occurrence matrix
-- [ ] test quadratic expansion with content classifiers
-- [ ] aesthetic prediction results: do locally
 
 Features
 - whitened HOG feature (wrap Jon's code) [.5 day]
