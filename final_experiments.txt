@@ -72,10 +72,11 @@ decaf_fc6:
     x h5: on flapjack, 81868, standardized
     x txt.gz: on flapjack, 75831, standardized, seems shuffled
     x style OAA result: done on cluster oct25 0015
-    - artist OAA result
-        oct 25 1950: orange6
+    x artist OAA result
+        launched oct 25 1950: orange6
         srun -p vision --cpus-per-task=22 --mem=24000 python vislab/predict.py predict --dataset=wikipaintings --label=artist --features=decaf_fc6 --collection_name=wikipaintings_artist_oct25 --num_workers=18 --prediction_label=artist_* --bit_precision=20
             - re-launched, updating with val data oct 28 1430
+            - done by 1930
 
 
 decaf_fc6_flatten:

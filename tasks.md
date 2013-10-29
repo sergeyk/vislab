@@ -2,9 +2,11 @@
 
 oct 28
 - [x] write out gbvs_saliency results for ava_style: bug in cache_to_h5
+- [x] gbvs experiment on ava_style
 - [x] get artist experiments results to load: fix some bug
     : now getting updated with validation data
 - [ ] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
+- [ ] sync up results on all datasets such that local mongo has up to date info
 - [ ] run pascal content classifiers on all datasets
 - [ ] generate the content-style co-occurrence matrix
 - [ ] test quadratic expansion with content classifiers
