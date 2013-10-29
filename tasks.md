@@ -5,16 +5,19 @@ oct 28
 - [x] gbvs experiment on ava_style
 - [x] get artist experiments results to load: fix some bug
     : now getting updated with validation data
-- [-] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
-    - 0045: launched script to copy all files to durian. run again when collection finishes.
-- [ ] launch pascal clf training again -- can't find models. not OAA, don't want to mess with evaluation code that I'd have to change. although i guess i wouldn't have to change it, it would just be unreliable on the train set.
-- [ ] sync up results on all datasets such that local mongo has up to date info
-- [ ] aesthetic prediction results: test locally, launch on cluster overnight
+- [x] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
+- [x] launch pascal clf training again -- can't find models. not OAA, don't want to mess with evaluation code that I'd have to change.
+- [x] aesthetic prediction results: test locally, launch on cluster overnight
 
 oct 29
+- [x] re-launch aesthetic pred. results with increased memory, this is BS
+- [x] launch finetuning training on durian (launched oct 29 1400)
 - [ ] run pascal content classifiers on all datasets
+    : how this will work is predict.py predict_from_trained --source_dataset=pascal --dataset=ava_style
+- [ ] sync up results on all datasets such that local mongo has up to date info, update paper figures, and little bit of text
 - [ ] test and launch quadratic expansion with content classifiers experiments
 - [ ] generate the content-style co-occurrence matrix
+- [ ] get image similarity display going again
 
 Features
 - whitened HOG feature (wrap Jon's code) [.5 day]
@@ -25,11 +28,6 @@ Datasets
 
 Experiments
 - store bit_precision in the results table somewhere. can definetely influence performance!
-
-Results
-
-Image similarity demo
-    - get it going with more features: simple matter of loading
 
 Image search demo
     - get flickr tags for the flickr set
