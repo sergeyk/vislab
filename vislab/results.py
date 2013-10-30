@@ -33,7 +33,7 @@ def binary_metrics(
     Parameters
     ----------
     pred_df: pandas.DataFrame
-        Must contain 'label' (int) and 'pred' (float) columns.
+        Must contain 'label' (int or bool) and 'pred' (float) columns.
     name: string ['']
         Name of the classification task: for example, the class name.
     balanced: bool [True]
@@ -44,7 +44,7 @@ def binary_metrics(
         return handles to None).
     with_print: bool [False]
     """
-    name = '{} balanced' if balanced else '{}'
+    name = '{} balanced'.format(name) if balanced else name
 
     # Drop rows without a label and make sure it's a bool.
     pred_df = pred_df.dropna(subset=['label'])

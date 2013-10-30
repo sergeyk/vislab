@@ -12,13 +12,17 @@ oct 28
 oct 29
 - [x] re-launch aesthetic pred. results with increased memory, this is BS
 - [x] launch finetuning training on durian (launched oct 29 1400)
-- [ ] run pascal content classifiers on all datasets
+- [x] run pascal content classifiers on all datasets
+    : launched oct29 1800 (collection names are given in run_experiment.py)
     - [x] sync up all pascal models to flapjack and then push them out to all machines
+- [x] sync up results on all datasets such that local mongo has up to date info
+    - [ ] load aesthetic results
+
 - [ ] develop method for loading the result pred_dfs for multiple classes and writing them back out as features
+    PICK UP HERE: gotta match the order of decaf feature
 - [ ] test and launch quadratic expansion with content classifiers experiments
-- [ ] sync up results on all datasets such that local mongo has up to date info, update paper figures, and little bit of text
 - [ ] generate the content-style co-occurrence matrix
-- [ ] get image similarity website going again with all faetures and datasets
+- [ ] get image similarity website going again with all features and datasets
 
 Features
 - whitened HOG feature (wrap Jon's code) [.5 day]
