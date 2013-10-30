@@ -13,6 +13,7 @@ Possible experiments:
 - AVA style, binary
 - AVA style, OAA
 """
+import copy
 import logging
 import pandas as pd
 import numpy as np
@@ -376,7 +377,7 @@ def _get_importance(df, num_labels):
     return importances
 
 
-def get_prediction_dataset_with_args(args):
+def get_prediction_dataset_with_args(args, source_df=None):
     """
     args should contain:
         prediction_label: string
@@ -390,13 +391,31 @@ def get_prediction_dataset_with_args(args):
     if '*' in args.prediction_label:
         column_set_name = args.prediction_label.replace('*', 'ALL')
         prefix = args.prediction_label.split('*')[0]
-        column_names = [col for col in df.columns if col.startswith(prefix)]
+
+        # If source_dataset is given, then add its columns to df, and fill
+        # with random values.
+        if source_df is not None:
+            column_names = [
+                col for col in source_df.columns
+                if source_df.startswith(prefix)
+            ]
+            df[column_names] = np.random.randint(
+                2, size=(df.shape[0], len(column_names))).astype(bool)
+        else:
+            column_names = [
+                col for col in df.columns if col.startswith(prefix)
+            ]
+
         dataset = get_multiclass_dataset(
             df, args.dataset, column_set_name, column_names,
             args.test_frac, args.balanced, args.random_seed)
 
     # Otherwise, we are matching either a binary or regression label.
     else:
+        if source_df is not None:
+            df[args.prediction_label] = np.random.randint(
+                2, size=df.shape[0]).astype(bool)
+
         dataset = get_binary_or_regression_dataset(
             df, args.dataset, args.prediction_label,
             args.test_frac, args.min_pos_frac, args.random_seed)
@@ -404,11 +423,37 @@ def get_prediction_dataset_with_args(args):
     return dataset
 
 
+def predict_from_trained(args=None):
+    if args is None:
+        args = vislab.utils.cmdline.get_args(
+            __file__, 'predict',
+            ['dataset', 'prediction', 'processing', 'feature'])
+
+    ## Get the source and target datasets as specified in args.
+
+    # First get the source dataset.
+    args_copy = copy.deepcopy(args)
+    args_copy.dataset = args_copy.source_dataset
+    source_dataset = get_prediction_dataset_with_args(args_copy)
+
+    # Then get the target dataset, with random values.
+    dataset = get_prediction_dataset_with_args(
+        args, source_dataset['train_df'])
+
+    vislab.vw.test(
+        args.collection_name, dataset, source_dataset, args.features,
+        force=args.force_predict, num_workers=args.num_workers,
+        bit_precision=args.bit_precision)
+
+
 def predict(args=None):
     if args is None:
         args = vislab.utils.cmdline.get_args(
             __file__, 'predict',
             ['dataset', 'prediction', 'processing', 'feature'])
+
+    if args.source_dataset is not None:
+        return predict_from_trained(args)
 
     # Get the dataset as specified in args.
     dataset = get_prediction_dataset_with_args(args)

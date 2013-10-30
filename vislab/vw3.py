@@ -1,4 +1,6 @@
+import glob
 import numpy as np
+import re
 import subprocess
 import time
 import logging
@@ -181,7 +183,8 @@ def _get_feat_filenames(feat_names, feat_dirname):
     return feat_filenames
 
 
-def _train_vw_cmd(setting, dirname, num_labels, bit_precision, from_model=None):
+def _train_vw_cmd(
+        setting, dirname, num_labels, bit_precision, from_model=None):
     """
     Return command to train VW.
 
@@ -252,6 +255,13 @@ def _setting_to_name(setting):
     return '_'.join(
         '{}_{}'.format(k, v)
         for k, v in sorted(setting.iteritems())
+    )
+
+
+def _name_to_setting(name):
+    return dict(
+        (key, re.search('{}_(.+?)(_|$)'.format(key), name).groups()[0])
+        for key in ['loss', 'l1', 'l2', 'num_passes']
     )
 
 
@@ -341,7 +351,7 @@ def _train_with_val(
 
 def cache_files(
         dataset, feat_names, feat_dirname, dirname, bit_precision,
-        num_workers, force=False):
+        num_workers, force=False, name_only=False):
     """
     Cache files for splits in the dataset.
     """
@@ -359,6 +369,10 @@ def cache_files(
                         '_{}'.format(dataset['num_labels'])
         output_dirnames[split_name] = vislab.util.makedirs(
             '{}/{}/{}'.format(dirname, cache_dirname, split_name))
+
+        # If name_only, we only want to get the folder names.
+        if name_only:
+            continue
 
         # Save the dataframe with labels for use in filtering examples.
         df_filename = dirname + '/{}_df.h5'.format(split_name)
@@ -544,6 +558,59 @@ class VW(object):
             dataset['val_df'], dataset['num_labels'])
         test_pred_df, test_score = _predict(
             best_setting, output_dirnames['val'], output_dirnames['test'],
+            dataset['test_df'], dataset['num_labels'])
+
+        # Combine all predictions into one DataFrame.
+        train_pred_df['split'] = 'train'
+        val_pred_df['split'] = 'val'
+        test_pred_df['split'] = 'test'
+        pred_df = train_pred_df.append(val_pred_df).append(test_pred_df)
+
+        return pred_df, test_score, val_score, train_score
+
+    def predict(
+            self, dataset, source_dataset, source_dirname,
+            feat_names, feat_dirname, force=False):
+        """
+        Looks for an existing model in the val directory of
+        source_dataset, and predicts target_dataset.
+        """
+        # Make sure the datasets are compatible.
+        assert(dataset['num_labels'] == source_dataset['num_labels'])
+
+        # Make sure that we find the model we need in paths derived
+        # from the source dataset.
+
+        # Get the dirnames of the source_dataset.
+        actual_source_dirname = '{}_b{}'.format(
+            source_dirname, self.bit_precision)
+        source_output_dirnames = cache_files(
+            source_dataset, feat_names, feat_dirname, actual_source_dirname,
+            self.bit_precision, self.num_workers, force=False, name_only=True)
+
+        model_filenames = glob.glob(
+            '{}/*_model.vw'.format(source_output_dirnames['val']))
+        assert(len(model_filenames) == 1)
+        best_name = re.search('/(.+)_model.vw', model_filenames[0]).groups()[0]
+        best_setting = _name_to_setting(best_name)
+
+        # Cache all splits of the target dataset to VW format.
+        output_dirnames = cache_files(
+            dataset, feat_names, feat_dirname, self.dirname,
+            self.bit_precision, self.num_workers, force)
+
+        print("Running VW prediction on all splits.")
+        train_pred_df, train_score = _predict(
+            best_setting, source_output_dirnames['val'],
+            output_dirnames['train'],
+            dataset['train_df'], dataset['num_labels'])
+        val_pred_df, val_score = _predict(
+            best_setting, source_output_dirnames['val'],
+            output_dirnames['val'],
+            dataset['val_df'], dataset['num_labels'])
+        test_pred_df, test_score = _predict(
+            best_setting, source_output_dirnames['val'],
+            output_dirnames['test'],
             dataset['test_df'], dataset['num_labels'])
 
         # Combine all predictions into one DataFrame.

@@ -27,6 +27,10 @@ def add_cmdline_args(group_name, parser):
             help="select which dataset to use",
             required=True)
         parser.add_argument(
+            '--source_dataset',
+            help="select which dataset to use as trained clf source",
+            type=str, default=None)
+        parser.add_argument(
             '--label',
             help="which label space to load for the dataset",
             default='style',
