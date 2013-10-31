@@ -25,7 +25,9 @@ oct 30
     - launch cluster experiments
 - [ ] generate the content-style co-occurrence matrix
 - [ ] get image similarity website going again with all features and datasets
-- [ ] try style features for the ava aesthetic prediction task
+- [ ] run flickr and wikipainting style classifiers on datasets that dont already have them
+
+oct 31
 
 ## Next
 

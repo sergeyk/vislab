@@ -1,3 +1,18 @@
+Pascal Classifiers on Datasets
+------------------------------
+collections:
+- pascal_meta_on_ava_oct29
+- pascal_on_flickr_oct29
+- pascal_on_wp_oct29
+
+Style Classifiers on datasets
+-----------------------------
+collections:
+- flickr_on_ava_oct30
+- flickr_on_wikipaintings_oct30
+- wikipaintings_on_ava_oct30
+- wikipaintings_on_flickr_oct30
+
 AVA Style
 ---------
 collection_name = ava_style_oct22, ava_style_aesth_oct29
@@ -45,7 +60,7 @@ decaf_fc6_flatten:
     - aesthetic result: launched oct29 0250
 
 decaf_tuned_fc6_flatten:
-    o OAA result: launched oct 30 1425
+    x OAA result: on cluster (1430-1900)
         srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=ava_style --features=decaf_tuned_fc6_flatten --collection_name=ava_style_oct22 --num_workers=9 --prediction_label=style_*
 
 Flickr
@@ -97,7 +112,7 @@ decaf_fc6:
             - done by 1930
 
 decaf_tuned_fc6:
-    - style OAA result: oct 30 1430-1930
+    x style OAA result: oct 30 1430-1930
         srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_tuned_fc6 --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
 
 decaf_fc6_flatten:
@@ -136,8 +151,6 @@ collection_name = pascal_oct29
 decaf_fc6:
     x txt.gz: on cluster, 17125, standardized, maybe shuffled
     - class_x and metaclass_x results: launched on cluster oct 29 0200
-
-
 
 ---
 

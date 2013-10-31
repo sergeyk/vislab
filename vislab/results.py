@@ -129,6 +129,11 @@ def multiclass_metrics_feat_comparison(
         if '_split' in mc_pred_df.columns:
             print("Only taking 'test' split predictions.")
             mc_pred_df = mc_pred_df[mc_pred_df['_split'] == 'test']
+        elif 'split' in mc_pred_df.columns:
+            print("Only taking 'test' split predictions.")
+            mc_pred_df = mc_pred_df[mc_pred_df['split'] == 'test']
+        else:
+            print("WARNING: no split info in the preds panel.")
 
         print('*'*20 + feature + '*'*20)
         feat_metrics[feature] = multiclass_metrics(
