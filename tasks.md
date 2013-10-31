@@ -16,23 +16,25 @@ oct 29
     : launched oct29 1800 (collection names are given in run_experiment.py)
     - [x] sync up all pascal models to flapjack and then push them out to all machines
 - [x] sync up results on all datasets such that local mongo has up to date info
-    - [ ] load aesthetic results
+    - [x] load aesthetic results
 
-- [ ] develop method for loading the result pred_dfs for multiple classes and writing them back out as features
-    PICK UP HERE: gotta match the order of decaf feature
-- [ ] test and launch quadratic expansion with content classifiers experiments
+oct 30
+- [x] develop method for loading the result pred_dfs for multiple classes and writing them back out as features
+- [ ] implement, test, and launch quadratic expansion with content classifiers experiments
+    : don't forget to divide number of passes by 2 when quadratic is enabled
+    - launch cluster experiments
 - [ ] generate the content-style co-occurrence matrix
 - [ ] get image similarity website going again with all features and datasets
+- [ ] try style features for the ava aesthetic prediction task
+
+## Next
 
 Features
-- whitened HOG feature (wrap Jon's code) [.5 day]
-- portrait and landscape classifiers [.25 day]
-
-Datasets
-- add 2 more styles to Flickr set for total of 20
+- whitened HOG feature (wrap Jon's code)
+- portrait and landscape classifiers
 
 Experiments
-- store bit_precision in the results table somewhere. can definetely influence performance!
+- store bit_precision in the results table somewhere.
 
 Image search demo
     - get flickr tags for the flickr set
@@ -48,8 +50,6 @@ Memorability dataset:
     - write interface
     - compute features, including style features
     - run experiments
-
-## Next
 
 VW:
 - get vector of weights from VW. (vowpal_porpoise doesnt seem to do this)
@@ -103,6 +103,9 @@ Recommendations
     - how many images does a user like on average?
     - how many users favorited the average image?
     - what is the overlap between users? per image?
+
+Bugs to fix:
+- preds_panel seems to contain objects instead of floats! yet sorting and comparisons still work fine. weird shit.
 
 ## Ideas
 

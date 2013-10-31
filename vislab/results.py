@@ -105,13 +105,13 @@ def multiclass_metrics_feat_comparison(
     Parameters
     ----------
     features: sequence of string
-        If includes feature '_random', also evaluate chance performance.
+        If includes feature 'random', also evaluate chance performance.
     """
     feat_metrics = {}
     for feature in features:
         # To evaluate chance performance, we need to pass any feature
         # channel with the random_preds flag so that they get replaced.
-        if feature == '_random':
+        if feature == 'random':
             actual_feature = features[0]
             random_preds = True
         else:

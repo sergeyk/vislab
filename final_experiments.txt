@@ -33,6 +33,10 @@ decaf_fc6:
     x OAA result: ran on local (started oct 24 1630, finished at 1930)
     - aesthetic result: launched oct29 0250
 
+decaf_tuned_fc6:
+    x OAA result: done on cluster (3 hours)
+        srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=ava_style --features=decaf_tuned_fc6 --collection_name=ava_style_oct22 --num_workers=9 --prediction_label=style_*
+
 decaf_fc6_flatten:
     x h5: on flapjack, 14066, standardized
     x txt.gz: on flapjack, 14066, standardized, shuffled (downloading to local oct 24 1740)
@@ -40,6 +44,9 @@ decaf_fc6_flatten:
         transferred result to local mongo
     - aesthetic result: launched oct29 0250
 
+decaf_tuned_fc6_flatten:
+    o OAA result: launched oct 30 1425
+        srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=ava_style --features=decaf_tuned_fc6_flatten --collection_name=ava_style_oct22 --num_workers=9 --prediction_label=style_*
 
 Flickr
 ------
@@ -50,11 +57,19 @@ decaf_fc6:
     x vw: on flapjack, 50198, standardized, shuffled?
     x OAA result: on cluster (done on orange1)
 
+decaf_tuned_fc6:
+    o OAA result: launched oct 30 1420
+        srun -p vision --cpus-per-task=11 --mem=18000 python vislab/predict.py predict --dataset=flickr --features=decaf_tuned_fc6 --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
+
 decaf_fc6_flatten:
     x h5: on flapjack, 50197, standardized
     x vw: on flapjack, 50197, standardized, shuffled
     - OAA result: on cluster, done on orange2
         srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=flickr --features=decaf_fc6_flatten --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
+
+decaf_tuned_fc6_flatten:
+    o OAA result: launched oct 30 1420
+        srun -p vision --cpus-per-task=11 --mem=18000 python vislab/predict.py predict --dataset=flickr --features=decaf_tuned_fc6_flatten --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
 
 lab_hist:
     k h5: on flapjack, 49688, standardized (which is bad, because it should be mostly 0)
@@ -81,6 +96,10 @@ decaf_fc6:
             - re-launched, updating with val data oct 28 1430
             - done by 1930
 
+decaf_tuned_fc6:
+    - style OAA result: oct 30 1430-1930
+        srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_tuned_fc6 --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
+
 decaf_fc6_flatten:
     x h5: on flapjack, 82141, standardized
     x txt.gz: on flapjack, 82141, standardized, shuffled
@@ -91,6 +110,12 @@ decaf_fc6_flatten:
     - artist OAA result
         oct 25 1950: on orange3
         didn't finish by oct 28 1430, so killed.
+
+decaf_tuned_fc6_flatten:
+    x h5: on flapjack
+    x txt.gz: on cluster
+    o style OAA result: launched oct 30 1420
+        srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_tuned_fc6_flatten --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
 
 mc_bit:
     x h5: on flapjack, 82438, binary
@@ -111,3 +136,28 @@ collection_name = pascal_oct29
 decaf_fc6:
     x txt.gz: on cluster, 17125, standardized, maybe shuffled
     - class_x and metaclass_x results: launched on cluster oct 29 0200
+
+
+
+---
+
+launched these bad boyz oct 30 0315
+tended to them oct 30 1200
+
+python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6 --dataset=ava_style --num_workers=20 && python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6 --dataset=ava_style --num_workers=20 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6 --dataset=ava_style && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6 --dataset=ava_style
+DONE
+
+python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6 --dataset=flickr --num_workers=20 && python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6 --dataset=flickr --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6 --dataset=flickr && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6 --dataset=flickr
+DONE
+
+python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6 --dataset=wikipaintings --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6 --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6 --dataset=wikipaintings
+DONE
+
+python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_flatten --dataset=ava_style --num_workers=20 && python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_flatten --dataset=ava_style --num_workers=20 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_flatten --dataset=ava_style && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_flatten --dataset=ava_style
+DONE
+
+python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_flatten --dataset=flickr --num_workers=30 && python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_flatten --dataset=flickr --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_flatten --dataset=flickr && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_flatten --dataset=flickr
+DONE
+
+python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_flatten --dataset=wikipaintings --num_workers=30 && python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_flatten --dataset=wikipaintings --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_flatten --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_flatten --dataset=wikipaintings
+DONE
