@@ -20,14 +20,13 @@ oct 29
 
 oct 30
 - [x] develop method for loading the result pred_dfs for multiple classes and writing them back out as features
-- [ ] implement, test, and launch quadratic expansion with content classifiers experiments
-    : don't forget to divide number of passes by 2 when quadratic is enabled
-    - launch cluster experiments
-- [ ] generate the content-style co-occurrence matrix
-- [ ] get image similarity website going again with all features and datasets
-- [ ] run flickr and wikipainting style classifiers on datasets that dont already have them
+- [x] implement, test, and launch quadratic expansion with content classifiers experiments
+- [x] run flickr and wikipainting style classifiers on datasets that dont already have them
+- [x] run late-fusion on all datasets
 
 oct 31
+- [ ] generate the content-style co-occurrence matrix
+- [ ] get image similarity website going again with all features and datasets
 
 ## Next
 

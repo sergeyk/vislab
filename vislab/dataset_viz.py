@@ -131,10 +131,10 @@ def plot_occurrence(
     if plot_vals:
         for i in xrange(0, M):
             for j in xrange(0, N):
-                val = df_m.iloc[i, j]
+                val = float(df_m.iloc[i, j])
                 if np.isnan(val):
                     continue
-                if val > 0.5:
+                if val / (color_anchor[1] - color_anchor[0]) > 0.5:
                     ax.text(j - 0.2, i + 0.1, '%.2f' % val, color='w')
                 else:
                     ax.text(j - 0.2, i + 0.1, '%.2f' % val, color='k')

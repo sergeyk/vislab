@@ -103,8 +103,7 @@ def train_and_test(
     l2_weight: list of float [[0]]
     quadratic: string ['']
         If a non-empty string is given, it must be a sequence of single
-        letter corresponding to the namespaces that will be crossed, or
-        the word 'all'.
+        letter corresponding to the namespaces that will be crossed.
     verbose: boolean [False]
     """
     print("{} running VW on {} for {}".format(
@@ -139,7 +138,7 @@ def train_and_test(
     feat_dirname = \
         vislab.config['paths']['feats'] + '/' + dataset['dataset_name']
     vw = vislab.vw3.VW(
-        dirname, num_workers, bit_precision, num_passes, loss, l1, l2)
+        dirname, num_workers, bit_precision, num_passes, loss, l1, l2, quadratic)
     pred_df, test_score, val_score, train_score = vw.fit_and_predict(
         dataset, feature_names, feat_dirname, force)
 

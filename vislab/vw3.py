@@ -213,6 +213,9 @@ def _train_vw_cmd(
     elif num_labels > 2:
         cmd += ' --oaa {}'.format(num_labels)
 
+    if 'quadratic' in setting:
+        cmd += ' -q {}'.format(setting['quadratic'])
+
     # If we are training from scratch, then we will use all data.
     if from_model is None:
         cmd += " --holdout_off --save_resume"
@@ -248,6 +251,10 @@ def _pred_vw_cmd(setting, model_dirname, pred_dirname):
     pred_filename = '{}/{}_pred.txt'.format(pred_dirname, name)
     cmd = vw_cmd + " -t -i {} --cache_file={}/cache.vw -r {}".format(
         model_filename, pred_dirname, pred_filename)
+
+    if 'quadratic' in setting:
+        cmd += ' -q {}'.format(setting['quadratic'])
+
     return cmd
 
 
@@ -259,10 +266,14 @@ def _setting_to_name(setting):
 
 
 def _name_to_setting(name):
-    return dict(
+    d = dict(
         (key, re.search('{}_(.+?)(_|$)'.format(key), name).groups()[0])
         for key in ['loss', 'l1', 'l2', 'num_passes']
     )
+    q = re.search('quadratic_(.+?)(_|$)', name)
+    if q is not None:
+        d['quadratic'] = q.groups()[0]
+    return d
 
 
 def _train_with_val(
@@ -487,7 +498,8 @@ class VW(object):
             num_passes=[25],
             loss=['hinge', 'logistic'],
             l1=['0', '1e-6', '1e-9'],
-            l2=['0', '1e-6', '1e-9']):
+            l2=['0', '1e-6', '1e-9'],
+            quadratic=None):
         # Actual output directory will have bit_precision info in name,
         # because cache files are dependent on the precision.
         self.dirname = vislab.util.makedirs(
@@ -503,6 +515,8 @@ class VW(object):
             'l1': [str(x) for x in l1],
             'l2': [str(x) for x in l2]
         }
+        if quadratic is not None:
+            self.param_grid['quadratic'] = [quadratic]
         settings_df = pd.DataFrame(
             list(sklearn.grid_search.ParameterGrid(self.param_grid))
         ).sort(['num_passes', 'loss'])
@@ -530,11 +544,6 @@ class VW(object):
         best_setting = _train_with_val(
             dataset, output_dirnames, self.settings, self.bit_precision,
             self.num_workers, verbose=False)
-
-        # best_setting = {
-        #     'loss': 'logistic', 'l2': '1e-09',
-        #     'num_passes': 121, 'l1': '0'
-        # }
 
         # Update the best model with validation data.
         print("Updating best VW model with validation data")

@@ -105,7 +105,7 @@ i.e. 'style_*' will match multiple columns""")
         parser.add_argument(
             '--quadratic',
             help="perform quadratic expansion of the features",
-            action="store_true", default=False)
+            type=str, default=None)
         parser.add_argument(
             '--bit_precision',
             help="bit precision of the VW classifier",
