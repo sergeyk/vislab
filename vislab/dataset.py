@@ -93,7 +93,8 @@ def get_boolean_df(df, column_name, min_positive_examples=-1):
     bool_df = pd.DataFrame(index=df.index)
     for val in vals:
         ascii_name = val.replace(' ', '_').encode('ascii', 'ignore')
-        ascii_name = column_name + '_' + ascii_name
+        if len(column_name) > 0:
+            ascii_name = column_name + '_' + ascii_name
         bool_df[ascii_name] = (df[column_name] == val)
     return bool_df
 

@@ -8,10 +8,16 @@ collections:
 Style Classifiers on datasets
 -----------------------------
 collections:
-- flickr_on_ava_oct30
-- flickr_on_wikipaintings_oct30
-- wikipaintings_on_ava_oct30
-- wikipaintings_on_flickr_oct30
+- flickr_on_ava_style_oct30
+- flickr_on_wp_oct30
+- flickr_on_pascal_oct30
+- wp_on_ava_oct30
+- wp_on_flickr_oct30
+- wp_on_pacal_oct30
+
+launched on flapjack oct31 0320. commands given by
+    python aphrodite/run_experiment.py --experiment=flickr_on_pascal,wikipaintings_on_pascal,wikipaintings_on_flickr,wikipaintings_on_ava_style,flickr_on_ava_style,flickr_on_wikipaintings --slurm --exclude="orange[1-6],banana[1-4]" --num_workers=3
+
 
 AVA Style
 ---------

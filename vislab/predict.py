@@ -392,15 +392,26 @@ def get_prediction_dataset_with_args(args, source_df=None):
         column_set_name = args.prediction_label.replace('*', 'ALL')
         prefix = args.prediction_label.split('*')[0]
 
-        # If source_dataset is given, then add its columns to df, and fill
-        # with random values.
+        # If source_dataset is given, then make a random value DataFrame
+        # with target dataset's index and source dataset's columns.
         if source_df is not None:
             column_names = [
                 col for col in source_df.columns
-                if source_df.startswith(prefix)
+                if col.startswith(prefix)
             ]
-            df[column_names] = np.random.randint(
-                2, size=(df.shape[0], len(column_names))).astype(bool)
+
+            # Making dataframe in this way so that only one label is
+            # active per row, so that our multiclass-splitting function
+            # can deal with it.
+            df = vislab.dataset.get_boolean_df(
+                pd.DataFrame(
+                    np.random.choice(column_names, size=df.shape[0]),
+                    columns=[''],
+                    index=df.index
+                ),
+                ''
+            )
+
         else:
             column_names = [
                 col for col in df.columns if col.startswith(prefix)
