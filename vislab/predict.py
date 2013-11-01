@@ -447,9 +447,15 @@ def predict_from_trained(args=None):
     args_copy.dataset = args_copy.source_dataset
     source_dataset = get_prediction_dataset_with_args(args_copy)
 
-    # Then get the target dataset, with random values.
-    dataset = get_prediction_dataset_with_args(
-        args, source_dataset['train_df'])
+    # Then get the target dataset.
+    # If the names are the same, then just use exactly the source.
+    if args.dataset == args.source_dataset:
+        dataset = copy.deepcopy(source_dataset)
+
+    # If not, then fill with random values.
+    else:
+        dataset = get_prediction_dataset_with_args(
+            args, source_dataset['train_df'])
 
     vislab.vw.test(
         args.collection_name, dataset, source_dataset, args.features,

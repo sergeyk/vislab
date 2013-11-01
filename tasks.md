@@ -25,7 +25,11 @@ oct 30
 - [x] run late-fusion on all datasets
 
 oct 31
-- [ ] generate the content-style co-occurrence matrix
+- [x] generate the content-style co-occurrence matrix
+- [o] Fix wikipaintings decaf_fc6 result (flickr got in there)
+    srun -p vision --nodelist=flapjack --cpus-per-task=6 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --source_dataset=wikipaintings --prediction_label="style_*" --features=decaf_fc6 --collection_name=wikipaintings_oct25 --num_workers=4
+- [x] launch experiments with quadratic expansion of fusion features
+- [ ] compute flickr styles on wikipaintings
 - [ ] get image similarity website going again with all features and datasets
 
 ## Next

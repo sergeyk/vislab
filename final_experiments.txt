@@ -1,3 +1,36 @@
+Late Fusion + Content
+---------------------
+ava_style: (local)
+    x python vislab/predict.py predict --dataset=ava_style --collection_name=ava_style_oct22 --features=fusion_ava_style_oct22,pascal_mc_for_fusion_ava_style_oct22 --prediction_label="style_*" --num_workers=8 --quadratic=fp
+
+ava_aesth (local):
+    x python vislab/predict.py predict --dataset=ava_style --collection_name=ava_style_aesth_oct29 --prediction_label=rating_mean_bin --features=fusion_ava_style_oct22,pascal_mc_for_fusion_ava_style_oct22 --mem=12000 --num_workers=8 --quadratic=fp
+
+flickr: (cluster)
+    x srun -p vision --cpus-per-task=8 --mem=12000 python vislab/predict.py predict --dataset=flickr --collection_name=flickr_oct26 --features=fusion_flickr_oct26,pascal_mc_for_fusion_flickr_oct26 --prediction_label="style_*" --num_workers=8 --quadratic=fp
+
+wikipaintings: (cluster)
+    o srun -p vision --cpus-per-task=8 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=fusion_wikipaintings_oct25,pascal_mc_for_fusion_wikipaintings_oct25 --prediction_label="style_*" --num_workers=8 --quadratic=fp
+
+
+Tuned decaf Upside-Down
+-----------------------
+AVA STYLE
+    x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=ava_style --num_workers=20 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=ava_style && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=ava_style
+
+    o srun -p vision --nodelist=flapjack --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=ava_style --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=ava_style_oct22 --num_workers=16
+
+FLICKR
+    x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=wikipaintings --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=wikipaintings
+
+    o srun -p vision --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=flickr --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=flickr_oct26 --num_workers=16
+
+WP
+    x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=flickr --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=flickr && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=flickr
+
+    o srun -p vision --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=wikipaintings_oct25 --num_workers=16
+
+
 Pascal Classifiers on Datasets
 ------------------------------
 collections:
@@ -16,7 +49,8 @@ collections:
 - wp_on_pascal_oct30
 
 finished, launched on flapjack oct31 0320. commands given by
-    python aphrodite/run_experiment.py --experiment=flickr_on_pascal,wikipaintings_on_pascal,wikipaintings_on_flickr,wikipaintings_on_ava_style,flickr_on_ava_style,flickr_on_wikipaintings --slurm --exclude="orange[1-6],banana[1-4]" --num_workers=3
+    python aphrodite/run_experiment.py --experiment=flickr_on_pascal,wikipaintings_on_pascal,wikipaintings_on_flickr,wikipaintings_on_ava_style,flickr_on_ava_style,flickr_on_wikipaintings --slurm --num_workers=3
+
 
 Single feature + Content
 ------------------------
@@ -27,6 +61,7 @@ flickr: launched oct31 0530 finished oct31 1230
 wikipaintings: launched oct31 0530  finished oct31 1230
     o srun -p vision --cpus-per-task=20 --mem=14000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=decaf_fc6,pascal_mc_for_decaf_fc6 --prediction_label="style_*" --num_workers=16 --quadratic=pd
     o srun -p vision --cpus-per-task=16 --mem=20000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=mc_bit,pascal_mc_for_mc_bit --prediction_label="style_*" --num_workers=16 --quadratic=pm --bit_precision=20
+
 
 Late Fusion
 -----------
@@ -39,6 +74,7 @@ flickr: (cluster)
     o srun -p vision --cpus-per-task=8 --mem=12000 python vislab/predict.py predict --dataset=flickr --collection_name=flickr_oct26 --features=fusion_flickr_oct26 --prediction_label="style_*" --num_workers=8
 wikipaintings: (cluster)
     x srun -p vision --cpus-per-task=8 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=fusion_wikipaintings_oct25 --prediction_label="style_*" --num_workers=8
+
 
 AVA Style
 ---------
@@ -90,6 +126,7 @@ decaf_tuned_fc6_flatten:
     x OAA result: on cluster (1430-1900)
         srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=ava_style --features=decaf_tuned_fc6_flatten --collection_name=ava_style_oct22 --num_workers=9 --prediction_label=style_*
 
+
 Flickr
 ------
 collection_name = flickr_oct26
@@ -97,21 +134,18 @@ collection_name = flickr_oct26
 decaf_fc6:
     x h5: on flapjack, 50198, standardized
     x vw: on flapjack, 50198, standardized, shuffled?
-    x OAA result: on cluster (done on orange1)
+    x OAA result
 
 decaf_tuned_fc6:
-    o OAA result: launched oct 30 1420
-        srun -p vision --cpus-per-task=11 --mem=18000 python vislab/predict.py predict --dataset=flickr --features=decaf_tuned_fc6 --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
+    - OAA result: launched oct 30 1420, done oct 30 2028 (6 hours)
 
 decaf_fc6_flatten:
     x h5: on flapjack, 50197, standardized
     x vw: on flapjack, 50197, standardized, shuffled
-    x OAA result: on cluster, done on orange2
-        srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=flickr --features=decaf_fc6_flatten --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
+    x OAA result
 
 decaf_tuned_fc6_flatten:
-    x OAA result: launched oct 30 1420 finished oct 31 1300
-        srun -p vision --cpus-per-task=11 --mem=18000 python vislab/predict.py predict --dataset=flickr --features=decaf_tuned_fc6_flatten --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
+    x OAA result: launched oct 30 1420 finished oct 31 1120 (21 hours)
 
 lab_hist:
     k h5: on flapjack, 49688, standardized (which is bad, because it should be mostly 0)
@@ -120,8 +154,7 @@ lab_hist:
 
 mc_bit:
     x txt.gz: on flapjack, 50152, binary, not sure if shuffled?
-    x OAA result: on cluster, done on orange5
-        srun -p vision --cpus-per-task=11 --mem=16000 python vislab/predict.py predict --dataset=flickr --features=mc_bit --collection_name=flickr_oct26 --num_workers=9 --prediction_label=style_*
+    x OAA result
 
 
 Wikipaintings
@@ -156,13 +189,13 @@ decaf_fc6_flatten:
 decaf_tuned_fc6_flatten:
     x h5: on flapjack
     x txt.gz: on cluster
-    o style OAA result: launched oct 30 1420
+    x style OAA result: launched oct 30 1420, ended oct 31 1720
         srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_tuned_fc6_flatten --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
 
 mc_bit:
     x h5: on flapjack, 82438, binary
     x txt.gz: on flapjack, 82438, binary, shuffled
-    x style OAA results: done on cluster oct26 some time
+    x style OAA results
     x artist OAA result
         oct 25 1950 on orange4
         srun -p vision --cpus-per-task=22 --mem=24000 python vislab/predict.py predict --dataset=wikipaintings --label=artist --features=mc_bit --collection_name=wikipaintings_artist_oct25 --num_workers=18 --prediction_label=artist_* --bit_precision=20
