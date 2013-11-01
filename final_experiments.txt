@@ -18,7 +18,7 @@ Tuned decaf Upside-Down
 AVA STYLE
     x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=ava_style --num_workers=20 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=ava_style && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=ava_style
 
-    o srun -p vision --nodelist=flapjack --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=ava_style --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=ava_style_oct22 --num_workers=16
+    - srun -p vision --nodelist=flapjack --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=ava_style --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=ava_style_oct22 --num_workers=16
 
 FLICKR
     x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=wikipaintings --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=wikipaintings
