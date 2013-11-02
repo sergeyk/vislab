@@ -98,7 +98,8 @@ def binary_metrics(
 
 def multiclass_metrics_feat_comparison(
         preds_panel, source_label_df, pred_prefix, features,
-        balanced=False, with_plot=False, with_print=False):
+        balanced=False, with_plot=False, with_print=False,
+        nice_feat_names=None):
     """
     Multiclass classification metrics for a set of feature channels.
 
@@ -143,20 +144,30 @@ def multiclass_metrics_feat_comparison(
     all_metrics = {'feat_metrics': feat_metrics}
 
     # Across-feature AP comparison.
-    all_metrics['ap_df'] = pd.DataFrame(dict(
-        (feature_name, feat_metrics[feature_name]['binary_metrics_df']['ap'])
-        for feature_name in features
+    ap_df = pd.DataFrame(dict(
+        (feature, feat_metrics[feature]['binary_metrics_df']['ap'])
+        for feature in features
     ))
-    all_metrics['ap_fig'] = vislab.results_viz.plot_df_bar(
-        all_metrics['ap_df'], features)
+    if nice_feat_names is not None:
+        ap_df.columns = [
+            nice_feat_names[x] if x in nice_feat_names else x
+            for x in ap_df.columns
+        ]
+    all_metrics['ap_fig'] = vislab.results_viz.plot_df_bar(ap_df)
+    all_metrics['ap_df'] = ap_df
 
     # # Across-feature top-k accuracy comparison.
-    all_metrics['acc_df'] = pd.DataFrame(
+    acc_df = pd.DataFrame(
         [feat_metrics[f]['top_k_accuracies'] for f in features],
         index=features
     ).T
-    all_metrics['top_k_fig'] = vislab.results_viz.plot_top_k_accuracies(
-        all_metrics['acc_df'][features])
+    if nice_feat_names is not None:
+        acc_df.columns = [
+            nice_feat_names[x] if x in nice_feat_names else x
+            for x in acc_df.columns
+        ]
+    all_metrics['top_k_fig'] = vislab.results_viz.plot_top_k_accuracies(acc_df)
+    all_metrics['acc_df'] = acc_df
 
     return all_metrics
 

@@ -1,12 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import vislab.gg
 
 
-def plot_df_bar(df, columns=None):
+def plot_df_bar(df, columns=None, figsize=(16, 4), fontsize=13):
     """
     Used to plot AP vs MCC for a single feature, or AP between features.
     """
-    fig = plt.figure(figsize=(16, 4))
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     if columns is not None:
         df = df[columns]
@@ -15,13 +16,20 @@ def plot_df_bar(df, columns=None):
     ax.set_yticks(np.arange(11) / 10.)
     fig.autofmt_xdate()
 
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.3),
-        ncol=3, fancybox=True, shadow=True)
+    ax.legend(
+        loc='upper center', bbox_to_anchor=(0.5, 1.2),
+        ncol=3, fancybox=True, shadow=True, prop={'size': fontsize})
+
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                 ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(fontsize)
+
+    vislab.gg.rstyle(ax)
 
     return fig
 
 
-def plot_top_k_accuracies(accuracies_df, top_k=5):
+def plot_top_k_accuracies(accuracies_df, top_k=5, font_size=13):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     accuracies_df.ix[range(top_k + 1)].plot(ax=ax, style='s--')
@@ -31,8 +39,15 @@ def plot_top_k_accuracies(accuracies_df, top_k=5):
     ax.set_ylim([0, 1])
     ax.set_ylabel('Top-K Accuracy')
 
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.35),
-        ncol=2, fancybox=True, shadow=True)
+    ax.legend(
+        loc='upper center', bbox_to_anchor=(0.5, 1.35),
+        ncol=2, fancybox=True, shadow=True, prop={'size': font_size})
+
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                 ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(font_size)
+
+    vislab.gg.rstyle(ax)
 
     return fig
 

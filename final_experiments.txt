@@ -1,3 +1,5 @@
+python vislab/predict.py predict --dataset=ava_style --collection_name=ava_style_aesth_oct29 --prediction_label=rating_mean_bin --features=decaf_tuned_fc6 --mem=12000 --num_workers=8
+
 Late Fusion + Content
 ---------------------
 ava_style: (local)
@@ -10,7 +12,7 @@ flickr: (cluster)
     x srun -p vision --cpus-per-task=8 --mem=12000 python vislab/predict.py predict --dataset=flickr --collection_name=flickr_oct26 --features=fusion_flickr_oct26,pascal_mc_for_fusion_flickr_oct26 --prediction_label="style_*" --num_workers=8 --quadratic=fp
 
 wikipaintings: (cluster)
-    o srun -p vision --cpus-per-task=8 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=fusion_wikipaintings_oct25,pascal_mc_for_fusion_wikipaintings_oct25 --prediction_label="style_*" --num_workers=8 --quadratic=fp
+    x srun -p vision --cpus-per-task=8 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=fusion_wikipaintings_oct25,pascal_mc_for_fusion_wikipaintings_oct25 --prediction_label="style_*" --num_workers=8 --quadratic=fp
 
 
 Tuned decaf Upside-Down
@@ -18,17 +20,17 @@ Tuned decaf Upside-Down
 AVA STYLE
     x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=ava_style --num_workers=20 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=ava_style && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=ava_style
 
-    - srun -p vision --nodelist=flapjack --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=ava_style --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=ava_style_oct22 --num_workers=16
+    x srun -p vision --nodelist=flapjack --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=ava_style --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=ava_style_oct22 --num_workers=16
 
 FLICKR
     x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=wikipaintings --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=wikipaintings
 
-    o srun -p vision --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=flickr --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=flickr_oct26 --num_workers=16
+    x srun -p vision --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=flickr --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=flickr_oct26 --num_workers=16
 
 WP
     x python vislab/feature.py compute --mem=3500 --features=decaf_tuned_fc6_ud --dataset=flickr --num_workers=30 && python vislab/feature.py cache_to_h5 --features=decaf_tuned_fc6_ud --dataset=flickr && python vislab/feature.py cache_to_vw --features=decaf_tuned_fc6_ud --dataset=flickr
 
-    o srun -p vision --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=wikipaintings_oct25 --num_workers=16
+    x srun -p vision --cpus-per-task=18 --mem=16000 python vislab/predict.py predict --dataset=wikipaintings --prediction_label="style_*" --features=decaf_tuned_fc6_ud --collection_name=wikipaintings_oct25 --num_workers=16
 
 
 Pascal Classifiers on Datasets
@@ -59,8 +61,8 @@ ava_style: launched directly on flapjack 0430
 flickr: launched oct31 0530 finished oct31 1230
     x srun -p vision --cpus-per-task=16 --mem=14000 python vislab/predict.py predict --dataset=flickr --collection_name=flickr_oct26 --features=decaf_tuned_fc6,pascal_mc_for_decaf_tuned_fc6 --prediction_label="style_*" --num_workers=16 --quadratic=pd
 wikipaintings: launched oct31 0530  finished oct31 1230
-    o srun -p vision --cpus-per-task=20 --mem=14000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=decaf_fc6,pascal_mc_for_decaf_fc6 --prediction_label="style_*" --num_workers=16 --quadratic=pd
-    o srun -p vision --cpus-per-task=16 --mem=20000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=mc_bit,pascal_mc_for_mc_bit --prediction_label="style_*" --num_workers=16 --quadratic=pm --bit_precision=20
+    x srun -p vision --cpus-per-task=20 --mem=14000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=decaf_fc6,pascal_mc_for_decaf_fc6 --prediction_label="style_*" --num_workers=16 --quadratic=pd
+    x srun -p vision --cpus-per-task=16 --mem=20000 python vislab/predict.py predict --dataset=wikipaintings --collection_name=wikipaintings_oct25 --features=mc_bit,pascal_mc_for_mc_bit --prediction_label="style_*" --num_workers=16 --quadratic=pm --bit_precision=20
 
 
 Late Fusion

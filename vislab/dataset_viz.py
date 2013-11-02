@@ -4,6 +4,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import vislab
 import vislab.dataset_stats
+import vislab.gg
 
 
 def plot_column_frequencies(df, column, top_k=20):
@@ -16,12 +17,14 @@ def plot_column_frequencies(df, column, top_k=20):
     column_vals.plot(ax=ax, kind='bar', title='{} Frequency'.format(column))
     ax.set_xlabel('')
     fig.autofmt_xdate()
+    vislab.gg.rstyle(ax)
     return fig
 
 
 def plot_conditional_occurrence(
         df_m, size=None, cmap=plt.cm.gray_r, color_anchor=[0, 1],
-        x_tick_rot=90, title=None, plot_vals=True, sort_by_prior=True):
+        x_tick_rot=90, title=None, plot_vals=True, sort_by_prior=True,
+        font_size=12):
     """
     Plot the occurrence of the columns of the given DataFrame
     conditioned on the occurrence of its rows.
@@ -47,7 +50,7 @@ def plot_conditional_occurrence(
         df_m = df_m.sort('prior', ascending=False)
 
     fig = plot_occurrence(
-        df_m, size, cmap, color_anchor, x_tick_rot, title, plot_vals)
+        df_m, size, cmap, color_anchor, x_tick_rot, title, plot_vals, font_size)
     ax = fig.get_axes()[0]
 
     # Plot line separating 'nothing' and 'prior' from rest of plot
@@ -62,7 +65,7 @@ def plot_conditional_occurrence(
 
 def plot_occurrence(
         df_m, size=None, cmap=plt.cm.gray_r, color_anchor=[0, 1],
-        x_tick_rot=90, title=None, plot_vals=True):
+        x_tick_rot=90, title=None, plot_vals=True, font_size=12):
     """
     TODO
     """
@@ -93,10 +96,10 @@ def plot_occurrence(
         tick[0].label2On = True
         tick[0].label1On = False
         tick[0].label2.set_rotation(x_tick_rot)
-        tick[0].label2.set_fontsize('x-large')
+        #tick[0].label2.set_fontsize('x-large')
 
     ax.set_yticks(np.arange(M))
-    ax.set_yticklabels(df_m.index, size='x-large')
+    ax.set_yticklabels(df_m.index)
 
     ax.yaxis.set_minor_locator(
         mpl.ticker.FixedLocator(np.arange(-.5, M + 0.5)))
@@ -135,9 +138,9 @@ def plot_occurrence(
                 if np.isnan(val):
                     continue
                 if val / (color_anchor[1] - color_anchor[0]) > 0.5:
-                    ax.text(j - 0.2, i + 0.1, '%.2f' % val, color='w')
+                    ax.text(j - 0.25, i + 0.1, '%.2f' % val, color='w', size=font_size-2)
                 else:
-                    ax.text(j - 0.2, i + 0.1, '%.2f' % val, color='k')
+                    ax.text(j - 0.25, i + 0.1, '%.2f' % val, color='k', size=font_size-2)
 
     # Hide the black frame around the plot
     # Doing ax.set_frame_on(False) results in weird thin lines
@@ -153,5 +156,10 @@ def plot_occurrence(
     cb = fig.colorbar(im, cax=ax_cb, orientation='horizontal',
                       cmap=cmap, ticks=ticks, format='%.2f')
     cb.ax.artists.remove(cb.outline)
+
+    # Set fontsize
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                 ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(font_size)
 
     return fig

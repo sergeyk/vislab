@@ -30,7 +30,7 @@ oct 31
     srun -p vision --nodelist=flapjack --cpus-per-task=6 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --source_dataset=wikipaintings --prediction_label="style_*" --features=decaf_fc6 --collection_name=wikipaintings_oct25 --num_workers=4
 - [x] launch experiments with quadratic expansion of fusion features
 - [ ] compute flickr styles on wikipaintings
-- [ ] get image similarity website going again with all features and datasets
+- [ ] get image similarity notebook
 
 ## Next
 
