@@ -4,7 +4,8 @@ module functions.
 """
 import sys
 import argparse
-import aphrodite.feature
+# TODO: fix this dependency
+#import aphrodite.feature
 
 
 def add_cmdline_args(group_name, parser):

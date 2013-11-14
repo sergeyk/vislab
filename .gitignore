@@ -1,3 +1,4 @@
 data
 .ipynb*
 vislab/tests/_temp
+vislab/config.json
