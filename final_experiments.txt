@@ -1,3 +1,13 @@
+srun -p vision --cpus-per-task=11 --mem=18000 python vislab/predict.py predict --dataset=ava_style --features=decaf_imagenet --collection_name=ava_style_oct22 --num_workers=9 --prediction_label=style_*
+srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=flickr --features=decaf_imagenet --collection_name=flickr_oct26 --num_workers=18 --prediction_label=style_*
+srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_imagenet --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
+c
+
+python vislab/feature.py compute --mem=2500 --features=decaf_imagenet --dataset=ava_style --num_workers=10 && python vislab/feature.py cache_to_h5 --features=decaf_imagenet --dataset=ava_style && python vislab/feature.py cache_to_vw --features=decaf_imagenet --dataset=ava_style
+python vislab/feature.py compute --mem=2500 --features=decaf_imagenet --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=decaf_imagenet --dataset=flickr && python vislab/feature.py cache_to_vw --features=decaf_imagenet --dataset=flickr
+python vislab/feature.py compute --mem=2500 --features=decaf_imagenet --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=decaf_imagenet --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=decaf_imagenet --dataset=wikipaintings
+
+
 python vislab/predict.py predict --dataset=ava_style --collection_name=ava_style_aesth_oct29 --prediction_label=rating_mean_bin --features=decaf_tuned_fc6 --mem=12000 --num_workers=8
 
 Late Fusion + Content

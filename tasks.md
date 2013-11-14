@@ -1,36 +1,4 @@
-## Experiments that need to happen for CVPR
-
-oct 28
-- [x] write out gbvs_saliency results for ava_style: bug in cache_to_h5
-- [x] gbvs experiment on ava_style
-- [x] get artist experiments results to load: fix some bug
-    : now getting updated with validation data
-- [x] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
-- [x] launch pascal clf training again -- can't find models. not OAA, don't want to mess with evaluation code that I'd have to change.
-- [x] aesthetic prediction results: test locally, launch on cluster overnight
-
-oct 29
-- [x] re-launch aesthetic pred. results with increased memory, this is BS
-- [x] launch finetuning training on durian (launched oct 29 1400)
-- [x] run pascal content classifiers on all datasets
-    : launched oct29 1800 (collection names are given in run_experiment.py)
-    - [x] sync up all pascal models to flapjack and then push them out to all machines
-- [x] sync up results on all datasets such that local mongo has up to date info
-    - [x] load aesthetic results
-
-oct 30
-- [x] develop method for loading the result pred_dfs for multiple classes and writing them back out as features
-- [x] implement, test, and launch quadratic expansion with content classifiers experiments
-- [x] run flickr and wikipainting style classifiers on datasets that dont already have them
-- [x] run late-fusion on all datasets
-
-oct 31
-- [x] generate the content-style co-occurrence matrix
-- [o] Fix wikipaintings decaf_fc6 result (flickr got in there)
-    srun -p vision --nodelist=flapjack --cpus-per-task=6 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --source_dataset=wikipaintings --prediction_label="style_*" --features=decaf_fc6 --collection_name=wikipaintings_oct25 --num_workers=4
-- [x] launch experiments with quadratic expansion of fusion features
-- [ ] compute flickr styles on wikipaintings
-- [ ] get image similarity notebook
+- style transfer idea: use the gradient at data level of the convnet to apply to the pixels. will need to regularize.
 
 ## Next
 
@@ -178,3 +146,31 @@ x re-run classification and regression with decaf_fc6 feature on style subset
 - debug mc_bit feature: seems to always be true. then re-run mc_bit computation
 - amend the cache_to_h5 thing that if the feature sums to 1 across rows, don't standardize (for histograms)
 - save the results and predictions panel just to filesystem in common space instead of database. size limit...
+- [x] write out gbvs_saliency results for ava_style: bug in cache_to_h5
+- [x] gbvs experiment on ava_style
+- [x] get artist experiments results to load: fix some bug
+    : now getting updated with validation data
+- [x] assemble all trainval images from Flickr and Wikipaintings into rolled-out 3x256x256 vectors, and assign int labels to all of them. ping jeff
+- [x] launch pascal clf training again -- can't find models. not OAA, don't want to mess with evaluation code that I'd have to change.
+- [x] aesthetic prediction results: test locally, launch on cluster overnight
+- [x] re-launch aesthetic pred. results with increased memory, this is BS
+- [x] launch finetuning training on durian (launched oct 29 1400)
+- [x] run pascal content classifiers on all datasets
+    : launched oct29 1800 (collection names are given in run_experiment.py)
+    - [x] sync up all pascal models to flapjack and then push them out to all machines
+- [x] sync up results on all datasets such that local mongo has up to date info
+    - [x] load aesthetic results
+- [x] develop method for loading the result pred_dfs for multiple classes and writing them back out as features
+- [x] implement, test, and launch quadratic expansion with content classifiers experiments
+- [x] run flickr and wikipainting style classifiers on datasets that dont already have them
+- [x] run late-fusion on all datasets
+- [x] generate the content-style co-occurrence matrix
+- [o] Fix wikipaintings decaf_fc6 result (flickr got in there)
+    srun -p vision --nodelist=flapjack --cpus-per-task=6 --mem=12000 python vislab/predict.py predict --dataset=wikipaintings --source_dataset=wikipaintings --prediction_label="style_*" --features=decaf_fc6 --collection_name=wikipaintings_oct25 --num_workers=4
+- [x] launch experiments with quadratic expansion of fusion features
+- [x] compute flickr styles on wikipaintings
+- [x] get image similarity notebook
+- [x] re-compute imagenet features on all datasets
+- [x] compute ids and distribute feats to cluster
+- [-] run experiments with imagenet features
+- [x] output latex tables for all the AP tables.
