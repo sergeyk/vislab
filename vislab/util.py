@@ -6,14 +6,7 @@ import socket
 import tempfile
 import cPickle
 import subprocess
-
-
-def add_cmdline_args(parser):
-    """
-    Add commonly used command line arguments to given ArgumentParser.
-    """
-    parser.add_argument(
-        '--random_seed', default=42)
+import shutil
 
 
 def exclude_ids_in_collection(image_ids, collection):
@@ -31,11 +24,11 @@ def exclude_ids_in_collection(image_ids, collection):
     return image_ids
 
 
-def load_or_generate_df(filename, generator_fn, force=False):
+def load_or_generate_df(filename, generator_fn, force=False, args=None):
     if not force and os.path.exists(filename):
         df = pd.read_hdf(filename, 'df')
     else:
-        df = generator_fn()
+        df = generator_fn(args)
         df.to_hdf(filename, 'df', mode='w')
     return df
 
@@ -67,7 +60,8 @@ def print_collection_counts():
     client = get_mongodb_client()
     for db_name in client.database_names():
         for coll_name in client[db_name].collection_names():
-            print db_name, coll_name, client[db_name][coll_name].count()
+            print('{} |\t\t{}: {}'.format(
+                db_name, coll_name, client[db_name][coll_name].count()))
 
 
 def get_redis_conn():
@@ -87,7 +81,7 @@ def pickle_function_call(func_name, args):
     return c
 
 
-def run_through_bash_script(cmds, filename=None, verbose=False):
+def run_through_bash_script(cmds, filename=None, verbose=False, num_workers=1):
     """
     Write out given commands to a bash script file and execute it.
     This is useful when the commands to run include pipes, or are chained.
@@ -100,20 +94,28 @@ def run_through_bash_script(cmds, filename=None, verbose=False):
         If None, a temporary file is used and deleted after.
     verbose: bool [False]
         If True, output the commands that will be run.
+    num_workers: int [1]
+        If > 1, commands are piped through parallel -j num_workers
     """
-    if verbose:
-        print("Commands that will be run:")
-        for cmd in cmds:
-            print cmd
+    assert(num_workers > 0)
 
     remove_file = False
     if filename is None:
         f, filename = tempfile.mkstemp()
         remove_file = True
 
+    if num_workers > 1:
+        contents = "echo \"{}\" | parallel --env PATH -j {}".format(
+            '\n'.join(cmds), num_workers)
+    else:
+        contents = '\n'.join(cmds)
+
     with open(filename, 'w') as f:
-        for cmd in cmds:
-            f.write(cmd + '\n')
+        f.write(contents + '\n')
+
+    if verbose:
+        print("Contents of script file about to be run:")
+        print(contents)
 
     p = subprocess.Popen(['bash', filename])
     out, err = p.communicate()
@@ -126,6 +128,37 @@ def run_through_bash_script(cmds, filename=None, verbose=False):
         raise Exception("Script exited with code {}".format(p.returncode))
 
 
+def run_shell_cmd(cmd, echo=True):
+    """
+    Run a command in a sub-shell, capturing stdout and stderr
+    to temporary files that are then read.
+    """
+    _, stdout_f = tempfile.mkstemp()
+    _, stderr_f = tempfile.mkstemp()
+
+    print("Running command")
+    print(cmd)
+    p = subprocess.Popen(
+        '{} >{} 2>{}'.format(cmd, stdout_f, stderr_f), shell=True)
+    p.wait()
+
+    with open(stdout_f) as f:
+        stdout = f.read()
+    os.remove(stdout_f)
+
+    with open(stderr_f) as f:
+        stderr = f.read()
+    os.remove(stderr_f)
+
+    if echo:
+        print("stdout:")
+        print(stdout)
+        print("stderr:")
+        print(stderr)
+
+    return stdout, stderr
+
+
 def makedirs(dirname):
     if os.path.exists(dirname):
         return dirname
@@ -136,3 +169,9 @@ def makedirs(dirname):
     except:
         raise
     return dirname
+
+
+def cleardirs(dirname):
+    if os.path.exists(dirname):
+        shutil.rmtree(dirname)
+    return makedirs(dirname)

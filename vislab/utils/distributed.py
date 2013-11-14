@@ -4,29 +4,8 @@ import numpy as np
 import shlex
 import sys
 import subprocess
+import vislab
 from vislab import util
-
-
-def add_cmdline_args(parser):
-    """
-    Add command line arguments to given parser.
-    """
-    parser.add_argument(
-        '--num_workers',
-        help="number of workers to use in processing jobs",
-        default=1)
-    parser.add_argument(
-        '--chunk_size',
-        help="number of jobs to assign to a worker at once",
-        default=20)
-    parser.add_argument(
-        '--mem',
-        help="amount of memory that a single worker will use",
-        default=3000)
-    parser.add_argument(
-        '--cpus_per_task',
-        help="number of cpus that a single worker will use",
-        default=2)
 
 
 def chunk(function, args_list):
@@ -119,7 +98,7 @@ def map_through_rq(
         cmd = "rqworker --burst {}".format(name)
         if util.running_on_icsi():
             redis_hostname = 'flapjack'
-            job_log_dirname = util.makedirs('data_shared/rqworkers')
+            job_log_dirname = util.makedirs(vislab.config['paths']['shared_data'] + '/rqworkers')
             cmd = "srun -p vision --cpus-per-task={} --mem={}".format(
                 cpus_per_task, mem)
             cmd += " --time={} --output={}/{}_%j-out.txt".format(

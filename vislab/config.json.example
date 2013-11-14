@@ -1,8 +1,12 @@
 {
     "paths": {
-        "VOC2007": "~/Dropbox/work/vision_data/VOC2007",
-        "data": "~/work/vislab-dev/data",
-        "shared_data": "~/work/vislab-dev/data/shared",
-        "static_data": "~/work/vislab-dev/data/static"
+        "VOC": "~/work/vision_data/VOC2012",
+        "AVA": "~/work/vision_data/AVA_dataset",
+        "data": "~/work/vislab/data",
+        "shared_data": "~/work/vislab/data/shared",
+        "static_data": "~/work/vislab/data/static",
+        "feats": "~/work/aphrodite/data/feats",
+        "predict": "~/work/vislab/data/predict",
+        "results": "~/work/vislab/data/results"
     }
 }
