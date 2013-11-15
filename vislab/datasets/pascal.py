@@ -1,26 +1,138 @@
+"""
+PASCAL VOC: http://pascallin.ecs.soton.ac.uk/challenges/VOC/
+
+Everything loaded from files, and images distributed with dataset.
+Nothing special to do in parallel.
+"""
 import os
 import glob
 import xml.dom.minidom as minidom
 import pandas as pd
 import time
 import joblib
+import operator
 import vislab
 
 
-def load_pascal_annotation(filename):
+def get_image_filename_for_id(image_id):
+    return '{}/JPEGImages/{}.jpg'.format(
+        vislab.config['paths']['VOC'], image_id)
+
+
+def get_clf_df(force=False, args=None):
+    """
+    Load the image classification data, with metaclasses.
+    """
+    label_df, objects_df = load_pascal(force, args)
+    label_df = label_df.fillna(False)
+
+    # Group classes into metaclasses as additional labels.
+    metaclasses = {
+        'metaclass_animal': [
+            'bird', 'cat', 'cow', 'dog', 'horse', 'sheep'
+        ],
+        'metaclass_vehicle': [
+            'aeroplane', 'bicycle', 'boat',
+            'bus', 'car', 'motorbike', 'train'
+        ],
+        'metaclass_indoor': [
+            'bottle', 'chair', 'diningtable',
+            'pottedplant', 'sofa', 'tvmonitor'
+        ],
+        'metaclass_person': [
+            'person'
+        ]
+    }
+    for metaclass, classes in metaclasses.iteritems():
+        label_df[metaclass] = reduce(
+            operator.or_, [label_df[c] for c in classes])
+
+    # Append c_ before every class other than the mc_ classes.
+    label_df.columns = [
+        'class_' + col
+        if not (col.startswith('metaclass_') or col.startswith('_'))
+        else col
+        for col in label_df.columns
+    ]
+
+    return label_df
+
+
+def load_pascal(force=False, args=None):
+    """
+    Load all the annotations, including object bounding boxes.
+    Loads XML data in args['num_workers'] threads using joblib.Parallel.
+
+    Warning: this takes a few minutes to load from scratch!
+    """
+    if args is None:
+        args = {'num_workers': 8}
+
+    filename = vislab.config['paths']['shared_data'] + '/pascal_dfs.h5'
+    if not force and os.path.exists(filename):
+        images_df = pd.read_hdf(filename, 'images_df')
+        objects_df = pd.read_hdf(filename, 'objects_df')
+        return images_df, objects_df
+
+    annotations = glob.glob(
+        vislab.config['paths']['VOC'] + '/Annotations/*.xml')
+    t = time.time()
+    results = joblib.Parallel(n_jobs=args['num_workers'])(
+        joblib.delayed(_load_pascal_annotation)(annotation)
+        for annotation in annotations
+    )
+    images, objects_dfs = zip(*results)
+    images_df = pd.DataFrame(list(images))
+    print('load_pascal: finished processing images in {:.3f} s'.format(
+        time.time() - t))
+
+    # Get the canonical split information.
+    splits_dir = vislab.config['paths']['VOC'] + '/ImageSets/Main'
+    images_df['_split'] = None
+    for split in ['train', 'val']:
+        with open(splits_dir + '/{}.txt'.format(split)) as f:
+            inds = [x.strip() for x in f.readlines()]
+
+        # Post VOC2007, the 'val' split is the de-facto test split for
+        # local development.
+        if split == 'val':
+            split = 'test'
+        images_df['_split'].ix[inds] = split
+
+    # Drop images without a split: the VOC2007 images.
+    images_df = images_df.dropna(subset=['_split'])
+
+    images_df = images_df.fillna(False)
+
+    objects_df = objects_dfs[0]
+    for df in objects_dfs[1:1000]:
+        objects_df = objects_df.append(df)
+    print('load_pascal: finished processing objects in {:.3f} s'.format(
+        time.time() - t))
+
+    images_df.to_hdf(filename, 'images_df', mode='w')
+    objects_df.to_hdf(filename, 'objects_df', mode='a')
+    return images_df, objects_df
+
+
+def _load_pascal_annotation(filename):
     """
     Load image and bounding boxes info from the PASCAL VOC XML format.
     """
     def get_data_from_tag(node, tag):
         if tag is "bndbox":
             bbox = node.getElementsByTagName(tag)[0]
-            x1 = int(bbox.childNodes[1].childNodes[0].data)
-            y1 = int(bbox.childNodes[3].childNodes[0].data)
-            x2 = int(bbox.childNodes[5].childNodes[0].data)
-            y2 = int(bbox.childNodes[7].childNodes[0].data)
+            x1 = int(float(bbox.childNodes[1].childNodes[0].data))
+            y1 = int(float(bbox.childNodes[3].childNodes[0].data))
+            x2 = int(float(bbox.childNodes[5].childNodes[0].data))
+            y2 = int(float(bbox.childNodes[7].childNodes[0].data))
             return (x1, y1, x2, y2)
         else:
-            return node.getElementsByTagName(tag)[0].childNodes[0].data
+            try:
+                return node.getElementsByTagName(tag)[0].childNodes[0].data
+            except:
+                # Hack to deal with at least one file missing truncated info.
+                return 0
 
     with open(filename) as f:
         data = minidom.parseString(f.read())
@@ -62,40 +174,5 @@ def load_pascal_annotation(filename):
     return image_series, objects_df
 
 
-def load_pascal(force=False):
-    """
-    Load all the annotations, including object bounding boxes.
-    Warning: this takes a good few minutes to load from scratch!
-    """
-    filename = vislab.config['data_dir'] + '/pascal_dfs.h5'
-    if not force and os.path.exists(filename):
-        images_df = pd.read_hdf(filename, 'images_df')
-        objects_df = pd.read_hdf(filename, 'objects_df')
-        return images_df, objects_df
-
-    annotations = glob.glob(vislab.config['VOC_DIR'] +
-                            '/Annotations/*.xml')
-    t = time.time()
-    results = joblib.Parallel(n_jobs=8)(
-        joblib.delayed(load_pascal_annotation)(annotation)
-        for annotation in annotations
-    )
-    images, objects_dfs = zip(*results)
-    images_df = pd.DataFrame(list(images))
-
-    # Get the canonical split information.
-    splits_dir = vislab.config['VOC_DIR'] + '/ImageSets/Main'
-    images_df['_split'] = None
-    for split in ['train', 'val', 'test']:
-        with open(splits_dir + '/{}.txt'.format(split)) as f:
-            inds = [x.strip() for x in f.readlines()]
-        images_df['_split'].ix[inds] = split
-
-    objects_df = objects_dfs[0]
-    for df in objects_dfs[1:]:
-        objects_df = objects_df.append(df)
-    print('load_pascal: finished in {:.3f} s'.format(time.time() - t))
-
-    images_df.to_hdf(filename, 'images_df', mode='w')
-    objects_df.to_hdf(filename, 'objects_df', mode='w')
-    return images_df, objects_df
+if __name__ == '__main__':
+    get_clf_df(force=True)

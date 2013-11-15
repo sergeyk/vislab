@@ -2,8 +2,6 @@ import sys
 import re
 import pandas as pd
 import signal
-# NOTE: this prevents IOError: [Errno 32] Broken pipe
-signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 
 def vw_filter(df_filename, input_filename):
@@ -15,9 +13,9 @@ def vw_filter(df_filename, input_filename):
 
     The DataFrame can have non-unique indices.
 
-    Input format is like:
-    ^ id<image_id> |<feature_name> <feature_id>:<feature_val> ...
-    # e.g. " id12402 |sift 0:.12 1:.13 id12402 |gist 0:.12 1:.13"
+    Input format:
+    ^ id<image_id> |<feature_name> <feature_id>:<feature_val> |...
+    e.g. " id12402 |sift 0:.12 1:.13 id12402 |gist 0:.12 1:.13"
 
     Parameters
     ----------
@@ -61,9 +59,14 @@ def vw_filter(df_filename, input_filename):
 
 if __name__ == '__main__':
     """
+    Can stream feature data to this script, or have it read from a file.
+
     usage: cat <input_filename> | vw_filter.py <df_filename>
     or:    vw_filter.py <df_filename> <input_filename>
     """
+    # NOTE: this prevents IOError: [Errno 32] Broken pipe
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     assert(len(sys.argv) in [2, 3])
     df_filename = sys.argv[1]
     input_filename = sys.stdin
