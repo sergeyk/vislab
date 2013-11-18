@@ -148,6 +148,9 @@ def get_df_with_args(args=None):
     elif args.dataset == 'pascal':
         df = vislab.datasets.pascal.get_clf_df()
 
+    elif args.dataset == 'behance_photo':
+        df = vislab.datasets.behance.get_photo_df()
+
     else:
         raise Exception('Unknown dataset.')
 

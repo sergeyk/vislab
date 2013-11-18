@@ -18,6 +18,21 @@ tags = ['photo','blue','car','chinese ink','colored pencil','colors','comic',
 testURL = 'http://www.behance.net//gallery/Icons/1140561'
 projectNum = 1140561
 
+
+def get_image_url_for_id(id):
+    df = get_photo_df()
+    return df.ix[id]['imageURL']
+
+
+def get_photo_df():
+    df = pd.read_csv(
+        vislab.repo_dirname + '/datasets/behanceImages.csv')
+    df = df[df.label == 'photo']
+    df = df[df['imageURL'] != 'http://a2.behance.net/img/site/grey.png']
+    df.index = ['behance_photo_{}'.format(x) for x in df.index]
+    return df
+
+
 def get_basic_dataset(force=False):
     """
     Return DataFrame of image_id -> page_url, artist_slug, artwork_slug.
@@ -62,7 +77,7 @@ def fetch_single_project_image_URLs_via_scraping(page_url):
 # set maximums to -1 in order to not have a maximum
 def fetch_basic_dataset(maxRequests = 10, maxImagesPerProject=2, useAPI=True):
     """
-    Fetch basic info and page urls from a collection of projects.  
+    Fetch basic info and page urls from a collection of projects.
     Results are returned as a DataFrame.
     """
     print("Fetching Behance dataset.")
@@ -80,7 +95,7 @@ def fetch_basic_dataset(maxRequests = 10, maxImagesPerProject=2, useAPI=True):
         if numRequests % 10 == 0:
             sys.stdout.write('Fetching project %d / %d   \r'%(numRequests,len(projectList.index)))
             sys.stdout.flush()
-            
+
         projectNum = row.name
         URL = row[1]
         label = row[2]
@@ -94,7 +109,7 @@ def fetch_basic_dataset(maxRequests = 10, maxImagesPerProject=2, useAPI=True):
             pickedImageURLs = imageURLs
         else:
             pickedImageURLs = random.sample(imageURLs,maxImagesPerProject)
-        
+
         for u in pickedImageURLs:
             imageData.append({'projectNum':projectNum,'projectURL':URL,'label':label,'imageURL':u})
 

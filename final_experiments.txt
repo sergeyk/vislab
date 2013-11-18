@@ -1,3 +1,5 @@
+srun -p vision --cpus-per-task=22 --mem=18000 --nodelist=flapjack python vislab/predict.py predict --collection_name=behance --dataset=behance_photo --source_dataset=flickr --prediction_label=style_* --num_workers=36 --features=decaf_fc6
+
 srun -p vision --cpus-per-task=11 --mem=18000 python vislab/predict.py predict --dataset=ava_style --features=decaf_imagenet --collection_name=ava_style_oct22 --num_workers=9 --prediction_label=style_*
 srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=flickr --features=decaf_imagenet --collection_name=flickr_oct26 --num_workers=18 --prediction_label=style_*
 srun -p vision --cpus-per-task=22 --mem=18000 python vislab/predict.py predict --dataset=wikipaintings --features=decaf_imagenet --collection_name=wikipaintings_oct25 --num_workers=18 --prediction_label=style_*
