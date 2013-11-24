@@ -89,6 +89,8 @@ You can always run `python vislab/feature.py compute -h` to read about the optio
 
 ### Training and testing prediction
 
+TODO: talk about potenital pitfall: `gzcat` vs `zcat` on OS X.
+
 The prediction task takes the feature to use as a flag, the MongoDB collection to store the results into, and the label to run on.
 
     python vislab/predict.py predict --dataset=wikipaintings --features=noise --collection_name=demo --prediction_label="style_*" --num_workers=6

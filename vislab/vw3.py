@@ -140,7 +140,7 @@ def _cache_cmd(
     for f in feat_filenames:
         assert(os.path.exists(f))
     cats = [
-        '<(zcat {})'.format(f) if f.endswith('.gz') else '<(cat {})'.format(f)
+        '<(gzcat {})'.format(f) if f.endswith('.gz') else '<(cat {})'.format(f)
         for f in feat_filenames
     ]
     paste_cmd = "paste -d'\\0' {}".format(' '.join(cats))

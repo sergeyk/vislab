@@ -1,4 +1,6 @@
 ## Next
+- move the prediction results UI to vislab; read from database; streamline everything
+
 Style transfer
     - use the gradient at data level of the convnet to apply to the pixels. will need to regularize
 
