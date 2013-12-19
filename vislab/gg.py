@@ -75,8 +75,11 @@ def rstyle(ax, xlog=False, ylog=False):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    frame = ax.get_legend().get_frame()
-    frame.set_facecolor('#f3f3f3')
+    ax.legend()
+    legend = ax.get_legend()
+    if legend:
+        frame = legend.get_frame()
+        frame.set_facecolor('#f3f3f3')
 
 
 
