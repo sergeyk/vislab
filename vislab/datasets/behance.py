@@ -19,9 +19,14 @@ testURL = 'http://www.behance.net//gallery/Icons/1140561'
 projectNum = 1140561
 
 
-def get_image_url_for_id(id):
+def get_image_url_for_photo_id(id):
     df = get_photo_df()
     return df.ix[id]['imageURL']
+
+
+def get_image_url_for_illustration_id(id):
+    df = get_illustration_df()
+    return df.ix[id]['image_url']
 
 
 def get_photo_df():
