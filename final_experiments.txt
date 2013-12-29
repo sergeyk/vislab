@@ -1,3 +1,11 @@
+TODO DEC 28:
+- results display was workng with multiclass=False, but mc metrics were not getting computed in the results notebook: need to add label columns or something.
+- don't run on PNGs or GIFs or that bear and spongebob image; re-run experiments on cluster
+OR
+- jsut don't display pngs and gifs or that bear pic
+
+
+## Behance photo experiment
 srun -p vision --cpus-per-task=22 --mem=18000 --nodelist=flapjack python vislab/predict.py predict --collection_name=behance --dataset=behance_photo --source_dataset=flickr --prediction_label=style_* --num_workers=36 --features=decaf_fc6
 
 srun -p vision --cpus-per-task=11 --mem=18000 python vislab/predict.py predict --dataset=ava_style --features=decaf_imagenet --collection_name=ava_style_oct22 --num_workers=9 --prediction_label=style_*
