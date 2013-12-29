@@ -151,6 +151,9 @@ def get_df_with_args(args=None):
     elif args.dataset == 'behance_photo':
         df = vislab.datasets.behance.get_photo_df()
 
+    elif args.dataset == 'behance_illustration':
+        df = vislab.datasets.behance.get_illustration_df()
+
     else:
         raise Exception('Unknown dataset.')
 

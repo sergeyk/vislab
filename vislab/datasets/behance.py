@@ -33,6 +33,17 @@ def get_photo_df():
     return df
 
 
+def get_illustration_df():
+    """
+    This DataFame was assembled in the notebooks load_data and processing
+    in the behance folder in the aphrodite repo.
+    """
+    df = pd.read_csv(
+        vislab.repo_dirname + '/datasets/10k_illustrations_20_tags_3_images.csv',
+        index_col=0)
+    return df
+
+
 def get_basic_dataset(force=False):
     """
     Return DataFrame of image_id -> page_url, artist_slug, artwork_slug.
