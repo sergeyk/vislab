@@ -15,7 +15,7 @@ def chunk(function, args_list):
 def map_through_rq(
         function, args_list, name='default', aggregate=False,
         num_workers=1, chunk_size=1, cpus_per_task=1, mem=3000,
-        max_time='12:0:0', result_ttl=640, timeout=320, async=True):
+        max_time='12:0:0', result_ttl=640, timeout=640, async=True):
     """
     Map function onto args_list by submitting the jobs to a Redis queue,
     and launching background workers to process them.

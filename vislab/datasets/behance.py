@@ -19,9 +19,14 @@ testURL = 'http://www.behance.net//gallery/Icons/1140561'
 projectNum = 1140561
 
 
-def get_image_url_for_id(id):
+def get_image_url_for_photo_id(id):
     df = get_photo_df()
     return df.ix[id]['imageURL']
+
+
+def get_image_url_for_illustration_id(id):
+    df = get_illustration_df()
+    return df.ix[id]['image_url']
 
 
 def get_photo_df():
@@ -30,6 +35,17 @@ def get_photo_df():
     df = df[df.label == 'photo']
     df = df[df['imageURL'] != 'http://a2.behance.net/img/site/grey.png']
     df.index = ['behance_photo_{}'.format(x) for x in df.index]
+    return df
+
+
+def get_illustration_df():
+    """
+    This DataFame was assembled in the notebooks load_data and processing
+    in the behance folder in the aphrodite repo.
+    """
+    df = pd.read_csv(
+        vislab.repo_dirname + '/datasets/10k_illustrations_20_tags_3_images.csv',
+        index_col=0)
     return df
 
 
