@@ -152,7 +152,9 @@ def get_df_with_args(args=None):
         df = vislab.datasets.behance.get_photo_df()
 
     elif args.dataset == 'behance_illustration':
-        df = vislab.datasets.behance.get_illustration_df()
+        df = pd.read_csv(
+            vislab.repo_dirname + '/datasets/10k_illustrations_20_tags_3_images.csv',
+            index_col=0)
 
     else:
         raise Exception('Unknown dataset.')

@@ -5,6 +5,7 @@ Everything loaded from files, and images distributed with dataset.
 Nothing special to do in parallel.
 """
 import os
+import numpy as np
 import glob
 import xml.dom.minidom as minidom
 import pandas as pd
@@ -19,11 +20,11 @@ def get_image_filename_for_id(image_id):
         vislab.config['paths']['VOC'], image_id)
 
 
-def get_clf_df(force=False, args=None):
+def get_clf_df(VOCyear='VOC2012', force=False, args=None):
     """
     Load the image classification data, with metaclasses.
     """
-    label_df, objects_df = load_pascal(force, args)
+    label_df, objects_df = load_pascal(VOCyear, force, args)
     label_df = label_df.fillna(False)
 
     # Group classes into metaclasses as additional labels.
@@ -58,7 +59,24 @@ def get_clf_df(force=False, args=None):
     return label_df
 
 
-def load_pascal(force=False, args=None):
+def load_annotation_files(filenames, num_workers=1):
+    t = time.time()
+    if num_workers > 1:
+        results = joblib.Parallel(n_jobs=num_workers)(
+            joblib.delayed(_load_pascal_annotation)(fname)
+            for fname in filenames
+        )
+    else:
+        results = [_load_pascal_annotation(fname) for fname in filenames]
+    images, objects_dfs = zip(*results)
+    images_df = pd.DataFrame(list(images))
+    objects_df = pd.concat(objects_dfs)
+    print('load_annotation_files: finished in {:.3f} s'.format(
+        time.time() - t))
+    return images_df, objects_df
+
+
+def load_pascal(VOCyear='VOC2012', force=False, args=None):
     """
     Load all the annotations, including object bounding boxes.
     Loads XML data in args['num_workers'] threads using joblib.Parallel.
@@ -66,113 +84,123 @@ def load_pascal(force=False, args=None):
     Warning: this takes a few minutes to load from scratch!
     """
     if args is None:
+        # TODO: set this to number of cores on machine
         args = {'num_workers': 8}
 
-    filename = vislab.config['paths']['shared_data'] + '/pascal_dfs.h5'
-    if not force and os.path.exists(filename):
-        images_df = pd.read_hdf(filename, 'images_df')
-        objects_df = pd.read_hdf(filename, 'objects_df')
+    cache_filename = \
+        vislab.config['paths']['shared_data'] + \
+        '/pascal_{}_dfs.h5'.format(VOCyear)
+    if not force and os.path.exists(cache_filename):
+        images_df = pd.read_hdf(cache_filename, 'images_df')
+        objects_df = pd.read_hdf(cache_filename, 'objects_df')
         return images_df, objects_df
 
-    annotations = glob.glob(
-        vislab.config['paths']['VOC'] + '/Annotations/*.xml')
-    t = time.time()
-    results = joblib.Parallel(n_jobs=args['num_workers'])(
-        joblib.delayed(_load_pascal_annotation)(annotation)
-        for annotation in annotations
-    )
-    images, objects_dfs = zip(*results)
-    images_df = pd.DataFrame(list(images))
-    print('load_pascal: finished processing images in {:.3f} s'.format(
-        time.time() - t))
+    # Load all annotation file data (should take < 30 s).
+    annotation_filenames = glob.glob(
+        vislab.config['paths'][VOCyear] + '/Annotations/*.xml')
+    images_df, objects_df = load_annotation_files(
+        annotation_filenames, args['num_workers'])
 
-    # Get the canonical split information.
-    splits_dir = vislab.config['paths']['VOC'] + '/ImageSets/Main'
+    # Get the split information.
+    splits_dir = vislab.config['paths'][VOCyear] + '/ImageSets/Main'
     images_df['_split'] = None
-    for split in ['train', 'val']:
-        with open(splits_dir + '/{}.txt'.format(split)) as f:
+    for split in ['train', 'val', 'test']:
+        split_filename = splits_dir + '/{}.txt'.format(split)
+        if not os.path.exists(split_filename):
+            print("{} split does not exist".format(split))
+            continue
+        with open(split_filename) as f:
             inds = [x.strip() for x in f.readlines()]
+        safe_inds = set(inds).intersection(images_df.index)
+        images_df['_split'].ix[safe_inds] = split
 
-        # Post VOC2007, the 'val' split is the de-facto test split for
-        # local development.
-        if split == 'val':
-            split = 'test'
-        images_df['_split'].ix[inds] = split
-
-    # Drop images without a split: the VOC2007 images.
+    # Drop images without a split (VOC2007 images in the VOC2012 set).
     images_df = images_df.dropna(subset=['_split'])
 
+    # Drop corresponding images in the objects_df.
+    objects_df = objects_df.ix[images_df.index]
+
+    # Propagate split info to objects_df
+    objects_df['split'] = np.repeat(
+        images_df['_split'].values, images_df['_num_objects'].values)
+
+    # Make sure that all labels are either True or False.
     images_df = images_df.fillna(False)
 
-    objects_df = objects_dfs[0]
-    for df in objects_dfs[1:1000]:
-        objects_df = objects_df.append(df)
-    print('load_pascal: finished processing objects in {:.3f} s'.format(
-        time.time() - t))
-
-    images_df.to_hdf(filename, 'images_df', mode='w')
-    objects_df.to_hdf(filename, 'objects_df', mode='a')
+    images_df.to_hdf(cache_filename, 'images_df', mode='w')
+    objects_df.to_hdf(cache_filename, 'objects_df', mode='a')
     return images_df, objects_df
 
 
 def _load_pascal_annotation(filename):
     """
-    Load image and bounding boxes info from the PASCAL VOC XML format.
+    Load image and bounding boxes info from XML file in the PASCAL VOC
+    format.
     """
     def get_data_from_tag(node, tag):
-        if tag is "bndbox":
-            bbox = node.getElementsByTagName(tag)[0]
-            x1 = int(float(bbox.childNodes[1].childNodes[0].data))
-            y1 = int(float(bbox.childNodes[3].childNodes[0].data))
-            x2 = int(float(bbox.childNodes[5].childNodes[0].data))
-            y2 = int(float(bbox.childNodes[7].childNodes[0].data))
-            return (x1, y1, x2, y2)
-        else:
-            try:
-                return node.getElementsByTagName(tag)[0].childNodes[0].data
-            except:
-                # Hack to deal with at least one file missing truncated info.
-                return 0
+        try:
+            return node.getElementsByTagName(tag)[0].childNodes[0].data
+        except:
+            return 0
 
     with open(filename) as f:
         data = minidom.parseString(f.read())
     name = str(get_data_from_tag(data, "filename"))
-    name = name[:-4]  # get rid of file extension
+    if name[-4:] == '.jpg':
+        name = name[:-4]
 
     # Load object bounding boxes into a data frame.
-    objects_df = pd.DataFrame([
-        {
-            'class': str(get_data_from_tag(obj, "name")).lower().strip(),
-            'pose': str(get_data_from_tag(obj, "pose")).lower().strip(),
-            'difficult': int(get_data_from_tag(obj, "difficult")) == 1,
-            'truncated': int(get_data_from_tag(obj, "truncated")) == 1,
-            'xmin': get_data_from_tag(obj, "bndbox")[0],
-            'ymin': get_data_from_tag(obj, "bndbox")[1],
-            'xmax': get_data_from_tag(obj, "bndbox")[2],
-            'ymax': get_data_from_tag(obj, "bndbox")[3],
+    all_obj_data = []
+    for obj in data.getElementsByTagName("object"):
+        obj_data = {
+            # It's unclear whether these coordinates are 1-based.
+            # For PASCAL, I think they are, but for Imagenet, they're
+            # not. It shouldn't matter.
+            'xmin': float(get_data_from_tag(obj, "xmin")),
+            'ymin': float(get_data_from_tag(obj, "ymin")),
+            'xmax': float(get_data_from_tag(obj, "xmax")),
+            'ymax': float(get_data_from_tag(obj, "ymax")),
+            'class': str(get_data_from_tag(obj, "name")).lower().strip()
         }
-        for obj in data.getElementsByTagName("object")
-    ])
-    objects_df.index = pd.MultiIndex.from_tuples(
-        [(name, ind) for ind in objects_df.index],
-        names=['image_id', 'object_id']
-    )
+        if obj.getElementsByTagName('pose'):
+            obj_data['pose'] = str(get_data_from_tag(obj, "pose")).lower().strip()
+        if obj.getElementsByTagName('difficult'):
+            obj_data['difficult'] = int(get_data_from_tag(obj, "difficult")) == 1
+        if obj.getElementsByTagName('truncated'):
+            obj_data['truncated'] = int(get_data_from_tag(obj, "truncated")) == 1
 
-    # Load misc info about the image into series.
-    source = data.getElementsByTagName('source')[0]
+        all_obj_data.append(obj_data)
+    objects_df = pd.DataFrame(all_obj_data)
+
+    # Load size info
     size = data.getElementsByTagName("size")[0]
-    classes = objects_df['class'].unique()
     image_info = {
         '_width': int(get_data_from_tag(size, "width")),
         '_height': int(get_data_from_tag(size, "height")),
-        '_source': str(get_data_from_tag(source, 'annotation'))
+        '_num_objects': objects_df.shape[0]
     }
-    for class_ in classes:
-        image_info[class_] = True
+
+    # Set index and size info of objects_df (if there are objects).
+    if objects_df.shape[0] > 0:
+        objects_df.index = pd.MultiIndex.from_tuples(
+            [(name, ind) for ind in objects_df.index],
+            names=['image_id', 'object_id']
+        )
+        objects_df['width'] = image_info['_width']
+        objects_df['height'] = image_info['_height']
+
+    # Load misc info about the image into series.
+    source = data.getElementsByTagName('source')[0]
+    if source.getElementsByTagName('annotation'):
+        image_info['_source'] = str(get_data_from_tag(source, 'annotation'))
+    if 'class' in objects_df.columns:
+        classes = objects_df['class'].unique()
+        for class_ in classes:
+            image_info[class_] = True
     image_series = pd.Series(image_info, name=name)
 
     return image_series, objects_df
 
 
 if __name__ == '__main__':
-    get_clf_df(force=True)
+    get_clf_df(VOCyear='VOC2012', force=True)

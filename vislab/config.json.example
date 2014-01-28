@@ -1,6 +1,8 @@
 {
     "paths": {
-        "VOC": "~/work/vision_data/VOC2012",
+        "VOC2012": "~/work/vision_data/VOC2012",
+        "VOC2007": "~/work/vision_data/VOC2007",
+        "ILSVRC2013": "~/work/vision_data/ILSVRC2013",
         "AVA": "~/work/vision_data/AVA_dataset",
         "data": "~/work/vislab/data",
         "shared_data": "~/work/vislab/data/shared",
