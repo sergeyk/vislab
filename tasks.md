@@ -1,8 +1,4 @@
 ## Next
-- move the prediction results UI to vislab; read from database; streamline everything
-
-Style transfer
-    - use the gradient at data level of the convnet to apply to the pixels. will need to regularize
 
 Features
     - whitened HOG feature (wrap Jon's code)
@@ -11,7 +7,6 @@ Features
     - make featurization server: gets filename, outputs result back on queue
     - implement feature computation in vislab that computes multiple levels of decaf feature at once
     - implement presence of text classifier
-    - local features: I guess like Alyosha's stuff
 
 Classification experiments
     - store bit_precision in the results table somewhere.
@@ -36,7 +31,7 @@ Datasets
 Results analysis
     - nice force-based layout graph of confusion matrix
     - could be a good figure: sort imagenet images for a few categories by beauty
-    - aaron's idea to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
+    - to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
 
 Image search demo
     - get tags for the flickr dataset
@@ -62,7 +57,7 @@ Misc
         :: Think of this as a general thing: want to be able to format tables with color depending on parameters, in Javacript. Publish blog post on the solution.
     - make diagram of data sources and labels and features and publish on blog
 
-Recommendations
+Image Recommendations
     - analyze it and try to form prediction dataset
         - how many images does a user like on average?
         - how many users favorited the average image?
