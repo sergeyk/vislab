@@ -41,7 +41,7 @@ def get_photo_df():
 def get_illustration_df():
     """
     This DataFame was assembled in the notebooks load_data and processing
-    in the behance folder in the aphrodite repo.
+    in the ADobe-private behance_style repo.
     """
     df = pd.read_csv(
         vislab.repo_dirname + '/datasets/10k_illustrations_20_tags_3_images.csv',

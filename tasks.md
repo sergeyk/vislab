@@ -1,6 +1,13 @@
 ## Next
 
+Aphrodite integration
+- every occurrence of vislab.repo_dirname should be replaced by path in vislab.config
+- put Adobe copyright text in relevant files
+- integrate feature.py and _feature.py: right now, messy nesting
+
+
 Features
+    - Switch to using caffe instead of decaf
     - whitened HOG feature (wrap Jon's code)
     - face detection
     - portrait and landscape classifiers: add to the PASCAL meta-class classifiers

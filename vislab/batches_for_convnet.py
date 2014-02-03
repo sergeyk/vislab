@@ -6,7 +6,6 @@ import random
 import string
 import os
 import requests
-import aphrodite
 import vislab
 import cPickle
 import numpy as np
@@ -15,7 +14,7 @@ import skimage.io
 
 
 queue_name = 'finetune_convnet'
-IMAGES_DIRNAME = vislab.util.makedirs(aphrodite.REPO_DIRNAME + '/data/images')
+IMAGES_DIRNAME = vislab.util.makedirs(vislab.repo_dirname + '/data/images')
 num_images = 1024
 
 

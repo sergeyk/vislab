@@ -1,5 +1,16 @@
 # VisLab
 
+## Architecture
+
+There are four main modules:
+
+- Preparing a dataset.
+- Computing features on images in a dataset (non-dataset images currently not supported).
+- Splitting up the dataset into train/val/test, and training/testing a predictor.
+- Displaying results in a web interface.
+
+This document walks you through all four parts.
+
 ## Requirements
 
 External dependencies:

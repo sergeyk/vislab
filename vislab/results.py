@@ -387,16 +387,3 @@ def get_pr_curve(y_true, y_score, title=None, with_plot=True):
         fig = vislab.results_viz.plot_curve_with_area(
             rec, prec, ap, 'Recall', 'Precision', 'AP', title)
     return fig, prec, rec, ap
-
-
-if __name__ == '__main__':
-    import vislab.datasets
-    import aphrodite.results
-    label_df = vislab.datasets.ava.get_style_df()
-    results_df, preds_panel = aphrodite.results.load_pred_results(
-        'ava_style_oct22', '/Users/sergeyk/work/aphrodite/data/results3',
-        force=False)
-    pred_prefix = 'pred'
-    mc_metrics = multiclass_metrics_feat_comparison(
-        preds_panel, label_df, pred_prefix, features=preds_panel.minor_axis,
-        balanced=True, with_plot=True, with_print=True)
