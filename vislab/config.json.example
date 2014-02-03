@@ -1,17 +1,17 @@
 {
     "paths": {
+        "behance_style_repo": "~/work/behance_style",
         "VOC2012": "~/work/vision_data/VOC2012",
         "VOC2007": "~/work/vision_data/VOC2007",
         "ILSVRC2013": "~/work/vision_data/ILSVRC2013",
         "AVA": "~/work/vision_data/AVA_dataset",
         "data": "~/work/vislab/data",
+        "images": "~/work/vislab/data/images",
         "shared_data": "~/work/vislab/data/shared",
         "static_data": "~/work/vislab/data/static",
-        "feats": "~/work/aphrodite/data/feats",
+        "feats": "~/work/vislab/data/feats",
         "predict": "~/work/vislab/data/predict",
         "results": "~/work/vislab/data/results"
-    },
-
-    "behanceAPIkey": "PUT_API_KEY_HERE"
+    }
 }
 
