@@ -23,9 +23,6 @@ import vislab.vw3
 
 DB_NAME = 'ava_feat_db'
 
-FEAT_DIRNAME = vislab.util.makedirs(
-    vislab.repo_dirname + '/data/feats')
-
 KNOWN_FEATURES = [
     'noise',
     'size',
@@ -196,7 +193,7 @@ def extract_features(
         assert(mem >= RECOMMENDED_SETTINGS[feature_name]['mem'])
 
     # Determine the cache filename, thereby creating the right directory
-    dirname = vislab.util.makedirs('{}/{}'.format(FEAT_DIRNAME, dataset_name))
+    dirname = vislab.util.makedirs('{}/{}'.format(vislab.config['feats'], dataset_name))
     h5_filename = '{}/{}.h5'.format(dirname, feature_name)
 
     collection = get_feat_collection(feature_name)
@@ -271,7 +268,7 @@ def get_feat_collection(feature_name):
 
 
 def _cache_to_h5(dataset_name, image_ids, feat_name, force=False):
-    dirname = os.path.join(FEAT_DIRNAME, dataset_name)
+    dirname = os.path.join(vislab.config['feats'], dataset_name)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     filename = '{}/{}.h5'.format(dirname, feat_name)
@@ -332,7 +329,7 @@ def _cache_to_vw(dataset_name, image_ids, feature_name, force=False):
     If not, writes directly from database.
     """
     assert(feature_name in KNOWN_FEATURES)
-    dirname = os.path.join(FEAT_DIRNAME, dataset_name)
+    dirname = os.path.join(vislab.config['feats'], dataset_name)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     filename = '{}/{}.txt.gz'.format(dirname, feature_name)
@@ -341,7 +338,7 @@ def _cache_to_vw(dataset_name, image_ids, feature_name, force=False):
         return
 
     h5_filename = '{}/{}/{}.h5'.format(
-        FEAT_DIRNAME, dataset_name, feature_name)
+        vislab.config['feats'], dataset_name, feature_name)
 
     # If HDF5 cache exists, write from it, shuffling lines.
     if os.path.exists(h5_filename):
@@ -367,7 +364,7 @@ def _write_features_for_vw_from_h5(
     Does not standardize features, assumes already standardized.
     """
     h5_filename = '{}/{}/{}.h5'.format(
-        FEAT_DIRNAME, dataset_name, feature_name)
+        vislab.config['feats'], dataset_name, feature_name)
     try:
         df = pd.read_hdf(h5_filename, 'df')
     except:
@@ -420,7 +417,7 @@ def load_features_for_image_ids(image_ids, feature_name):
     df: pandas.DataFrame
     """
     assert(feature_name in KNOWN_FEATURES)
-    filename = '{}/{}.h5'.format(FEAT_DIRNAME, feature_name)
+    filename = '{}/{}.h5'.format(vislab.config['feats'], feature_name)
     with pandas.get_store(filename) as f:
         df = f['df']
         df = df.ix[image_ids].dropna()

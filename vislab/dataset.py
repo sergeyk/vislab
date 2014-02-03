@@ -153,7 +153,7 @@ def get_df_with_args(args=None):
 
     elif args.dataset == 'behance_illustration':
         df = pd.read_csv(
-            vislab.repo_dirname + '/datasets/10k_illustrations_20_tags_3_images.csv',
+            vislab.config['behance_style_repo'] + '/data/10k_illustrations_20_tags_3_images.csv',
             index_col=0)
 
     else:

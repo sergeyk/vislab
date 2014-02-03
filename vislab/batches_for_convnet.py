@@ -14,12 +14,12 @@ import skimage.io
 
 
 queue_name = 'finetune_convnet'
-IMAGES_DIRNAME = vislab.util.makedirs(vislab.repo_dirname + '/data/images')
 num_images = 1024
 
 
 def process_image(image_id, image_url):
-    filename = IMAGES_DIRNAME + '/{}.jpg'.format(image_id)
+    filename = '{}/{}.jpg'.format(
+        vislab.util.makedirs(vislab.config['images']), image_id)
     try:
         if not os.path.exists(filename):
             print("Downloading image for id: {}".format(image_id))

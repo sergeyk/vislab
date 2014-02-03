@@ -31,7 +31,7 @@ def get_image_url_for_illustration_id(id):
 
 def get_photo_df():
     df = pd.read_csv(
-        vislab.repo_dirname + '/datasets/behanceImages.csv')
+        vislab.config['behance_style_repo'] + '/data/behanceImages.csv')
     df = df[df.label == 'photo']
     df = df[df['imageURL'] != 'http://a2.behance.net/img/site/grey.png']
     df.index = ['behance_photo_{}'.format(x) for x in df.index]
@@ -44,7 +44,7 @@ def get_illustration_df():
     in the ADobe-private behance_style repo.
     """
     df = pd.read_csv(
-        vislab.repo_dirname + '/datasets/10k_illustrations_20_tags_3_images.csv',
+        vislab.config['behance_style_repo'] + '/data/10k_illustrations_20_tags_3_images.csv',
         index_col=0)
     return df
 

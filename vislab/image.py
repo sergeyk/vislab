@@ -4,9 +4,6 @@ import skimage.io
 import vislab
 import vislab.datasets
 
-IMAGES_DIRNAME = vislab.util.makedirs(
-    vislab.repo_dirname + '/data/images')
-
 
 def fetch_image_filename_for_id(image_id, dataset_name, force=False):
     """
@@ -33,7 +30,7 @@ def fetch_image_filename_for_id(image_id, dataset_name, force=False):
 
     # Other datasets have images on the internet that need to be fetched
     else:
-        filename = IMAGES_DIRNAME + '/{}.jpg'.format(image_id)
+        filename = vislab.config['images'] + '/{}.jpg'.format(image_id)
         if force or not os.path.exists(filename):
             try:
                 if dataset_name == 'flickr':

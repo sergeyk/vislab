@@ -1,10 +1,8 @@
 ## Next
 
 Aphrodite integration
-- every occurrence of vislab.repo_dirname should be replaced by path in vislab.config
 - put Adobe copyright text in relevant files
 - integrate feature.py and _feature.py: right now, messy nesting
-
 
 Features
     - Switch to using caffe instead of decaf
@@ -75,4 +73,4 @@ Bugs to fix:
 
 ## Done
 
-(cleared nov 15)
+x every occurrence of vislab.repo_dirname should be replaced by path in vislab.config
