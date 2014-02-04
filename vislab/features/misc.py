@@ -5,7 +5,6 @@ Written during internship at Adobe CTL, San Francisco.
 import os
 import numpy as np
 import Image
-import aphrodite
 import leargist
 import tempfile
 import subprocess
@@ -15,7 +14,7 @@ import socket
 import glob
 import pandas as pd
 import shutil
-import aphrodite.image
+import vislab.image
 #import decaf.scripts.imagenet
 
 
@@ -34,7 +33,7 @@ def decaf_feat(image_filenames, image_ids, feat='fc6_cudanet_out', tuned=True):
     actual_image_ids = []
     for image_filename, image_id in zip(image_filenames, image_ids):
         try:
-            image = aphrodite.image.get_image_for_filename(image_filename)
+            image = vislab.image.get_image_for_filename(image_filename)
             if image is None:
                 continue
         except Exception as e:
@@ -62,7 +61,7 @@ def size(image_filename, image_id):
     """
     Simply return the (h, w, area, aspect_ratio, has_color) of the image.
     """
-    image = aphrodite.image.get_image_for_filename(image_filename)
+    image = vislab.image.get_image_for_filename(image_filename)
     has_color = 1 if image.ndim > 2 else 0
     h, w = image.shape[:2]
     return np.array((h, w, h * w, float(h) / w, has_color))
@@ -70,7 +69,7 @@ def size(image_filename, image_id):
 
 def gist(image_filename, image_id, max_size=256):
     # TODO: resize image to a smaller size? like 128?
-    image = aphrodite.image.get_image_for_filename(image_filename)
+    image = vislab.image.get_image_for_filename(image_filename)
     assert(image.dtype == np.uint8)
 
     if image.ndim == 2:
@@ -86,27 +85,6 @@ def gist(image_filename, image_id, max_size=256):
     im.thumbnail((max_size, max_size), Image.ANTIALIAS)
     feat = leargist.color_gist(im)
     return feat
-
-
-def color_histogram(
-        image_filenames, image_ids, K=150, sp_grid=[(3, 3), (1, 1)], sigma=1):
-    """
-    The derived feature name for the default parameters
-    is color_K150_s1.00_3x3_1x1.
-    """
-    transform_filename = '{}/transform_N800_S64.npy'.format(
-        aphrodite.color_histogram.DIRNAME)
-    codebook_filename = '{}/codebook_N800_S64_K{}.npy'.format(
-        aphrodite.color_histogram.DIRNAME, K)
-    transform = np.load(transform_filename)
-    codebook = np.load(codebook_filename)
-
-    feats = []
-    for image_filename in image_filenames:
-        feat = aphrodite.color_histogram.spatial_pyramid_color_histogram(
-            image_filename, transform, codebook, sigma, sp_grid)
-        feats.append(feat)
-    return feats
 
 
 def lab_hist(image_filenames, image_ids):
@@ -155,7 +133,7 @@ def gbvs_saliency(image_filenames, image_ids):
 
     pid = subprocess.Popen(
         shlex.split(matlab_cmd),
-        cwd=os.path.expanduser('~/work/aphrodite/matlab/gbvs'))
+        cwd=os.path.expanduser('~/work/vislab/matlab/gbvs'))
     retcode = pid.wait()
     if retcode != 0:
         raise Exception("Matlab script did not exit successfully!")
@@ -180,7 +158,7 @@ def mc_bit(image_filenames, image_ids):
     Compute the mc_bit feature provided by the vlg_extractor package,
     which should be installed in ext/.
     """
-    input_dirname = aphrodite.image.IMAGES_DIRNAME
+    input_dirname = vislab.image.IMAGES_DIRNAME
     image_filenames = [
         os.path.relpath(fname, input_dirname) for fname in image_filenames]
     f, list_filename = tempfile.mkstemp()
@@ -196,7 +174,7 @@ def mc_bit(image_filenames, image_ids):
         print("Starting {}".format(cmd))
         p = subprocess.Popen(
             shlex.split(cmd),
-            cwd=os.path.expanduser('~/work/aphrodite')
+            cwd=os.path.expanduser('~/work/vislab')
         )
         p.wait()
     except Exception as e:

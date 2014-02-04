@@ -5,7 +5,7 @@ module functions.
 import sys
 import argparse
 # TODO: fix this dependency
-import aphrodite.feature
+import vislab._feature
 
 
 def add_cmdline_args(group_name, parser):
@@ -52,7 +52,7 @@ def add_cmdline_args(group_name, parser):
         parser.add_argument(
             '--features',
             help="List of words in {} separated by commas".format(
-                aphrodite.feature.KNOWN_FEATURES),
+                vislab._feature.KNOWN_FEATURES),
             default='size')
         parser.add_argument(
             '--force_features',

@@ -28,7 +28,6 @@ KNOWN_FEATURES = [
     'size',
     'gist_256',  # python
     'dsift_llc_1000',  # matlab
-    'color_K150_s1.00_3x3_1x1',  # python
     'lab_hist',  # matlab
     'mc_bit',  # matlab
     'gbvs_saliency',  # matlab
@@ -45,7 +44,6 @@ RECOMMENDED_SETTINGS = {
     'gbvs_saliency': {'cpus_per_task': 4, 'mem': 3000},
     'lab_hist': {'cpus_per_task': 4, 'mem': 3000},
     'mc_bit': {'cpus_per_task': 1, 'mem': 7000},
-    'color_K150_s1.00_3x3_1x1': {'cpus_per_task': 2, 'mem': 3000},
     'dsift_llc_1000': {'cpus_per_task': 3, 'mem': 3000},
     'gist_256': {'cpus_per_task': 2, 'mem': 2000},
     'decaf_fc6_flatten': {'cpus_per_task': 4, 'mem': 2500},
@@ -90,11 +88,6 @@ def _extract_features_for_image_ids(
     if feature_name in ['dsift_llc_1000']:
         image_ids, feats = vislab.features.dsift.dsift_llc(
             image_filenames, image_ids)
-
-    elif feature_name in ['color_K150_s1.00_3x3_1x1']:
-        feats = vislab.features.color_histogram(
-            image_filenames, image_ids,
-            K=150, sp_grid=[(3, 3), (1, 1)], sigma=1)
 
     elif feature_name in ['mc_bit']:
         image_ids, feats = vislab.features.mc_bit(
@@ -227,8 +220,7 @@ def extract_features(
         ]
 
     elif feature_name in [
-            'dsift_llc_1000', 'color_K150_s1.00_3x3_1x1',
-            'mc_bit', 'lab_hist', 'gbvs_saliency',
+            'dsift_llc_1000', 'mc_bit', 'lab_hist', 'gbvs_saliency',
             'decaf_imagenet', 'decaf_fc6', 'decaf_fc6_flatten',
             'decaf_tuned_fc6', 'decaf_tuned_fc6_flatten',
             'decaf_tuned_fc6_ud', 'decaf_tuned_fc6_flatten_ud']:
