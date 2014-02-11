@@ -1,16 +1,87 @@
 """
-ImageNet detection challenge.
+ImageNet classification and detection challenges.
 
 Everything loaded from files, and images distributed with dataset.
 """
-from vislab.datasets.pascal import load_annotation_files
-import vislab
 import os
 import pandas as pd
 import glob
+import scipy.io
+import networkx as nx
+import numpy as np
+import vislab
+from vislab.datasets.pascal import load_annotation_files
 
 
-def load_imagenet(year='2013', force=False, args=None):
+class ImagenetGraph(object):
+    """
+    Represents the ImageNet structure, loaded from .mat files provided
+    in the ILSVRC2013_devkit.
+
+    Download devkit from [1] and untar into devkit_dirname.
+    Then download meta_10k from [2] and place into devkit_dirname/data.
+
+    [1]: http://imagenet.stanford.edu/image/ilsvrc2013/ILSVRC2013_devkit.tgz
+    [2]: https://dl.dropboxusercontent.com/u/44891/research/meta_10k.mat
+    """
+    def __init__(self, metafile, type='1k'):
+        """
+        Parameters
+        ----------
+        type: string
+            In ['1k', '10k', 'det'].
+        """
+        data = scipy.io.loadmat(metafile)['synsets']
+        if not type == '10k':
+            data = data[0]
+
+        g = nx.DiGraph()
+
+        # First pass: add nodes.
+        wnids = []
+        for node in data:
+            if type == '10k':
+                node = node[0]
+
+            wnid = str(node[1][0])
+            wnids.append(wnid)
+            g.add_node(wnid, {'words': node[2][0]})
+
+        # Second pass: add edges.
+        for i, node in enumerate(data):
+            if type == '10k':
+                node = node[0]
+
+            if type == 'det':
+                children = node[4].flatten()
+            else:
+                children = node[5][0]
+
+            # Children are IDs from the original metafile, which is 1-indexed.
+            for child in children:
+                g.add_edge(wnids[i], wnids[child - 1])
+
+        self.g = g
+
+    def node_name(self, wnid):
+        word = self.g.node[wnid]['words'].split(',')[0]
+        return '{} ({})'.format(word, wnid)
+
+    def get_all_successors(self, wnid):
+        children = self.g.successors(wnid)
+        all_children = list(children)
+        for child in children:
+            all_children += self.get_all_successors(child)
+        return all_children
+
+    def get_leaf_nodes(self, wnids):
+        return [
+            wnid for wnid in wnids
+            if not self.g.successors(wnid)
+        ]
+
+
+def load_imagenet_detection(year='2013', force=False, args=None):
     """
     TODO: currently only loads val split.
     TODO: current hard-coded to be 2013 split.
