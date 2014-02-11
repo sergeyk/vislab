@@ -19,11 +19,75 @@ External dependencies:
 - Redis
 - [Vowpal Wabbit](https://github.com/JohnLangford/vowpal_wabbit)
 
-For Python dependencies, I **highly** recommend installing the [Anaconda distribution](https://store.continuum.io/cshop/anaconda/) that will have most of the Python packages that we use.
+For Python dependencies, I **highly** recommend installing the [Anaconda distribution][] that will have most of the Python packages that we use.
 You will also need a couple of Python packages that are not widely distributed:
+
+[Anaconda distribution]:    https://store.continuum.io/cshop/anaconda/
 
 - [aphrodite](https://github.com/sergeyk/aphrodite)
 - [decaf](https://github.com/UCB-ICSI-Vision-Group/decaf-release)
+
+## (Mostly) comprehensive environment setup instructions
+
+The following assumes you are using the [Anaconda distribution][] and have [Homebrew][] installed.  Do that first.
+
+[Homebrew]:     http://brew.sh/
+
+### Install Mongo
+
+    brew install mongo
+    conda install pymongo
+
+### To run `wikipaintings dataset.ipynb`
+
+Install some stuff.
+
+    brew install fftw
+    conda install pyleargist
+    conda install joblib
+    conda install rq
+    conda install husl
+    conda install mpltools
+
+Install the Python OpenMPI stuff, then uninstall the extra stuff that conda brings along.
+
+    brew install openmpi
+    conda install mpi4py
+    conda remove openmpi
+
+### Install Decaf
+
+Install a compatible compiler.
+
+    brew install homebrew/versions/gcc48
+    
+Clone the source.
+
+    git clone git@github.com:UCB-ICSI-Vision-Group/decaf-release.git decaf
+    cd decaf
+    
+edit `decaf/layers/cpp/Makefile` and switch the it to `CC=g++4.8`
+
+Then install.
+
+    python setup.py build
+    python setup.py install
+
+### Running prediction
+
+Install some stuff.
+
+    brew install parallel
+    brew install boost
+
+Clone and install Vowpal Wabbit.
+
+    git clone git@github.com:JohnLangford/vowpal_wabbit.git
+    cd vowpal_wabbit
+    make
+    make install
+
+Assuming I didn't screw anything up, you should be good to go.
 
 ## Quick start.
 
