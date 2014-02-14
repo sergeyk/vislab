@@ -117,7 +117,9 @@ def load_imagenet_detection(year='2013', force=False, args=None):
 
     # Propagate split info to objects_df
     objects_df['split'] = np.repeat(
-        images_df['_split'].values, images_df['_num_objects'].values)
+        images_df['_split'].values,
+        images_df['_num_objects'].values.astype(int)
+    )
 
     images_df.to_hdf(cache_filename, 'images_df', mode='w')
     objects_df.to_hdf(cache_filename, 'objects_df', mode='a')
