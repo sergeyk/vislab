@@ -15,9 +15,9 @@ import operator
 import vislab
 
 
-def get_image_filename_for_id(image_id):
+def get_image_filename_for_id(image_id, VOCyear='VOC2012'):
     return '{}/JPEGImages/{}.jpg'.format(
-        vislab.config['paths']['VOC'], image_id)
+        vislab.config['paths'][VOCyear], image_id)
 
 
 def get_clf_df(VOCyear='VOC2012', force=False, args=None):
@@ -116,6 +116,11 @@ def load_pascal(VOCyear='VOC2012', force=False, args=None):
 
     # Drop images without a split (VOC2007 images in the VOC2012 set).
     images_df = images_df.dropna(subset=['_split'])
+
+    # Generate image filenames
+    images_df['_filename'] = images_df.apply(
+        lambda r: get_image_filename_for_id(r.name, VOCyear),
+        axis=1)
 
     # Drop corresponding images in the objects_df.
     objects_df = objects_df.ix[images_df.index]
