@@ -1,6 +1,6 @@
 import vislab.utils.cmdline
 import vislab.dataset
-import aphrodite.feature
+#import aphrodite.feature # TODO missing dependency
 
 
 ## Command-line stuff
