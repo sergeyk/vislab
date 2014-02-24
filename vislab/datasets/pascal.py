@@ -119,7 +119,7 @@ def load_pascal(VOCyear='VOC2012', force=False, args=None):
 
     # Generate image filenames
     images_df['_filename'] = images_df.apply(
-        lambda r: get_image_filename_for_id(r.index, VOCyear),
+        lambda r: get_image_filename_for_id(r.name, VOCyear),
         axis=1)
 
     # Drop corresponding images in the objects_df.
