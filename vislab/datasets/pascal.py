@@ -15,9 +15,9 @@ import operator
 import vislab
 
 
-def get_image_filename_for_id(image_id):
+def get_image_filename_for_id(image_id, VOCyear='VOC2012'):
     return '{}/JPEGImages/{}.jpg'.format(
-        vislab.config['paths']['VOC'], image_id)
+        vislab.config['paths'][VOCyear], image_id)
 
 
 def get_clf_df(VOCyear='VOC2012', force=False, args=None):
