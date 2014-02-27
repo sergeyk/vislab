@@ -4,6 +4,7 @@
         "VOC2012": "~/work/vision_data/VOC2012",
         "VOC2007": "~/work/vision_data/VOC2007",
         "ILSVRC2013": "~/work/vision_data/ILSVRC2013",
+        "INRIAPerson": "~/work/vision_data/INRIAPerson",
         "AVA": "~/work/vision_data/AVA_dataset",
         "data": "~/work/vislab/data",
         "images": "~/work/vislab/data/images",
