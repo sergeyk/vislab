@@ -23,10 +23,13 @@ def exclude_ids_in_collection(image_ids, collection):
         num_ids - len(image_ids), num_ids))
     return image_ids
 
-# Gather data by calling generator_fn into "filename", if it doesn't already exist.
-# If it does exist, just reload it from the file.
-# Use force=True to force regenerating the data.
+
 def load_or_generate_df(filename, generator_fn, force=False, args=None):
+    """
+    If filename does not already exist, gather data with generator_fn,
+    and write to filename.
+    If filename does exist, load from it.
+    """
     if not force and os.path.exists(filename):
         df = pd.read_hdf(filename, 'df')
     else:
@@ -42,24 +45,24 @@ def running_on_icsi():
     return socket.gethostname().endswith('ICSI.Berkeley.EDU')
 
 
-def get_mongodb_client():
+def get_mongodb_client(port=27666):
     """
     Establish connection to MongoDB.
     """
     try:
         host = 'flapjack' if running_on_icsi() else 'localhost'
-        connection = pymongo.MongoClient(host, 27666)
+        connection = pymongo.MongoClient(host, port)
         return connection
     except pymongo.errors.ConnectionFailure:
         raise Exception(
-            "Need a MongoDB server running on {}, port 27666".format(host))
+            "Need a MongoDB server running on {}, port {}".format(host, port))
 
 
-def print_collection_counts():
+def print_collection_counts(port=27666):
     """
     Print all collections and their counts for all databases in MongoDB.
     """
-    client = get_mongodb_client()
+    client = get_mongodb_client(port)
     for db_name in client.database_names():
         for coll_name in client[db_name].collection_names():
             print('{} |\t\t{}: {}'.format(

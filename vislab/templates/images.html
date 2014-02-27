@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+    <title>VisLab: Image analysis</title>
+
+    <link href="/static/main.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" />
+
+    <script src="/static/sprintf-0.7-beta1.js"></script>
+    <script src="/static/jquery-1.10.2.min.js"></script>
+    <script src="/static/jquery.sparkline.min.js"></script>
+
+    <script src="/static/ava_explorer.js"></script>
+    <script src="/static/ava_image.js"></script>
+</head>
+
+<body>
+<div class="container">
+<h1>
+    <a href="/"><i class="icon-home"></i></a>&nbsp;
+    VisLab: Image analysis
+</h1>
+
+<img id="image" src="{{image_info.image_url}}" />
+<br />
+<a href="{{image_info.page_url}}">Source</a>
+
+<div>
+{% if image_info.preds_table %}
+    {{ image_info.preds_table }}
+{% endif %}
+</div>
+
+</div>
+
+</body>
+</html>

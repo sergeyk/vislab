@@ -13,7 +13,7 @@ from vislab.utils import redis_q
 import vislab.datasets.wikipaintings
 
 
-data_dir = os.path.expanduser('~/work/aphrodite/data')
+data_dir = os.path.expanduser('~/work/vislab/data')
 feat_filenames = {
     'flickr': {
         'style scores': data_dir + '/results/flickr_decaf_fc6_preds.h5',

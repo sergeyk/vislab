@@ -7,9 +7,6 @@ import bs4
 
 
 def fav_user_ids(image_ids):
-    """
-    This used to be part of aphrodite.features
-    """
     ids_ = []
     feats = []
     for image_id in image_ids:

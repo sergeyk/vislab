@@ -1,6 +1,6 @@
 import vislab.utils.cmdline
 import vislab.dataset
-import aphrodite.feature
+import vislab._feature
 
 
 ## Command-line stuff
@@ -14,7 +14,7 @@ def compute(args=None):
     df = vislab.dataset.get_df_with_args(args)
 
     for feature in args.features:
-        aphrodite.feature.extract_features(
+        vislab._feature.extract_features(
             df, args.dataset, feature, args.force_features,
             args.mem, args.cpus_per_task, args.num_workers)
 
@@ -37,9 +37,9 @@ def cache_to_vw(args=None):
 
 def _cache(format, args=None):
     if format == 'h5':
-        caching_fn = aphrodite.feature._cache_to_h5
+        caching_fn = vislab._feature._cache_to_h5
     elif format == 'vw':
-        caching_fn = aphrodite.feature._cache_to_vw
+        caching_fn = vislab._feature._cache_to_vw
     else:
         raise Exception("Unknown cache format.")
 

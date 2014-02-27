@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+    <title>VisLab: {{page_title}}</title>
+
+    <link href="/static/main.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" />
+
+    <script src="/static/sprintf-0.7-beta1.js"></script>
+    <script src="/static/jquery-1.10.2.min.js"></script>
+    <script src="/static/d3.v3.min.js"></script>
+
+    {% if page_mode == 'results' %}
+    <link href="/static/ava_results_barplot.css" rel="stylesheet" type="text/css" />
+    <script src="/static/ava_results_barplot.js"></script>
+    {% endif %}
+
+    {% if dataset_name == 'ava' %}
+    <script src="/static/jquery.sparkline.min.js"></script>
+    {% endif %}
+
+    {% if dataset_name == 'ava' and page_mode == 'data' %}
+    <link href="/static/ava_scatterplot.css" rel="stylesheet" type="text/css" />
+    <script src="/static/d3.hexbin.v0.min.js"></script>
+    <script src="/static/ava_scatterplot.js"></script>
+    {% endif %}
+
+    <script src="/static/ava_explorer.js"></script>
+
+    <script>
+    $(document).ready(function() {
+        // Set global variables.
+        page_mode = "{{page_mode}}";
+        dataset_name = "{{dataset_name}}";
+        page = {{args.page}};
+
+        // Set selects to the passed-in arguments.
+        {% for arg_name, val in args.iteritems() %}
+        $("#{{arg_name}}").val("{{val}}");
+        {% endfor %}
+
+        // Execute the program logic.
+        ava_explorer();
+    });
+    </script>
+</head>
+
+<body>
+<div class="container">
+<h1>
+    <a href="/"><i class="icon-home"></i></a>&nbsp;
+    VisLab: {{page_title}}
+</h1>
+
+<!-- {% if page_mode == 'results' %}
+<div id="results-barplot"></div>
+{% endif %}
+ -->
+{% if page_mode == 'data' and dataset_name == 'ava' %}
+<div id="data-scatterplot"></div>
+<input type='hidden' class='query_arg' id='rating_mean_min' />
+<input type='hidden' class='query_arg' id='rating_mean_max' />
+<input type='hidden' class='query_arg' id='rating_std_min' />
+<input type='hidden' class='query_arg' id='rating_std_max' />
+{% endif %}
+
+<div id="search-options" style="display: block; text-align: center;">
+    {% for name, options in select_options.iteritems() %}
+    <label for="{{name}}">{{name}}</label>
+    <select id="{{name}}" class='query_arg'>
+        {% for x in options %}
+        <option value="{{ x }}">{{ x }}</option>
+        {% endfor %}
+    </select>
+    {% endfor %}
+</div>
+
+<div id="images">
+    <div class="results-nav" style="display: none;">
+        <h3>Matching images</h3>
+        <span id="num-results"></span> results,
+            <a href="#" id="prev-page">&larr;</a>
+            page <span id="page"></span>
+            <a href="#" id="next-page">&rarr;</a>
+    </p>
+    <div id="results">
+    </div>
+</div>
+
+</div>
+</body>
+</html>

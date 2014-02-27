@@ -1,0 +1,33 @@
+.axis text {
+  font: 8px sans-serif;
+}
+
+circle {
+  fill: slateblue;
+  fill-opacity: .08;
+}
+
+circle.hidden {
+  fill: black;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.hexagon {
+  fill: none;
+  fill-opacity: 0.5;
+  stroke: black;
+  stroke-width: .5px;
+  stroke-opacity: 0.5;
+}
+
+.brush, .extent {
+  fill: black;
+  fill-opacity: .2;
+  stroke: white;
+}

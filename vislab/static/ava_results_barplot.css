@@ -1,0 +1,36 @@
+.tooltip {
+  position: absolute;
+  text-align: center;
+  width: 180px;
+  height: 60px;
+  color: white;
+  background: black;
+  border: 0;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+rect.bar {
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+rect.highlight {
+    opacity: 1;
+}
+
+rect.selected {
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.x.axis path {
+  display: none;
+}
