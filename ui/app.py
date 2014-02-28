@@ -8,13 +8,16 @@ TODO
 - Only display at most N pins per user (N can be set client-side in dropdown).
 """
 import os
-import flask
 import pandas as pd
+import flask
+from tornado.wsgi import WSGIContainer
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 
 app = flask.Flask(__name__)
 
 pins_df = pd.read_hdf(os.path.expanduser(
-    '~/work/vislab/data/shared/pins_df_feb27.h5'), 'df')
+    '~/work/vislab/data/shared/pins_df_feb28.h5'), 'df')
 query_names = [
     _[6:] for _ in pins_df.columns.tolist()
     if _.startswith('query_')
@@ -63,4 +66,12 @@ def data(style_name, page):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    import sys
+    debug = len(sys.argv) > 1 and sys.argv[1] == 'debug'
+    if debug:
+        print("Debug mode")
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    else:
+        http_server = HTTPServer(WSGIContainer(app))
+        http_server.listen(5000)
+        IOLoop.instance().start()
