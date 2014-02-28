@@ -38,8 +38,6 @@ underscored_style_names = [
     'style_' + style.replace(' ', '_') for style in styles.keys()]
 
 # TODO: store in file that is not checked into github
-# Get from http://www.flickr.com/services/apps/by/<username>
-api_key = '2d5f50b3cd465055d83a5a8cc1a4985e'
 
 
 def populate_database(photos_per_style=1000):
@@ -141,7 +139,7 @@ def get_photos_for_style(style, num_images=250):
 
     group_id = styles[style][0]
     params = {
-        'api_key': api_key,
+        'api_key': vislab.config['api_key'],
         'group_id': group_id,
         'per_page': 500,  # 500 is the maximum allowed
         'content_type': 1,  # only photos

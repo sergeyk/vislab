@@ -13,6 +13,10 @@
         "feats": "~/work/vislab/data/feats",
         "predict": "~/work/vislab/data/predict",
         "results": "~/work/vislab/data/results"
+    },
+    "api_keys": {
+        "flickr": "YOUR API KEY HERE",
+        "behance": "YOUR API KEY HERE"
     }
 }
 
