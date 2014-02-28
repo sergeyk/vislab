@@ -4,11 +4,8 @@ The older code for the same tasks is in vislab/app.py
 We start with the Pinterest data here.
 
 TODO
-- Switch to getting data from a mongo database instead of loading
-DataFrames here.
-- deal with getting many of a single user's pins at once: maybe only
-display at most N pins per user.
-- display info about image under it
+- Switch to getting data from a mongo database instead of loading df.
+- Only display at most N pins per user (N can be set client-side in dropdown).
 """
 import os
 import flask
@@ -26,12 +23,12 @@ query_names = [
 
 @app.route('/')
 def index():
-     return flask.redirect(flask.url_for('data', style_name='all', page=1))
+     return flask.redirect(flask.url_for('data', style_name='pastel', page=1))
 
 
 @app.route('/data/<style_name>/<int:page>')
 def data(style_name, page):
-    results_per_page = 60
+    results_per_page = 7 * 20
 
     # Filter on style.
     df = pins_df
@@ -50,7 +47,16 @@ def data(style_name, page):
     ]
 
     # Fetch images and render.
-    images = [_[1].to_dict() for _ in df.iterrows()]
+    images = []
+    for ix, row in df.iterrows():
+        image_info = row.to_dict()
+        image_info['pin_url'] = 'http://pinterest.com/pin/{}'.format(ix)
+        image_info['user_url'] = 'http://pinterest.com/{}'.format(
+            image_info['username'])
+        image_info['board_url'] = 'http://pinterest.com/{}/{}'.format(
+            image_info['username'], image_info['board_name'])
+        images.append(image_info)
+
     return flask.render_template(
         'data.html', images=images, select_options=select_options
     )

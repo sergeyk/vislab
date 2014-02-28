@@ -45,7 +45,16 @@
 
 <div class="images">
 {% for image in images %}
-    <img src="{{image.img}}" width="200px"/>
+    <div class="result">
+        <a href="{{image.pin_url}}">
+            <img src="{{image.img}}" width="160px" />
+        </a>
+        <div style="text-align: center;">
+            <a href="{{image.board_url}}">{{image.board_name}}</a>
+            |
+            <a href="{{image.user_url}}">{{image.username}}</a>
+        </div>
+    </div>
 {% endfor %}
 </div>
 
