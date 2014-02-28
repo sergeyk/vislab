@@ -5,7 +5,6 @@ We start with the Pinterest data here.
 
 TODO
 - Switch to getting data from a mongo database instead of loading df.
-- Only display at most N pins per user (N can be set client-side in dropdown).
 """
 import os
 import pandas as pd
@@ -26,17 +25,22 @@ query_names = [
 
 @app.route('/')
 def index():
-     return flask.redirect(flask.url_for('data', style_name='pastel', page=1))
+     return flask.redirect(flask.url_for(
+        'data', style_name='pastel', pins_per_user=5, page=1))
 
 
-@app.route('/data/<style_name>/<int:page>')
-def data(style_name, page):
+@app.route('/data/<style_name>/<int:pins_per_user>/<int:page>')
+def data(style_name, pins_per_user, page):
     results_per_page = 7 * 20
 
     # Filter on style.
     df = pins_df
     if style_name != 'all':
         df = pins_df[pins_df['query_{}'.format(style_name)]]
+
+    # Filter on pins per user
+    df = df.groupby('username').head(pins_per_user)
+    df.set_index(df.index.get_level_values(1), inplace=True)
 
     # Paginate
     num_pages = df.shape[0] / results_per_page
@@ -46,7 +50,8 @@ def data(style_name, page):
     # Set filter options
     select_options = [
         ('query', ['all'] + query_names, style_name),
-        ('page', range(1, num_pages), page)
+        ('pins_per_user', [1, 5, 100], pins_per_user),
+        ('page', range(1, num_pages), page),
     ]
 
     # Fetch images and render.

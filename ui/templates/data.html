@@ -12,10 +12,13 @@
     <script>
     $(document).ready(function() {
         $('#query').change(function() {
-            window.location = '/data/' + $('#query').val() + '/1';
+            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/1';
+        });
+        $('#pins_per_user').change(function() {
+            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
         });
         $('#page').change(function() {
-            window.location = '/data/' + $('#query').val() + '/' + $('#page').val();
+            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
         });
     });
     </script>
