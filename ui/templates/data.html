@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+    <title>VisLab: Image analysis</title>
+
+    <link href="/static/main.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" />
+</head>
+
+<body>
+<div class="container">
+<h1>
+    <a href="/"><i class="icon-home"></i></a>&nbsp;
+    VisLab: Data
+</h1>
+
+<div class="images">
+{% for image in images %}
+    <img src="{{image.img}}" width="200px"/>
+{% endfor %}
+</div>
+
+</div>
+
+</body>
+</html>
