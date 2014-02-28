@@ -1,10 +1,24 @@
 <!doctype html>
 <html>
 <head>
-    <title>VisLab: Image analysis</title>
+    <title>VisLab: Data Explorer</title>
 
     <link href="/static/main.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.css" />
+    <!-- <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.min.css" /> -->
+
+    <script src="/static/jquery-2.1.0.js"></script>
+    <!-- <script src="/static/jquery-2.1.0.min.js"></script> -->
+    <script>
+    $(document).ready(function() {
+        $('#query').change(function() {
+            window.location = '/data/' + $('#query').val() + '/1';
+        });
+        $('#page').change(function() {
+            window.location = '/data/' + $('#query').val() + '/' + $('#page').val();
+        });
+    });
+    </script>
 </head>
 
 <body>
@@ -13,6 +27,21 @@
     <a href="/"><i class="icon-home"></i></a>&nbsp;
     VisLab: Data
 </h1>
+
+<div id="search-options" style="display: block; text-align: center;">
+    {% for name, options, selected_value in select_options %}
+    <label for="{{name}}">{{name}}</label>
+    <select id="{{name}}">
+        {% for x in options %}
+            {% if selected_value == x %}
+                <option value="{{ x }}" selected>{{ x }}</option>
+            {% else %}
+                <option value="{{ x }}">{{ x }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    {% endfor %}
+</div>
 
 <div class="images">
 {% for image in images %}
