@@ -4,6 +4,7 @@ The older code for the same tasks is in vislab/app.py
 We start with the Pinterest data here.
 
 TODO
+- Display the number of results on the page.
 - Switch to getting data from a mongo database instead of loading df.
 """
 import os
