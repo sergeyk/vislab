@@ -72,7 +72,7 @@ def map_through_rq(
     t = time.time()
     if chunk_size > 1:
         chunked_args_list = [
-            (function, args_list[i:i+chunk_size])
+            (function, args_list[i:i + chunk_size])
             for i in range(0, len(args_list), chunk_size)
         ]
         jobs = [
@@ -98,7 +98,8 @@ def map_through_rq(
         cmd = "rqworker --burst {}".format(name)
         if util.running_on_icsi():
             redis_hostname = 'flapjack'
-            job_log_dirname = util.makedirs(vislab.config['paths']['shared_data'] + '/rqworkers')
+            job_log_dirname = util.makedirs(
+                vislab.config['paths']['shared_data'] + '/rqworkers')
             cmd = "srun -p vision --cpus-per-task={} --mem={}".format(
                 cpus_per_task, mem)
             cmd += " --time={} --output={}/{}_%j-out.txt".format(
@@ -131,7 +132,7 @@ def map_through_rq(
             sys.stdout.flush()
             if num_succeeded + num_failed == len(jobs):
                 break
-            time.sleep(2)
+            time.sleep(1)
         sys.stdout.write('\n')
         sys.stdout.flush()
     print('Done with all jobs.')
@@ -145,7 +146,7 @@ def map_through_rq(
     if aggregate:
         results = [job.result for job in jobs]
         if chunk_size > 1:
-            # Watch out for some jobs retuning None results.
+            # Watch out for some jobs returning None results.
             all_results = []
             for result in results:
                 if result is not None:
