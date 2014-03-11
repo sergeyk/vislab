@@ -5,6 +5,10 @@ Aphrodite integration
 - integrate feature.py and _feature.py: right now, messy nesting
 
 Features
+    - Use caffe with HDF5DataLayer instead of vowpal wabbit classifier
+        - Output to several HDF5 files instead of just one.
+        - Modify Caffe to be able to take label file as separate from feature file
+        - Modify Caffe to be able to take multiple feature files (should be easy, as separate layers).
     - Switch to using caffe instead of decaf
     - whitened HOG feature (wrap Jon's code)
     - face detection

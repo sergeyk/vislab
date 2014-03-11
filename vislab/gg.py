@@ -5,20 +5,23 @@ All credit for rstyle, rhist, rbox goes to [messymind.net][1].
 Additional credit (husl_gen, rbar) goes to [Rob Story][2].
 
 [1]: http://messymind.net/2012/07/making-matplotlib-look-like-ggplot/
-[2]: http://nbviewer.ipython.org/urls/raw.github.com/wrobstory/climatic/master/examples/ggplot_styling_for_matplotlib.ipynb
+[2]: http://nbviewer.ipython.org/urls/raw.github.com/\
+wrobstory/climatic/master/examples/ggplot_styling_for_matplotlib.ipynb
 """
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import husl
 import pylab
-import mpltools.style
-
-mpltools.style.use('ggplot')
-matplotlib.rcParams['axes.color_cycle'] = [
-    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
-    "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
-# from http://mbostock.github.io/protovis/docs/color.html
+try:
+    import mpltools.style
+    mpltools.style.use('ggplot')
+    # Colors from http://mbostock.github.io/protovis/docs/color.html
+    matplotlib.rcParams['axes.color_cycle'] = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
+        "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
+except:
+    pass
 
 
 def husl_gen():
@@ -82,7 +85,6 @@ def rstyle(ax, xlog=False, ylog=False):
         frame.set_facecolor('#f3f3f3')
 
 
-
 def rbar(ax, left, height, **kwargs):
     """
     Create a bar plot with default style parameters to look like ggplot2.
@@ -136,13 +138,16 @@ def rhist(ax, data, **kwargs):
 
     return ax.hist(data, **kwargs)
 
+
 def rbox(ax, data, **keywords):
     """
-    Create a ggplot2 style boxplot, is eqivalent to calling ax.boxplot with the following additions:
+    Create a ggplot2 style boxplot, is eqivalent to calling ax.boxplot
+    with the following additions:
 
     Keyword arguments:
     colors -- array-like collection of colours for box fills
-    names -- array-like collection of box names which are passed on as tick labels
+    names -- array-like collection of box names which are passed on as
+    tick labels
     """
     hasColors = 'colors' in keywords
     if hasColors:
@@ -167,10 +172,11 @@ def rbox(ax, data, **keywords):
         for j in range(5):
             boxX.append(box.get_xdata()[j])
             boxY.append(box.get_ydata()[j])
-        boxCoords = zip(boxX,boxY)
+        boxCoords = zip(boxX, boxY)
 
         if hasColors:
-            boxPolygon = pylab.Polygon(boxCoords, facecolor=colors[i % len(colors)])
+            boxPolygon = pylab.Polygon(
+                boxCoords, facecolor=colors[i % len(colors)])
         else:
             boxPolygon = pylab.Polygon(boxCoords, facecolor='0.95')
 

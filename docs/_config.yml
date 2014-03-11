@@ -1,0 +1,6 @@
+name: VisLab
+author: Sergey Karayev
+description: Tools for computer vision.
+url: http://sergeykarayev.com/vislab
+pygments: true
+permalink: /:title

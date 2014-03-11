@@ -8,4 +8,5 @@ rsync -ravzP --delete --prune-empty-dirs \
     . sergeyk@flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab
 
 # shared data
-rsync -ravzP --delete data/shared/ sergeyk@flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/shared
+rsync -ravzP --delete data/shared/ sergeyk@flapjack1.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/shared
+rsync -ravzP --delete data/shared/ sergeyk@flapjack2.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/shared
