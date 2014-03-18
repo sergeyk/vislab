@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Vislab | Home</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    
+    <section>
+      <h1 id="vislab">Vislab</h1>
+
+<h2 id="overview">Overview</h2>
+
+<p>Vislab is a set of modules for visual recognition:</p>
+
+<ul>
+<li>Preparing a dataset.</li>
+
+<li>Computing features on images.</li>
+
+<li>Splitting the dataset into train/val/test, and training/testing a predictor.</li>
+
+<li>Evaluating prediction results, outputting figures and tables.</li>
+
+<li>Displaying dataset and prediction results in a web interface.</li>
+</ul>
+
+<p>It is released under the BSD 2-clause <a href="https://github.com/sergeyk/vislab/blob/master/LICENSE.txt">license</a>.</p>
+
+<h2 id="documentation">Documentation</h2>
+
+<p>The best place to get started is the <a href="/tutorial.html">tutorial</a>.</p>
+
+<h2 id="acknowledgements">Acknowledgements</h2>
+
+<p>This code was written while I was an intern at Adobe Creative Technologies Lab, a Graduate Student Researcher at UC Berkeley, and on my own time.</p>
+    </section>
+    <footer>
+      <hr />
+      <p>Developed by <a href="http://sergeykarayev.com">Sergey Karayev</a>.</p>
+    </footer>
+    <script>
+    $(function() {
+      return $("h2, h3, h4").each(function(i, el) {
+        var id = $(el).attr('id');
+        if (id) {
+          return $(el).prepend($("<a />").attr("name", id).attr("href", "#" + id).html('#'));
+        }
+      });
+    });
+    </script>
+  </body>
+</html>
