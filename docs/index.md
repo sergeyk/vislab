@@ -18,7 +18,7 @@ It is released under the BSD 2-clause [license]({{site.repo}}/blob/master/LICENS
 
 ## Documentation
 
-The best place to get started is the [tutorial](/tutorial.html).
+The best place to get started is the [tutorial](tutorial.html).
 
 ## Acknowledgements
 
