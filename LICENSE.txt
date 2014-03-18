@@ -1,5 +1,5 @@
 Copyright (c) 2013, Sergey Karayev
-Parts of the code (written during an internship) copyright Adobe Corporation.
+Parts of the code written during an internship are copyright Adobe Corporation.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

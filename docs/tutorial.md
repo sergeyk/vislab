@@ -1,7 +1,8 @@
 ---
 layout: default
+title: Tutorial
 ---
-# VisLab: Tutorial
+# Tutorial
 
 ## Setting up
 
@@ -10,10 +11,11 @@ VisLab has the following external dependencies:
 - [MongoDB]: key-value store used for storing features
 - [Redis]: key-value store used for our job queue
 - [Vowpal Wabbit]: machine learning framework
-- [Caffe] deep-learning framework (another Berkeley project)
-    Caffe itself has many dependencies, such as OpenCV.
-- and a bunch of Python packages: we recommend simply using the [Anaconda distribution], which has most of the required Python packages.
+- and a bunch of Python packages: we recommend using the [Anaconda distribution], which provides most of them out of the box.
 
+<!-- - [Caffe] deep-learning framework (another Berkeley project)
+    Caffe itself has many dependencies, such as OpenCV.
+ -->
 Additionally, you'll benefit from downloading our pre-packaged datasets.
 Follow along for the link.
 
@@ -56,7 +58,7 @@ Clone and install Vowpal Wabbit.
     make
     make install
 
-To install [Caffe], please follow the [instructions](http://caffe.berkeleyvision.org/installation.html).
+<!-- To install [Caffe], please follow the [instructions](http://caffe.berkeleyvision.org/installation.html). -->
 
 ### Getting vislab code and wikipaintings dataset
 
@@ -91,6 +93,7 @@ Originally, this involved scraping ~100K records from the Wikipaintings.org webs
 No one should have to do that more than once, so simply download our pre-packaged data from this [Dropbox folder](https://www.dropbox.com/sh/our2zcaaqfi2e6d/1rZs5J4xhl).
 Copy the whole thing to `vislab-git/data/shared` -- or simply symlink directly to the dropbox directory:
 
+    mkdir data
     ln -s ~/Dropbox/vislab_data_shared data/shared
 
 Next, copy over the default configuration.
@@ -116,7 +119,7 @@ This should open a browser, where you can select the 'wikipaintings dataset' not
 Run the cells in it to make sure that the data quickly loads and works as expected.
 If python complains about being unable to import packages, `conda install` or `pip install` them as needed.
 
-Note: if the cell with `df = wikipaintings.get_basic_dataset()` doesn't complete within a few seconds, then the data wasn't found; check that you have correctly set the paths in `config.json`.
+Note: if the cell with `df = wikipaintings.get_basic_df()` doesn't complete within a few seconds, then the data wasn't found; check that you have correctly set the paths in `config.json`.
 
 ### Computing features on a dataset
 
