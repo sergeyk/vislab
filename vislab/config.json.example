@@ -6,17 +6,21 @@
         "ILSVRC2013": "~/work/vision_data/ILSVRC2013",
         "INRIAPerson": "~/work/vision_data/INRIAPerson",
         "AVA": "~/work/vision_data/AVA_dataset",
-        "data": "~/work/vislab/data",
-        "images": "~/work/vislab/data/images",
-        "shared_data": "~/work/vislab/data/shared",
-        "static_data": "~/work/vislab/data/static",
-        "feats": "~/work/vislab/data/feats",
-        "predict": "~/work/vislab/data/predict",
-        "results": "~/work/vislab/data/results"
+        "data": "~/work/vislab-git/data",
+        "images": "~/work/vislab-git/data/images",
+        "shared_data": "~/work/vislab-git/data/shared",
+        "static_data": "~/work/vislab-git/data/static",
+        "feats": "~/work/vislab-git/data/feats",
+        "predict": "~/work/vislab-git/data/predict",
+        "results": "~/work/vislab-git/data/results"
     },
     "api_keys": {
-        "flickr": "YOUR API KEY HERE",
-        "behance": "YOUR API KEY HERE"
+        "flickr": "",
+        "behance": ""
+    },
+    "servers": {
+        "mongo": ["0.0.0.0", "27017"],
+        "redis": ["0.0.0.0", "6379"]
     }
 }
 

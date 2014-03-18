@@ -56,7 +56,7 @@ def map_through_rq(
     assert(chunk_size > 0)
 
     # Establish connection to Redis queue.
-    redis_conn = util.get_redis_conn()
+    redis_conn = util.get_redis_client()
     fq = rq.Queue('failed', connection=redis_conn)
     q = rq.Queue(name, connection=redis_conn, async=async)
 

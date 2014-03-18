@@ -1,7 +1,5 @@
 ## Fixes
 
-- set the redis and mongodb server hostname and port in config file
-
 ## Next
 
 Aphrodite integration
@@ -83,3 +81,5 @@ Bugs to fix:
 
 x every occurrence of vislab.repo_dirname should be replaced by path in vislab.config
 x publish website for documentation, from docs/ directory
+x set the redis and mongodb server hostname and port in config file
+

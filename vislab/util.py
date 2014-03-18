@@ -7,6 +7,7 @@ import tempfile
 import cPickle
 import subprocess
 import shutil
+import vislab
 
 
 def exclude_ids_in_collection(image_ids, collection):
@@ -45,34 +46,39 @@ def running_on_icsi():
     return socket.gethostname().endswith('ICSI.Berkeley.EDU')
 
 
-def get_mongodb_client(port=27666):
+def get_mongodb_client():
     """
     Establish connection to MongoDB.
     """
     try:
-        host = 'flapjack' if running_on_icsi() else 'localhost'
+        host, port = vislab.config['servers']['mongo']
         connection = pymongo.MongoClient(host, port)
-        return connection
     except pymongo.errors.ConnectionFailure:
         raise Exception(
             "Need a MongoDB server running on {}, port {}".format(host, port))
+    return connection
 
 
-def print_collection_counts(port=27666):
+def print_collection_counts():
     """
     Print all collections and their counts for all databases in MongoDB.
     """
-    client = get_mongodb_client(port)
+    client = get_mongodb_client()
     for db_name in client.database_names():
         for coll_name in client[db_name].collection_names():
             print('{} |\t\t{}: {}'.format(
                 db_name, coll_name, client[db_name][coll_name].count()))
 
 
-def get_redis_conn():
-    host = 'flapjack' if running_on_icsi() else 'localhost'
-    redis_conn = redis.Redis(host)
-    return redis_conn
+def get_redis_client():
+    host, port = vislab.config['servers']['redis']
+    try:
+        connection = redis.Redis(host, port)
+        connection.ping()
+    except redis.ConnectionError:
+        raise Exception(
+            "Need a Redis server running on {}, port {}".format(host, port))
+    return connection
 
 
 def pickle_function_call(func_name, args):
