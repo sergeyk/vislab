@@ -403,7 +403,7 @@ def get_prediction_dataset_with_args(args, source_df=None):
             # Making dataframe in this way so that only one label is
             # active per row, so that our multiclass-splitting function
             # can deal with it.
-            df = vislab.dataset.get_boolean_df(
+            df = vislab.dataset.get_bool_df(
                 pd.DataFrame(
                     np.random.choice(column_names, size=df.shape[0]),
                     columns=[''],

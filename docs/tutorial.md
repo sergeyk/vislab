@@ -12,6 +12,7 @@ VisLab has the following external dependencies:
 - [Redis][]: key-value store used for our job queue
 - [Vowpal Wabbit][]: machine learning framework
 - and a bunch of Python packages: we recommend using the [Anaconda distribution][], which provides most of them out of the box.
+- some Matlab code for feature computation is required if you're not satisfied with the convolutional network feature.
 
 <!-- - [Caffe] deep-learning framework (another Berkeley project)
     Caffe itself has many dependencies, such as OpenCV.

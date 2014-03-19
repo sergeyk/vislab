@@ -1,35 +1,33 @@
 ## Fixes
 
+## Today
+
+- make sure that image_url is part of wikipaintings, and test feature.py
+
+- Replace classifier: VW -> caffe
+    - In feature.py, output to several HDF5 files (of max size 2GB) instead of just one.
+    - Modify Caffe to be able to take label file as separate from feature file.
+    - Modify Caffe to be able to take multiple feature files (should be easy, as separate layers).
+
+- Replace convnet feature computation: decaf -> caffe
+    - Compute multiple levels of convnet at once.
+
+- Check out Helen's tags for the flickr dataset
+
 ## Next
 
-Aphrodite integration
-- put Adobe copyright text in relevant files
-- integrate feature.py and _feature.py: right now, messy nesting
+- Generate Sphinx autodoc and display it on my doc page
+- Compute pairwise distances for images for different features
 
-Features
-    - Use caffe with HDF5DataLayer instead of vowpal wabbit classifier
-        - Output to several HDF5 files instead of just one.
-        - Modify Caffe to be able to take label file as separate from feature file
-        - Modify Caffe to be able to take multiple feature files (should be easy, as separate layers).
-    - Switch to using caffe instead of decaf
+- Features
     - whitened HOG feature (wrap Jon's code)
     - face detection
     - portrait and landscape classifiers: add to the PASCAL meta-class classifiers
     - make featurization server: gets filename, outputs result back on queue
-    - implement feature computation in vislab that computes multiple levels of decaf feature at once
     - implement presence of text classifier
-
-Classification experiments
-    - store bit_precision in the results table somewhere.
 
 Single-person classification accuracy:
     - how good is a single person at predicting the style classification task? the ava task?
-
-VW:
-    - get vector of weights from VW.
-        : in fact, need --inverse_hash to do this properly, and that seems to slow things down substantially (haven't tried though)
-    - revamp cross-validation to write all results to database to allow iterative improvement and visualizing the effects of the parameters
-    - implement a dot-product distance computation mode in vowpal wabbit that outputs all pairwise distances for the data points; if a model is provided, the distances are in the projected space. this will also implement the k-nn classifier.
 
 Evaluation
     - average over multiple random subsets of test-balanced data
@@ -40,12 +38,8 @@ Datasets
     - weight AVA examples according to inverse distance to mean (should work better than the delta method)
 
 Results analysis
-    - nice force-based layout graph of confusion matrix
-    - could be a good figure: sort imagenet images for a few categories by beauty
+    - could be good figure: sort imagenet images for a few categories by beauty
     - to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
-
-Image search demo
-    - get tags for the flickr dataset
 
 Similarity demo
     - add paintings data
@@ -82,4 +76,5 @@ Bugs to fix:
 x every occurrence of vislab.repo_dirname should be replaced by path in vislab.config
 x publish website for documentation, from docs/ directory
 x set the redis and mongodb server hostname and port in config file
-
+x put Adobe copyright text in relevant files
+x integrate feature.py and _feature.py: right now, messy nesting
