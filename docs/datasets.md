@@ -32,7 +32,7 @@ Adding your own dataset is super simple.
 - unique string-based index, with name `image_id`
 - `image_url` or `image_filename` in columns
 - a column for whatever boolean label you care about
-2. Modify `load_dataset_df` in `vislab/dataset.py` to map a dataset name to the function that loads this DataFrame.
+2. Modify `DATASETS` in `vislab/dataset.py` to map a name to your new function.
 
 ## Dataset for classification
 

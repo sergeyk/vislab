@@ -2,33 +2,12 @@
 Construct dicts containing identifying information and DataFrames
 for train, val, test splits of data, for use with classifiers.
 
-## Datasets
-
-pascal:
-    VOC2012, ~10K images tagged with 20 object classes. Multi-label.
-ava:
-    ~250K images with aesthetic ratings
-ava_style:
-    ~20K images from AVA that also have style labels
-flickr:
-    ~50K images with style labels
-wikipaintings:
-    ~100K images with style, genre, artist labels
-
-## Format
-
-- The main thing is for the DataFrame index to contain unique image ids,
-and to be able to get the image url from the id.
-
-- The classifier expects DataFrames with only two columns:
-'label' and 'importance'.
-- The 'label' column can contain
-    - real values (regression)
-    - -1/1 (binary classification)
-    - or positive ints (multiclass classification).
+See docs/datasets.md for more information on Vislab datasets.
 """
 import numpy as np
 import pandas as pd
+import requests
+import os
 import vislab
 import vislab.utils.cmdline
 import vislab.utils.distributed
@@ -65,7 +44,7 @@ def get_train_test_split(df_, test_frac=0.2, random_seed=42):
     return split
 
 
-def get_boolean_df(df, column_name, min_positive_examples=-1):
+def get_bool_df(df, column_name, min_positive_examples=-1):
     """
     Return a boolean DataFrame whose columns consist of unique
     values of df[column_name] that have more than the required
@@ -106,11 +85,66 @@ def subsample_dataset(df, num_images=-1, random_seed=42):
 
     Note: Does NOT permute images if df is of size num_images.
     """
-    np.random.seed(random_seed)
     if num_images < 0 or num_images >= df.shape[0]:
         return df
+    np.random.seed(random_seed)
     ind = np.random.permutation(df.shape[0])[:num_images]
     return df.iloc[ind]
+
+
+def fetch_image_filenames_for_ids(image_ids, dataset_name):
+    """
+    Return list of image filenames for given image_ids in dataset_name.
+    If the images are not already present on disk, downloads them to
+    cache location.
+
+    Parameters
+    ----------
+    image_ids: list of string
+    dataset_name: string
+
+    Returns
+    -------
+    good_filenames: list of string
+        Only filenames of images that actually exist on disk.
+    """
+    df = load_dataset_df(dataset_name)
+
+    if 'image_filename' in df.columns:
+        filenames = df['image_filename'].loc[image_ids]
+    else:
+        assert 'image_url' in df.columns
+        filenames = [
+            '{}/{}/{}.jpg'.format(
+                vislab.config['images'], dataset_name, image_id
+            )
+            for image_id in image_ids
+        ]
+        urls = df['image_url'].loc[image_ids]
+
+    good_filenames = []
+    for filename, url in zip(filenames, urls):
+        if os.path.exists(filename):
+            good_filenames.append(filename)
+            continue
+
+        try:
+            print("Download image for {}: {}".format(dataset_name, image_id))
+            r = requests.get(url)
+            with open(filename, 'wb') as f:
+                f.write(r.content)
+            good_filenames.append(filename)
+
+        except Exception as e:
+            print("Exception: {}".format(e))
+
+    return good_filenames
+
+
+def load_dataset_df(dataset_name, force=False):
+    if dataset_name not in vislab.datasets.DATASETS:
+        raise Exception('Unknown dataset.')
+    return vislab.datasets.DATASETS[dataset_name]['fn'](force=force)
 
 
 def get_df_with_args(args=None):
@@ -125,43 +159,8 @@ def get_df_with_args(args=None):
     if args is None:
         args = vislab.utils.cmdline.get_args(
             'dataset', 'get_df', ['dataset', 'processing'])
-
-    # Load the dataset.
-    if args.dataset == 'ava':
-        df = vislab.datasets.ava.get_ava_df()
-
-    elif args.dataset == 'ava_style':
-        style_df = vislab.datasets.ava.get_style_df()
-        ratings_df = vislab.datasets.ava.get_ratings_df()
-        df = style_df.join(ratings_df)
-
-    elif args.dataset == 'flickr':
-        df = vislab.datasets.flickr.load_flickr_df(
-            args.num_images, args.random_seed)
-
-    elif args.dataset == 'wikipaintings':
-        if args.label == 'artist':
-            df = vislab.datasets.wikipaintings.get_artist_df()
-        else:
-            df = vislab.datasets.wikipaintings.get_style_df()
-
-    elif args.dataset == 'pascal':
-        df = vislab.datasets.pascal.get_clf_df()
-
-    elif args.dataset == 'behance_photo':
-        df = vislab.datasets.behance.get_photo_df()
-
-    elif args.dataset == 'behance_illustration':
-        df = pd.read_csv(
-            vislab.config['paths']['behance_style_repo'] + '/data/10k_illustrations_20_tags_3_images.csv',
-            index_col=0)
-
-    else:
-        raise Exception('Unknown dataset.')
-
-    # Subsample number of images if necessary.
+    df = load_dataset_df(args.dataset, args.force)
     df = subsample_dataset(df, args.num_images, args.random_seed)
-
     return df
 
 

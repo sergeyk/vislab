@@ -85,8 +85,7 @@ def load_pascal(VOCyear='VOC2012', force=False, args=None):
     Warning: this takes a few minutes to load from scratch!
     """
     if args is None:
-        # TODO: set this to number of cores on machine
-        args = {'num_workers': 8}
+        args = {'num_workers': multiprocessing.cpu_count()}
 
     cache_filename = \
         vislab.config['paths']['shared_data'] + \
@@ -164,11 +163,14 @@ def _load_pascal_annotation(filename):
             'class': str(get_data_from_tag(obj, "name")).lower().strip()
         }
         if obj.getElementsByTagName('pose'):
-            obj_data['pose'] = str(get_data_from_tag(obj, "pose")).lower().strip()
+            obj_data['pose'] = str(
+                get_data_from_tag(obj, "pose")).lower().strip()
         if obj.getElementsByTagName('difficult'):
-            obj_data['difficult'] = int(get_data_from_tag(obj, "difficult")) == 1
+            obj_data['difficult'] = int(
+                get_data_from_tag(obj, "difficult")) == 1
         if obj.getElementsByTagName('truncated'):
-            obj_data['truncated'] = int(get_data_from_tag(obj, "truncated")) == 1
+            obj_data['truncated'] = int(
+                get_data_from_tag(obj, "truncated")) == 1
 
         all_obj_data.append(obj_data)
     objects_df = pd.DataFrame(all_obj_data)

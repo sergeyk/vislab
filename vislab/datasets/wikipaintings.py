@@ -1,13 +1,8 @@
 """
-Code to scrape the WikiPaintings website to construct a dataset.
+Copyright Sergey Karayev - 2013.
 
-To generate from scratch, run
-
-python vislab/datasets/wikipaintings.py load_basic_df
+Scrape wikipaintings.org to construct a dataset.
 """
-
-# Behance API details: http://www.behance.net/dev
-
 import os
 import requests
 import bs4
@@ -56,27 +51,30 @@ def get_df(force=False, args=None):
     return df
 
 
-def get_style_df(min_positive_examples=1000):
-    df = _get_column_label_df('style', min_positive_examples)
+def get_style_df(min_positive_examples=1000, force=False):
+    df = _get_column_label_df('style', min_positive_examples, force)
     df['_split'] = vislab.dataset.get_train_test_split(df)
     return df
 
 
-def get_genre_df(min_positive_examples=1000):
-    return _get_column_label_df('genre', min_positive_examples)
+def get_genre_df(min_positive_examples=1000, force=False):
+    return _get_column_label_df('genre', min_positive_examples, force)
 
 
-def get_artist_df(min_positive_examples=200):
+def get_artist_df(min_positive_examples=200, force=False):
     df = get_df()
     df['artist'] = df['artist_slug']
-    df = vislab.dataset.get_boolean_df(df, 'artist', min_positive_examples)
+    df = vislab.dataset.get_bool_df(df, 'artist', min_positive_examples, force)
     df['_split'] = vislab.dataset.get_train_test_split(df)
     return df
 
 
-def _get_column_label_df(column_name, min_positive_examples=500):
-    df = get_df()
-    return vislab.dataset.get_boolean_df(df, column_name, min_positive_examples)
+def _get_column_label_df(column_name, min_positive_examples=500, force=False):
+    df = get_df(force)
+    bool_df = vislab.dataset.get_bool_df(
+        df, column_name, min_positive_examples)
+    bool_df['image_url'] = df['image_url']
+    return bool_df
 
 
 def _fetch_basic_dataset(args=None):
@@ -244,26 +242,3 @@ def _fetch_artwork_info(image_id, page_url):
         if tag.name == 'img':
             info[itemprop] = tag.attrs['src'].split('!')[0]
     return info
-
-
-## Command line interface.
-def load_basic_df():
-    args = vislab.utils.cmdline.get_args(
-        'wikipaintings', 'load_basic_dataset', ['datasets', 'processing'])
-    force = args.force_dataset
-    get_basic_df(force, args)
-
-
-def load_df():
-    args = vislab.utils.cmdline.get_args(
-        'wikipaintings', 'load_basic_dataset', ['datasets', 'processing'])
-    force = args.force_dataset
-    get_df(force, args)
-
-
-if __name__ == '__main__':
-    possible_functions = {
-        'load_basic_df': load_basic_df,
-        'load_df': load_df
-    }
-    vislab.util.cmdline.run_function_in_file(__file__, possible_functions)

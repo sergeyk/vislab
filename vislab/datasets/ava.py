@@ -1,4 +1,7 @@
 """
+Copyright Sergey Karayev / Adobe - 2013.
+Written during internship at Adobe CTL, San Francisco.
+
 Code to load the AVA dataset.
 Download it from http://www.lucamarchesotti.com/AVA/
 
@@ -74,8 +77,10 @@ def get_style_df(force=False, args=None):
     """
     Return DataFrame of the AVA style labels: column per label.
     """
-    return vislab.util.load_or_generate_df(
+    style_df = vislab.util.load_or_generate_df(
         STYLE_DF_FILENAME, _load_style_df, force, args)
+    ratings_df = vislab.datasets.ava.get_ratings_df()
+    return style_df.join(ratings_df)
 
 
 ## From-scratch loaders.

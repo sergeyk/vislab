@@ -1,9 +1,11 @@
 """
-Making my own dataset of Flickr data using groups.
+Copyright Sergey Karayev / Adobe - 2013.
+Written during internship at Adobe CTL, San Francisco.
 
-## TODOs
+Make dataset of images with style labels by querying Flickr Groups using
+the Flickr API.
 
-- handle multiple group ids per key
+TODO: cache as HDF5, not pickle
 """
 import urllib2
 import pandas as pd
@@ -11,7 +13,6 @@ import numpy as np
 import json
 import os
 import vislab
-
 
 # Mapping of style names to group ids.
 styles = {
@@ -37,20 +38,12 @@ style_names = styles.keys()
 underscored_style_names = [
     'style_' + style.replace(' ', '_') for style in styles.keys()]
 
-# TODO: store in file that is not checked into github
 
-
-def populate_database(photos_per_style=1000):
-    for style in styles:
-        vislab.datasets.get_photos_for_style(style, photos_per_style)
-
-
-def load_flickr_df(num_images=-1, random_seed=42, force=False):
+def load_flickr_df(force=False):
     """
-    Load the data from the DataBase into one DataFrame.
+    Load the data from the database into a DataFrame and save it.
     """
     filename = vislab.config['paths']['shared_data'] + '/flickr_df.pickle'
-
     if force or not os.path.exists(filename):
         client = vislab.util.get_mongodb_client()
         dfs = []
@@ -74,10 +67,6 @@ def load_flickr_df(num_images=-1, random_seed=42, force=False):
         main_df[underscored_style_names] = \
             main_df[underscored_style_names].astype(bool)
 
-        # Shuffle the rows.
-        np.random.seed(random_seed)
-        main_df = main_df.iloc[np.random.permutation(main_df.shape[0])]
-
         main_df.to_pickle(filename)
 
     else:
@@ -90,12 +79,6 @@ def load_flickr_df(num_images=-1, random_seed=42, force=False):
     main_df['_split'][main_df[underscored_style_names].sum(1) > 1] = 'test'
 
     return main_df
-
-
-def get_image_url_for_id(image_id):
-    df = load_flickr_df()
-    url = df['image_url'].ix[image_id]
-    return url
 
 
 def get_image_url(photo, size_flag=''):
@@ -155,8 +138,10 @@ def get_photos_for_style(style, num_images=250):
     while collection_size < num_images and page < num_pages:
         page += 1
         params['page'] = page
-        url = 'http://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1'
-        url += '&api_key={api_key}&content_type={content_type}&group_id={group_id}&page={page}&per_page={per_page}'
+        url = 'http://api.flickr.com/services/rest/' + \
+              '?method=flickr.photos.search&format=json&nojsoncallback=1' + \
+              '&api_key={api_key}&content_type={content_type}' + \
+              '&group_id={group_id}&page={page}&per_page={per_page}'
         url = url.format(**params)
         print(url)
 
@@ -188,3 +173,11 @@ def get_photos_for_style(style, num_images=250):
         if page > page_data['photos']['pages']:
             print("Not enough pages to fill up to desired amount!")
             break
+
+
+def populate_database(photos_per_style=1000):
+    """
+    Run this to collect data.
+    """
+    for style in styles:
+        vislab.datasets.get_photos_for_style(style, photos_per_style)

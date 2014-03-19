@@ -9,6 +9,7 @@ import glob
 import scipy.io
 import networkx as nx
 import numpy as np
+import multiprocessing
 import vislab
 from vislab.datasets.pascal import load_annotation_files
 
@@ -92,7 +93,7 @@ def load_imagenet_detection(year='2013', force=False, args=None):
     Warning: this takes a few minutes to load from scratch!
     """
     if args is None:
-        args = {'num_workers': 8}
+        args = {'num_workers': multiprocessing.cpu_count()}
 
     cache_filename = \
         vislab.config['paths']['shared_data'] + \
