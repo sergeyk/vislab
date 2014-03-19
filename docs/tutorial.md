@@ -8,10 +8,10 @@ title: Tutorial
 
 VisLab has the following external dependencies:
 
-- [MongoDB]: key-value store used for storing features
-- [Redis]: key-value store used for our job queue
-- [Vowpal Wabbit]: machine learning framework
-- and a bunch of Python packages: we recommend using the [Anaconda distribution], which provides most of them out of the box.
+- [MongoDB][]: key-value store used for storing features
+- [Redis][]: key-value store used for our job queue
+- [Vowpal Wabbit][]: machine learning framework
+- and a bunch of Python packages: we recommend using the [Anaconda distribution][], which provides most of them out of the box.
 
 <!-- - [Caffe] deep-learning framework (another Berkeley project)
     Caffe itself has many dependencies, such as OpenCV.
@@ -23,7 +23,7 @@ Follow along for the link.
 
 We're going to describe the setup on OS X (tested with versions 10.8 and above).
 
-[Homebrew] is by far the best way to manage packages on OS X, so we assume that it is used.
+[Homebrew][] is by far the best way to manage packages on OS X, so we assume that it is used.
 On Linux, most `brew install` commands can be replaced with `sudo apt-get install`.
 
 We also assume that the [Anaconda distribution] of Python is used.
@@ -58,7 +58,7 @@ Clone and install Vowpal Wabbit.
     make
     make install
 
-<!-- To install [Caffe], please follow the [instructions](http://caffe.berkeleyvision.org/installation.html). -->
+<!-- To install [Caffe][], please follow the [instructions](http://caffe.berkeleyvision.org/installation.html). -->
 
 ### Getting vislab code and wikipaintings dataset
 
@@ -75,8 +75,8 @@ Set up the Python path to contain this directory:
 
 *All following commmands assume that you are performing them in this directory.*
 
-[MongoDB]: #
-[Redis]: #
+[MongoDB]: https://www.mongodb.org/
+[Redis]: http://redis.io/
 [Vowpal Wabbit]: https://github.com/JohnLangford/vowpal_wabbit
 [Caffe]: http://caffe.berkeleyvision.org
 [Anaconda distribution]: https://store.continuum.io/cshop/anaconda/
