@@ -12,7 +12,7 @@ DATASETS = {
         'fn': ava.get_style_df
     },
     'flickr': {
-        'fn': flickr.load_flickr_df
+        'fn': flickr.get_df
     },
     'wikipaintings': {
         'fn': wikipaintings.get_style_df

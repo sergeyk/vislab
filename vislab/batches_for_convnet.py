@@ -19,7 +19,7 @@ num_images = 1024
 
 def process_image(image_id, image_url):
     filename = '{}/{}.jpg'.format(
-        vislab.util.makedirs(vislab.config['images']), image_id)
+        vislab.util.makedirs(vislab.config['paths']['images']), image_id)
     try:
         if not os.path.exists(filename):
             print("Downloading image for id: {}".format(image_id))

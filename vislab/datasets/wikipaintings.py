@@ -52,27 +52,26 @@ def get_df(force=False, args=None):
 
 
 def get_style_df(min_positive_examples=1000, force=False):
-    df = _get_column_label_df('style', min_positive_examples, force)
-    df['_split'] = vislab.dataset.get_train_test_split(df)
-    return df
+    df = get_df(force)
+    return _get_column_label_df(df, 'style', min_positive_examples)
 
 
 def get_genre_df(min_positive_examples=1000, force=False):
-    return _get_column_label_df('genre', min_positive_examples, force)
+    df = get_df(force)
+    return _get_column_label_df(df, 'genre', min_positive_examples)
 
 
 def get_artist_df(min_positive_examples=200, force=False):
-    df = get_df()
-    df['artist'] = df['artist_slug']
-    df = vislab.dataset.get_bool_df(df, 'artist', min_positive_examples, force)
-    df['_split'] = vislab.dataset.get_train_test_split(df)
-    return df
-
-
-def _get_column_label_df(column_name, min_positive_examples=500, force=False):
     df = get_df(force)
+    df['artist'] = df['artist_slug']
+    return _get_column_label_df(df, 'artist', min_positive_examples)
+
+
+def _get_column_label_df(
+        df, column_name, min_positive_examples=500):
     bool_df = vislab.dataset.get_bool_df(
-        df, column_name, min_positive_examples)
+        df, 'style', min_positive_examples)
+    bool_df['_split'] = vislab.dataset.get_train_test_split(bool_df)
     bool_df['image_url'] = df['image_url']
     return bool_df
 

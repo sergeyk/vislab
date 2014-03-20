@@ -11,7 +11,6 @@ import urllib2
 import pandas as pd
 import numpy as np
 import json
-import os
 import vislab
 
 # Mapping of style names to group ids.
@@ -39,46 +38,47 @@ underscored_style_names = [
     'style_' + style.replace(' ', '_') for style in styles.keys()]
 
 
-def load_flickr_df(force=False):
+def _fetch_df():
+    client = vislab.util.get_mongodb_client()
+    dfs = []
+    for style in style_names:
+        df = pd.DataFrame(list(client['flickr'][style].find()))
+        df2 = pd.DataFrame(data={
+            'image_url': df.apply(lambda row: get_image_url(row), axis=1),
+            'page_url': df.apply(lambda row: get_page_url(row), axis=1),
+        })
+        df2.index = df['image_id'].astype(str)
+        style_str = 'style_' + style.replace(' ', '_')
+        df2[style_str] = True
+        dfs.append(df2)
+
+    main_df = dfs[0]
+    for df_ in dfs:
+        main_df = main_df.combine_first(df_)
+    main_df = main_df.fillna(False)
+
+    # Make sure the values are boolean
+    main_df[underscored_style_names] = \
+        main_df[underscored_style_names].astype(bool)
+
+    return main_df
+
+
+def get_df(force=False):
     """
     Load the data from the database into a DataFrame and save it.
     """
     filename = vislab.config['paths']['shared_data'] + '/flickr_df.pickle'
-    if force or not os.path.exists(filename):
-        client = vislab.util.get_mongodb_client()
-        dfs = []
-        for style in style_names:
-            df = pd.DataFrame(list(client['flickr'][style].find()))
-            df2 = pd.DataFrame(data={
-                'image_url': df.apply(lambda row: get_image_url(row), axis=1),
-                'page_url': df.apply(lambda row: get_page_url(row), axis=1),
-            })
-            df2.index = df['image_id'].astype(str)
-            style_str = 'style_' + style.replace(' ', '_')
-            df2[style_str] = True
-            dfs.append(df2)
+    df = vislab.util.load_or_generate_df(
+        filename, _fetch_df, force)
 
-        main_df = dfs[0]
-        for df_ in dfs:
-            main_df = main_df.combine_first(df_)
-        main_df = main_df.fillna(False)
+    # Assign split information, and assign the few images that have
+    # multiple labels to test.
+    df['_split'] = vislab.dataset.get_train_test_split(
+        df[underscored_style_names])
+    df['_split'][df[underscored_style_names].sum(1) > 1] = 'test'
 
-        # Make sure the values are boolean
-        main_df[underscored_style_names] = \
-            main_df[underscored_style_names].astype(bool)
-
-        main_df.to_pickle(filename)
-
-    else:
-        main_df = pd.read_pickle(filename)
-
-    # Assign split information
-    main_df['_split'] = vislab.dataset.get_train_test_split(
-        main_df[underscored_style_names])
-    # Also assign the few images that have multiple labels to test.
-    main_df['_split'][main_df[underscored_style_names].sum(1) > 1] = 'test'
-
-    return main_df
+    return df
 
 
 def get_image_url(photo, size_flag=''):

@@ -15,6 +15,10 @@ import vislab.datasets
 
 
 def get_train_test_split(df_, test_frac=0.2, random_seed=42):
+    """
+    Split DataFrame into train and test subsets, by preserving label
+    ratios.
+    """
     np.random.seed(random_seed)
 
     N = df_.shape[0]
@@ -108,6 +112,9 @@ def fetch_image_filenames_for_ids(image_ids, dataset_name):
     good_filenames: list of string
         Only filenames of images that actually exist on disk.
     """
+    image_dirname = vislab.util.makedirs(os.path.join(
+        vislab.config['paths']['images'], dataset_name))
+
     df = load_dataset_df(dataset_name)
 
     if 'image_filename' in df.columns:
@@ -115,9 +122,7 @@ def fetch_image_filenames_for_ids(image_ids, dataset_name):
     else:
         assert 'image_url' in df.columns
         filenames = [
-            '{}/{}/{}.jpg'.format(
-                vislab.config['images'], dataset_name, image_id
-            )
+            os.path.join(image_dirname, '{}.jpg'.format(image_id))
             for image_id in image_ids
         ]
         urls = df['image_url'].loc[image_ids]

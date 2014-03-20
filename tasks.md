@@ -1,18 +1,20 @@
 ## Fixes
 
-## Today
+## Current
 
-- make sure that image_url is part of wikipaintings, and test feature.py
+- Replace convnet feature computation: decaf -> caffe
+    - Compute multiple levels of convnet at once
+
+## Today
 
 - Replace classifier: VW -> caffe
     - In feature.py, output to several HDF5 files (of max size 2GB) instead of just one.
     - Modify Caffe to be able to take label file as separate from feature file.
     - Modify Caffe to be able to take multiple feature files (should be easy, as separate layers).
 
-- Replace convnet feature computation: decaf -> caffe
-    - Compute multiple levels of convnet at once.
+- Integrate Helen's tags for the flickr dataset
 
-- Check out Helen's tags for the flickr dataset
+- Integrate Trent's negative set into Flickr dataset
 
 ## Next
 
