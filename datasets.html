@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Vislab | Datasets</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script type="text/javascript" src="//use.typekit.net/uzs7hgs.js"></script>
+    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+  </head>
+  <body>
+    
+    <header>
+      <a href="/"><i class="fa fa-th"></i> Vislab</a>
+    </header>
+    
+    <section>
+      <h1 id="datasets">Datasets</h1>
+
+<p>Vislab provides support for several vision datasets out of the box.</p>
+
+<h2 id="provided">Provided</h2>
+
+<dl>
+<dt>pascal</dt>
+
+<dd>VOC2012, ~10K images tagged with 20 object classes. Multi-label.</dd>
+
+<dt>ava</dt>
+
+<dd>~250K images with aesthetic ratings</dd>
+
+<dt>ava_style</dt>
+
+<dd>~20K images from AVA that also have style labels</dd>
+
+<dt>flickr</dt>
+
+<dd>~50K images with style labels</dd>
+
+<dt>wikipaintings</dt>
+
+<dd>~100K images with style, genre, artist labels</dd>
+</dl>
+
+<h2 id="adding_your_own">Adding your own</h2>
+
+<p>Adding your own dataset is super simple.</p>
+
+<ol>
+<li>Add the file <code>vislab/datasets/your_dataset.py</code> that will contain a function to load a <code>pandas.DataFrame</code> with:</li>
+</ol>
+
+<ul>
+<li>unique string-based index, with name <code>image_id</code></li>
+
+<li><code>image_url</code> or <code>image_filename</code> in columns</li>
+
+<li>a column for whatever boolean label you care about</li>
+</ul>
+
+<ol>
+<li>Modify <code>DATASETS</code> in <code>vislab/dataset.py</code> to map a name to your new function.</li>
+</ol>
+
+<h2 id="dataset_for_classification">Dataset for classification</h2>
+
+<p>The classifier expects DataFrames with only two columns: ‘label’ and ‘importance’.</p>
+
+<p>The ‘label’ column can contain:</p>
+
+<ul>
+<li>real values (regression)</li>
+
+<li>-1/1 (binary classification)</li>
+
+<li>or positive ints (multiclass classification).</li>
+</ul>
+    </section>
+    <footer>
+      <hr />
+      <p>Developed by <a href="http://sergeykarayev.com">Sergey Karayev</a>.</p>
+    </footer>
+    <script>
+    $(function() {
+      return $("h2, h3, h4").each(function(i, el) {
+        var id = $(el).attr('id');
+        if (id) {
+          return $(el).prepend($("<a />").attr("name", id).attr("href", "#" + id).html('#'));
+        }
+      });
+    });
+    </script>
+  </body>
+</html>

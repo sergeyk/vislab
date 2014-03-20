@@ -1,34 +1,28 @@
-@import url(http://fonts.googleapis.com/css?family=PT+Serif:400,700,400italic|Raleway:300);
-
 html {
   min-width: 1040px;
 }
 
 body {
-  font: 100%/1.5 "PT Serif", serif;
-  color: #444;
+  font: 100%/1.5 "ff-meta-serif-web-pro", serif;
+  color: #585857;
   margin: 1em auto 4em auto;
   position: relative;
   width: 960px;
 }
 
 header, footer, aside, h1, h2, h3, h4 {
-  font-family: "Raleway", sans-serif;
+  font-family: "source-sans-pro", sans-serif;
 }
 
 h1, h2, h3, h4 {
-  color: #111;
-}
-
-header, footer {
-  color: #636363;
+  color: #3f3f3e;
 }
 
 h1 {
-  font-size: 64px;
+  font-size: 3em;
   font-weight: 300;
   letter-spacing: -2px;
-  margin: .3em 0 .1em 0;
+  margin: 0;
 }
 
 h2 {
@@ -119,6 +113,10 @@ pre, code, textarea {
 
 textarea {
   font-size: 100%;
+}
+
+dt {
+  font-weight: bold;
 }
 
 section > pre {

@@ -10,6 +10,9 @@
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
+    <script type="text/javascript" src="//use.typekit.net/uzs7hgs.js"></script>
+    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
   </head>
   <body>
     
@@ -25,13 +28,15 @@
 <p>VisLab has the following external dependencies:</p>
 
 <ul>
-<li><a href="#">MongoDB</a>: key-value store used for storing features</li>
+<li><a href="https://www.mongodb.org/">MongoDB</a>: key-value store used for storing features</li>
 
-<li><a href="#">Redis</a>: key-value store used for our job queue</li>
+<li><a href="http://redis.io/">Redis</a>: key-value store used for our job queue</li>
 
 <li><a href="https://github.com/JohnLangford/vowpal_wabbit">Vowpal Wabbit</a>: machine learning framework</li>
 
 <li>and a bunch of Python packages: we recommend using the <a href="https://store.continuum.io/cshop/anaconda/">Anaconda distribution</a>, which provides most of them out of the box.</li>
+
+<li>some Matlab code for feature computation is required if you’re not satisfied with the convolutional network feature.</li>
 </ul>
 <!-- - [Caffe] deep-learning framework (another Berkeley project)
     Caffe itself has many dependencies, such as OpenCV.
@@ -74,7 +79,7 @@ conda install mpi4py</code></pre>
 cd vowpal_wabbit
 make
 make install</code></pre>
-<!-- To install [Caffe], please follow the [instructions](http://caffe.berkeleyvision.org/installation.html). -->
+<!-- To install [Caffe][], please follow the [instructions](http://caffe.berkeleyvision.org/installation.html). -->
 <h3 id="getting_vislab_code_and_wikipaintings_dataset">Getting vislab code and wikipaintings dataset</h3>
 
 <p>You’ll need to pick a work directory that will contain the repository. I use <code>~/work</code>, so this repository goes into <code>~/work/vislab-git</code>.</p>
