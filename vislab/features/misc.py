@@ -21,6 +21,47 @@ import shutil
 import vislab.image
 
 
+def caffe(image_ids, image_filenames, layer='fc6', network='alexnet'):
+    import caffe.imagenet
+
+    networks = {
+        'alexnet': {
+            'model_def_file': (
+                str(vislab.config['paths']['caffe'] +
+                    '/examples/imagenet/imagenet_deploy.prototxt')
+            ),
+            'pretrained_model': (
+                str(vislab.config['paths']['caffe'] +
+                    '/examples/imagenet/caffe_reference_imagenet_model')
+            )
+        }
+    }
+    if network not in networks:
+        raise ValueError('Only networks supported: {}'.format(networks.keys()))
+
+    # Initialize the network (takes ~1 s)
+    net = caffe.imagenet.ImageNetClassifier(**networks[network])
+    net.caffenet.set_phase_test()
+    net.caffenet.set_mode_cpu()
+
+    if layer not in net.caffenet.blobs.keys():
+        raise ValueError('Only layers supported for this network: {}'.format(
+            net.caffenet.blobs.keys()))
+
+    good_image_ids = []
+    feats = []
+    for image_id, image_filename in zip(image_ids, image_filenames):
+        try:
+            # First, run the network fully forward by calling predict.
+            # Then, for whatever blob we want, max across image crops.
+            net.predict(image_filename)
+            feats.append(net.caffenet.blobs[layer].data.max(0).flatten())
+            good_image_ids.append(image_id)
+        except:
+            continue
+    return good_image_ids, feats
+
+
 def size(image_ids, image_filenames):
     """
     Simply return the (h, w, area, aspect_ratio, has_color) of each image.

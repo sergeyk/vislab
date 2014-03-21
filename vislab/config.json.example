@@ -12,7 +12,8 @@
         "static_data": "~/work/vislab-git/data/static",
         "feats": "~/work/vislab-git/data/feats",
         "predict": "~/work/vislab-git/data/predict",
-        "results": "~/work/vislab-git/data/results"
+        "results": "~/work/vislab-git/data/results",
+        "caffe": "~/work/caffe-bvlc"
     },
     "api_keys": {
         "flickr": "",
@@ -21,6 +22,6 @@
     "servers": {
         "mongo": ["0.0.0.0", 27017],
         "redis": ["0.0.0.0", 6379]
-    }
+    },
 }
 

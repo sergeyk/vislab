@@ -8,6 +8,7 @@ where good_image_ids may be a subset of image_ids.
 """
 import os
 import sys
+import functools
 import pandas as pd
 import numpy as np
 import cPickle
@@ -21,32 +22,51 @@ DB_NAME = 'vislab_feats'
 FEATURES = {
     # does not look at image at all:
     'noise': {
-        'cpus_per_task': 1, 'mem': 1000, 'chunk_size': -1, 'fn': None},
+        'cpus_per_task': 1, 'mem': 1000, 'chunk_size': -1, 'fn': None
+    },
 
     # python:
     'size': {
         'fn': vislab.features.size,
-        'cpus_per_task': 1, 'mem': 1000, 'chunk_size': -1},
+        'cpus_per_task': 1, 'mem': 1000, 'chunk_size': -1
+    },
 
     'gist_256': {
-        'cpus_per_task': 2, 'mem': 2000, 'chunk_size': -1},
+        'fn': functools.partial(vislab.features.gist, max_size=256),
+        'cpus_per_task': 2, 'mem': 2000, 'chunk_size': -1
+    },
+
+    # caffe:
+    'caffe_fc6': {
+        'fn': functools.partial(vislab.features.caffe, layer='fc6'),
+        'cpus_per_task': 4, 'mem': 2000, 'chunk_size': 30,
+    },
+
+    'caffe_fc6': {
+        'fn': functools.partial(vislab.features.caffe, layer='fc7'),
+        'cpus_per_task': 4, 'mem': 2000, 'chunk_size': 30,
+    },
 
     # matlab:
     'dsift_llc_1000': {
         'fn': vislab.features.dsift_llc,
-        'cpus_per_task': 3, 'mem': 3000, 'chunk_size': 20},
+        'cpus_per_task': 3, 'mem': 3000, 'chunk_size': 20
+    },
 
     'lab_hist': {
         'fn': vislab.features.lab_hist,
-        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30},
+        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30
+    },
 
     'mc_bit': {
         'fn': vislab.features.mc_bit,
-        'cpus_per_task': 1, 'mem': 7000, 'chunk_size': 10},
+        'cpus_per_task': 1, 'mem': 7000, 'chunk_size': 10
+    },
 
     'gbvs_saliency': {
         'fn': vislab.features.gbvs_saliency,
-        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 10},
+        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 10
+    },
 }
 
 
@@ -137,7 +157,7 @@ def _extract_features_for_image_ids(
     if len(image_ids) == 0:
         print("Could not load any images from {}".format(image_ids))
         return
-    image_ids, feats = FEATURES[feat_name]['fn'](image_filenames, image_ids)
+    image_ids, feats = FEATURES[feat_name]['fn'](image_ids, image_filenames)
     _store_in_db(collection, image_ids, feats)
 
 
