@@ -10,6 +10,10 @@ import shutil
 import vislab
 
 
+def zero_results(collection, query):
+    return collection.find(query).limit(1).count() == 0
+
+
 def exclude_ids_in_collection(image_ids, collection):
     """
     Exclude ids already stored in the collection.
