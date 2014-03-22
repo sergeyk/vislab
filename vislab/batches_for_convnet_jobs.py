@@ -46,6 +46,6 @@ if __name__ == '__main__':
 
     # Submit jobs to queue
     queue_name = 'finetune_convnet'
-    redis_conn = vislab.util.get_redis_conn()
+    redis_conn = vislab.util.get_redis_client()
     for image_id, row in train_df.iterrows():
         redis_conn.rpush(queue_name, cPickle.dumps((image_id, dict(row))))

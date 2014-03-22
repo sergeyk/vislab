@@ -39,7 +39,7 @@ def submit_job(function_name, kwargs, queue_name='default'):
     queue_name: string ['default']
         Name of the queue to wait on.
     """
-    redis_conn = util.get_redis_conn()
+    redis_conn = util.get_redis_client()
     key = '%s:result:%s' % (queue_name, str(uuid.uuid4()))
     redis_conn.rpush(
         queue_name, cPickle.dumps((function_name, kwargs, key)))
@@ -85,7 +85,7 @@ def poll_for_jobs(registered_functions, queue_name='default', rv_ttl=60):
     rv_ttl: float [60]
         Result's time to live, in seconds.
     """
-    redis_conn = util.get_redis_conn()
+    redis_conn = util.get_redis_client()
     print("poll_for_jobs: now listening on {}".format(queue_name))
     while True:
         msg = redis_conn.blpop(queue_name)

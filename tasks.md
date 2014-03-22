@@ -1,45 +1,59 @@
+## Fixes
+
+## Today
+
+- Merge dev to master
+- Compute fc6 features on flickr
+- Cache fc6 on flickr to vw
+- Compute fc6 features on wikipaintings
+- Cache fc6 on wikipaintings to vw
+- Compute fc6 features on pinterest
+- Cache fc6 on pinterest to vw
+- Compute fc7 features on flickr
+- Cache fc7 on flickr to vw
+- Compute fc7 features on wikipaintings
+- Cache fc7 on wikipaintings to vw
+- Compute fc7 features on pinterest
+- Cache fc7 on pinterest to vw
+
+
+## Tomorrow
+
+- Form list of experiments that need to be run, rank by importance
+
 ## Next
 
-Aphrodite integration
-- put Adobe copyright text in relevant files
-- integrate feature.py and _feature.py: right now, messy nesting
-
-Features
-    - Switch to using caffe instead of decaf
-    - whitened HOG feature (wrap Jon's code)
-    - face detection
-    - portrait and landscape classifiers: add to the PASCAL meta-class classifiers
-    - make featurization server: gets filename, outputs result back on queue
-    - implement feature computation in vislab that computes multiple levels of decaf feature at once
-    - implement presence of text classifier
-
-Classification experiments
-    - store bit_precision in the results table somewhere.
+- make sure Helen send me her Flickr-scraping code, so that I can integrate it into Vislab, and run it again to update the new dataset with tags
 
 Single-person classification accuracy:
     - how good is a single person at predicting the style classification task? the ava task?
 
-VW:
-    - get vector of weights from VW.
-        : in fact, need --inverse_hash to do this properly, and that seems to slow things down substantially (haven't tried though)
-    - revamp cross-validation to write all results to database to allow iterative improvement and visualizing the effects of the parameters
-    - implement a dot-product distance computation mode in vowpal wabbit that outputs all pairwise distances for the data points; if a model is provided, the distances are in the projected space. this will also implement the k-nn classifier.
+- Replace classifier: VW -> caffe
+    - In feature.py, output to several HDF5 files (of max size 2GB) instead of just one.
+    - Modify Caffe to be able to take label file as separate from feature file.
+    - Modify Caffe to be able to take multiple feature files (should be easy, as separate layers).
+
+- Generate Sphinx autodoc and display it on my doc page
+
+- Compute pairwise distances for images for different features
+
+- Features
+    - whitened HOG feature (wrap Jon's code)
+    - face detection
+    - portrait and landscape classifiers: add to the PASCAL meta-class classifiers
+    - make featurization server: gets filename, outputs result back on queue
+    - implement presence of text classifier
 
 Evaluation
     - average over multiple random subsets of test-balanced data
 
 Datasets
     - make memorability/interestingness dataset interface (aude's data with extra interestingness scores)
-    - store widths and heights in database for better layout on client
     - weight AVA examples according to inverse distance to mean (should work better than the delta method)
 
 Results analysis
-    - nice force-based layout graph of confusion matrix
-    - could be a good figure: sort imagenet images for a few categories by beauty
+    - could be good figure: sort imagenet images for a few categories by beauty
     - to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
-
-Image search demo
-    - get tags for the flickr dataset
 
 Similarity demo
     - add paintings data
@@ -55,6 +69,8 @@ Job queue system
     - launch workers separately from the script that submits jobs for them, but with their own script
     - be able to kill workers with scancel
     - report when workers get killed
+
+- make the results server use Mongo (and then can populate dataframes from filtered results there)
 
 Misc
     - need util function for syncing up dataframe with mongodb collection. useful for datasets.
@@ -74,3 +90,12 @@ Bugs to fix:
 ## Done
 
 x every occurrence of vislab.repo_dirname should be replaced by path in vislab.config
+x publish website for documentation, from docs/ directory
+x set the redis and mongodb server hostname and port in config file
+x put Adobe copyright text in relevant files
+x integrate feature.py and _feature.py: right now, messy nesting
+x Replace convnet feature computation: decaf -> caffe
+x Expand Flickr set to 5000 examples for 20 different styles (added Bokeh. Detailed, Texture).
+x integrate Pinsplorer code into Vislab
+x store image and page urls in the pinterest dataset: rsync the notebook from elbow first, don't want to re-write that code
+x also, give pinterest dataset names exactly like the Flickr dataset

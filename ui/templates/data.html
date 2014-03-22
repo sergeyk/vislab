@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+    <title>VisLab: Data Explorer</title>
+
+    <link href="/static/main.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.css" />
+    <!-- <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.min.css" /> -->
+
+    <script src="/static/jquery-2.1.0.js"></script>
+    <!-- <script src="/static/jquery-2.1.0.min.js"></script> -->
+    <script>
+    $(document).ready(function() {
+        $('#query').change(function() {
+            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/1';
+        });
+        $('#pins_per_user').change(function() {
+            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
+        });
+        $('#page').change(function() {
+            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
+        });
+    });
+    </script>
+</head>
+
+<body>
+<div class="container">
+<h1>
+    <a href="/"><i class="icon-home"></i></a>&nbsp;
+    VisLab: Data
+</h1>
+
+<div id="search-options" style="display: block; text-align: center;">
+    {% for name, options, selected_value in select_options %}
+    <label for="{{name}}">{{name}}</label>
+    <select id="{{name}}">
+        {% for x in options %}
+            {% if selected_value == x %}
+                <option value="{{ x }}" selected>{{ x }}</option>
+            {% else %}
+                <option value="{{ x }}">{{ x }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    {% endfor %}
+</div>
+
+<div class="images">
+{% for image in images %}
+    <div class="result">
+        <a href="{{image.pin_url}}">
+            <img src="{{image.img}}" width="160px" />
+        </a>
+        <div style="text-align: center;">
+            <a href="{{image.board_url}}">{{image.board_name}}</a>
+            |
+            <a href="{{image.user_url}}">{{image.username}}</a>
+        </div>
+    </div>
+{% endfor %}
+</div>
+
+</div>
+
+</body>
+</html>

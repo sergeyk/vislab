@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>{{ site.name }} | {{ page.title }}</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script type="text/javascript" src="//use.typekit.net/uzs7hgs.js"></script>
+    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+  </head>
+  <body>
+    {% if page.title != 'Home' %}
+    <header>
+      <a href="/"><i class="fa fa-th"></i> {{ site.name }}</a>
+    </header>
+    {% endif %}
+    <section>
+      {{ content }}
+    </section>
+    <footer>
+      <hr />
+      <p>Developed by <a href="http://sergeykarayev.com">Sergey Karayev</a>.</p>
+    </footer>
+    <script>
+    $(function() {
+      return $("h2, h3, h4").each(function(i, el) {
+        var id = $(el).attr('id');
+        if (id) {
+          return $(el).prepend($("<a />").attr("name", id).attr("href", "#" + id).html('#'));
+        }
+      });
+    });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,142 @@
+html {
+  min-width: 1040px;
+}
+
+body {
+  font: 100%/1.5 "ff-meta-serif-web-pro", serif;
+  color: #585857;
+  margin: 1em auto 4em auto;
+  position: relative;
+  width: 960px;
+}
+
+header, footer, aside, h1, h2, h3, h4 {
+  font-family: "source-sans-pro", sans-serif;
+}
+
+h1, h2, h3, h4 {
+  color: #3f3f3e;
+}
+
+h1 {
+  font-size: 3em;
+  font-weight: 300;
+  letter-spacing: -2px;
+  margin: 0;
+}
+
+h2 {
+  margin-top: 1em;
+}
+
+h1, h2 {
+  text-rendering: optimizeLegibility;
+}
+
+h2 a[name], h3 a[name], h4 a[name]  {
+  color: #ff8a04;
+  left: -20px;
+  position: absolute;
+  width: 740px;
+  opacity: 0;
+  -webkit-transition: opacity 0.2s ease-in-out 0.1s;
+  -moz-transition: opacity 0.2s ease-in-out 0.1s;
+  -ms-transition: opacity 0.2s ease-in-out 0.1s;
+}
+
+h2:hover a, h3:hover a, h4:hover a {
+  opacity: 1;
+}
+
+header aside, footer aside {
+  float: left;
+  margin-right: .5em;
+}
+
+header aside:after, footer aside:after {
+  padding-left: .5em;
+  content: "/";
+}
+
+footer {
+  margin-top: 2em;
+}
+
+h1 ~ aside {
+  font-size: small;
+  right: 0;
+  position: absolute;
+  width: 180px;
+}
+
+.attribution {
+  font-size: small;
+  margin-bottom: 2em;
+}
+
+section > p, li > p {
+  line-height: 1.5em;
+}
+
+section > p {
+  width: 720px;
+}
+
+section > blockquote {
+  width: 640px;
+}
+
+blockquote q {
+  display: block;
+  font-style: oblique;
+}
+
+li {
+  width: 680px;
+}
+
+a {
+  color: #ff8a04;
+  text-decoration: none;
+  -webkit-transition: color .15s ease-out;
+  -moz-transition: color .15s ease-out;
+  transition: color .15s ease-out;
+}
+
+a:not(:hover) {
+  color: #0e9ce0;
+}
+
+pre, code, textarea {
+  font-family: monospace;
+}
+
+textarea {
+  font-size: 100%;
+}
+
+dt {
+  font-weight: bold;
+}
+
+section > pre {
+  width: 720px;
+  overflow: auto;
+  white-space: pre-wrap;
+  border-left: solid 2px #ccc;
+  padding-left: 18px;
+  margin: 2em 0 2em -20px;
+}
+
+sup, sub {
+  line-height: 0;
+}
+
+blockquote:before {
+  position: absolute;
+  left: 2em;
+}
+
+blockquote:after {
+  position: absolute;
+}

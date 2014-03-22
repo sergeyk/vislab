@@ -1,0 +1,7 @@
+name: Vislab
+author: Sergey Karayev
+description: Tools for computer vision.
+url: http://sergeykarayev.com/vislab
+pygments: true
+permalink: /:title
+repo: https://github.com/sergeyk/vislab

@@ -4,8 +4,6 @@ module functions.
 """
 import sys
 import argparse
-# TODO: fix this dependency
-import vislab._feature
 
 
 def add_cmdline_args(group_name, parser):
@@ -17,9 +15,12 @@ def add_cmdline_args(group_name, parser):
     """
     if group_name == 'common':
         parser.add_argument(
-            '--force', default=False)
+            '--force',
+            default=False)
         parser.add_argument(
-            '--random_seed', type=int, default=42)
+            '--random_seed',
+            type=int,
+            default=42)
 
     # Stuff for selecting the dataset and limiting the number of images:
     elif group_name == 'dataset':
@@ -30,53 +31,52 @@ def add_cmdline_args(group_name, parser):
         parser.add_argument(
             '--source_dataset',
             help="select which dataset to use as trained clf source",
-            type=str, default=None)
-        parser.add_argument(
-            '--label',
-            help="which label space to load for the dataset",
-            default='style',
-            required=False)
+            type=str,
+            default=None)
         parser.add_argument(
             '--num_images',
             help="number of images to use from the dataset (-1 for all)",
-            type=int, default=-1)
-
-    # Stuff for forcing load of datasets from scratch:
-    elif group_name == 'datasets':
+            type=int,
+            default=-1)
         parser.add_argument(
-            '--force_dataset', default=False,
-            help="Force reloading of dataset from scratch.")
+            '--force_dataset',
+            help="Force reloading of dataset from scratch",
+            default=False)
 
     # Stuff for selecting list of features and forcing their overwrite.
     elif group_name == 'feature':
         parser.add_argument(
             '--features',
-            help="List of words in {} separated by commas".format(
-                vislab._feature.KNOWN_FEATURES),
+            help="Comma-separated list of FEATURES from vislab/feature.py",
             default='size')
         parser.add_argument(
             '--force_features',
             help="force overwrite of existing features",
-            action="store_true", default=False)
+            action="store_true",
+            default=False)
 
     # Stuff for distributed computation:
     elif group_name == 'processing':
         parser.add_argument(
             '--num_workers',
             help="number of workers to use in processing jobs",
-            type=int, default=1)
+            type=int,
+            default=1)
         parser.add_argument(
             '--chunk_size',
             help="number of jobs to assign to a worker at once",
-            type=int, default=20)
+            type=int,
+            default=20)
         parser.add_argument(
             '--mem',
             help="amount of memory that a single worker will use",
-            type=int, default=3000)
+            type=int,
+            default=3000)
         parser.add_argument(
             '--cpus_per_task',
             help="number of cpus that a single worker will use",
-            type=int, default=4)
+            type=int,
+            default=4)
 
     # Forming a prediction dataset and setting properties of predictor.
     elif group_name == 'prediction':
@@ -94,35 +94,43 @@ i.e. 'style_*' will match multiple columns""")
         parser.add_argument(
             '--test_frac',
             help="fraction of dataset to use for testing",
-            type=float, default=0.2)
+            type=float,
+            default=0.2)
         parser.add_argument(
             '--balanced',
             help="should the validation set be balanced for multiclass",
-            action="store_true", default=False)
+            action="store_true",
+            default=False)
         parser.add_argument(
             '--min_pos_frac',
             help="minimum fraction of positive examples in training",
-            type=float, default=0.1)
+            type=float,
+            default=0.1)
         parser.add_argument(
             '--quadratic',
             help="perform quadratic expansion of the features",
-            type=str, default=None)
+            type=str,
+            default=None)
         parser.add_argument(
             '--bit_precision',
             help="bit precision of the VW classifier",
-            type=int, default=18)
+            type=int,
+            default=18)
         parser.add_argument(
             '--force_predict',
             help="force overwrite of existing results",
-            action="store_true", default=False)
+            action="store_true",
+            default=False)
         parser.add_argument(
             '--ava_num_train',
             help="number of training images to use",
-            type=int, default=-1)
+            type=int,
+            default=-1)
         parser.add_argument(
             '--ava_delta',
             help="AVA: only use images >= delta from mean rating",
-            type=float, default=0.0)
+            type=float,
+            default=0.0)
 
     else:
         raise Exception("Unknown group!")

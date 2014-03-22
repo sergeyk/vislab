@@ -1,10 +1,14 @@
 """
-Copyright Sergey Karayev - 2013.
+Copyright Sergey Karayev / Adobe - 2013.
 Written during internship at Adobe CTL, San Francisco.
+
+TODO:
+- be robust to failures in computing some features in gbvs_saliency
+and lab_hist
 """
 import os
 import numpy as np
-import Image
+from PIL import Image
 import leargist
 import tempfile
 import subprocess
@@ -15,76 +19,96 @@ import glob
 import pandas as pd
 import shutil
 import vislab.image
-#import decaf.scripts.imagenet
 
 
-def decaf_feat(image_filenames, image_ids, feat='fc6_cudanet_out', tuned=True):
-    # Use weights tuned on Flickr and Wikipaintings style data.
-    if tuned:
-        decaf_scripts_dir = os.path.expanduser('~/work/decaf/scripts')
-        net = decaf.scripts.imagenet.DecafNet(
-            net_file=decaf_scripts_dir + '/stylenet.pickle')
+def caffe(image_ids, image_filenames, layer='fc6', network='alexnet'):
+    import caffe.imagenet
 
-    # Use default Imagenet weights.
-    else:
-        net = decaf.scripts.imagenet.DecafNet()
+    networks = {
+        'alexnet': {
+            'model_def_file': (
+                str(vislab.config['paths']['caffe'] +
+                    '/examples/imagenet/imagenet_deploy.prototxt')
+            ),
+            'pretrained_model': (
+                str(vislab.config['paths']['caffe'] +
+                    '/examples/imagenet/caffe_reference_imagenet_model')
+            )
+        }
+    }
+    if network not in networks:
+        raise ValueError('Only networks supported: {}'.format(networks.keys()))
 
+    # Initialize the network (takes ~1 s)
+    net = caffe.imagenet.ImageNetClassifier(**networks[network])
+    net.caffenet.set_phase_test()
+    net.caffenet.set_mode_cpu()
+
+    if layer not in net.caffenet.blobs.keys():
+        raise ValueError('Only layers supported for this network: {}'.format(
+            net.caffenet.blobs.keys()))
+
+    good_image_ids = []
     feats = []
-    actual_image_ids = []
-    for image_filename, image_id in zip(image_filenames, image_ids):
+    for image_id, image_filename in zip(image_ids, image_filenames):
         try:
-            image = vislab.image.get_image_for_filename(image_filename)
-            if image is None:
-                continue
-        except Exception as e:
-            print('Exception', e)
+            # First, run the network fully forward by calling predict.
+            # Then, for whatever blob we want, max across image crops.
+            net.predict(image_filename)
+            feats.append(net.caffenet.blobs[layer].data.max(0).flatten())
+            good_image_ids.append(image_id)
+        except:
             continue
+    return good_image_ids, feats
 
+
+def size(image_ids, image_filenames):
+    """
+    Simply return the (h, w, area, aspect_ratio, has_color) of each image.
+    """
+    good_image_ids = []
+    feats = []
+    for image_id, filename in zip(image_ids, image_filenames):
         try:
-            scores = net.classify(image, center_only=True)
-
-            if feat == 'imagenet':
-                feats.append(scores)
-            else:
-                layer_feat = net._net.feature(feat).flatten()
-                feats.append(layer_feat)
-
-            actual_image_ids.append(image_id)
-
-        except Exception as e:
-            print(e)
-
-    return actual_image_ids, feats
+            image = vislab.dataset.get_image_for_filename(filename)
+            has_color = 1 if image.ndim > 2 else 0
+            h, w = image.shape[:2]
+            feat = np.array((h, w, h * w, float(h) / w, has_color))
+            good_image_ids.append(image_id)
+            feats.append(feat)
+        except:
+            continue
+    return good_image_ids, feats
 
 
-def size(image_filename, image_id):
-    """
-    Simply return the (h, w, area, aspect_ratio, has_color) of the image.
-    """
-    image = vislab.image.get_image_for_filename(image_filename)
-    has_color = 1 if image.ndim > 2 else 0
-    h, w = image.shape[:2]
-    return np.array((h, w, h * w, float(h) / w, has_color))
+def gist(image_ids, image_filenames, max_size=256):
+    good_image_ids = []
+    feats = []
+    for image_id, filename in zip(image_ids, image_filenames):
+        try:
+            # TODO: resize image to a smaller size? like 128?
+            img = vislab.dataset.get_image_for_filename(filename)
+            assert(img.dtype == np.uint8)
 
+            if img.ndim == 2:
+                img = np.tile(img[:, :, np.newaxis], (1, 1, 3))
+            h, w = img.shape[:2]
 
-def gist(image_filename, image_id, max_size=256):
-    # TODO: resize image to a smaller size? like 128?
-    image = vislab.image.get_image_for_filename(image_filename)
-    assert(image.dtype == np.uint8)
+            mode = 'RGBA'
+            rimg = img.reshape(img.shape[0] * img.shape[1], img.shape[2])
+            if len(rimg[0]) == 3:
+                rimg = np.c_[rimg, 255 * np.ones((len(rimg), 1), np.uint8)]
 
-    if image.ndim == 2:
-        image = np.tile(image[:, :, np.newaxis], (1, 1, 3))
-    h, w = image.shape[:2]
+            im = Image.frombuffer(
+                mode, (w, h), rimg.tostring(), 'raw', mode, 0, 1)
+            im.thumbnail((max_size, max_size), Image.ANTIALIAS)
+            feat = leargist.color_gist(im)
 
-    mode = 'RGBA'
-    rimage = image.reshape(image.shape[0] * image.shape[1], image.shape[2])
-    if len(rimage[0]) == 3:
-        rimage = np.c_[rimage, 255 * np.ones((len(rimage), 1), np.uint8)]
-
-    im = Image.frombuffer(mode, (w, h), rimage.tostring(), 'raw', mode, 0, 1)
-    im.thumbnail((max_size, max_size), Image.ANTIALIAS)
-    feat = leargist.color_gist(im)
-    return feat
+            good_image_ids.append(image_id)
+            feats.append(feat)
+        except:
+            continue
+    return image_ids, feats
 
 
 def lab_hist(image_filenames, image_ids):
@@ -116,7 +140,7 @@ def lab_hist(image_filenames, image_ids):
     os.remove(output_filename)
 
     assert(len(feats) == len(image_ids))
-    return feats
+    return image_ids, feats
 
 
 def gbvs_saliency(image_filenames, image_ids):
@@ -150,7 +174,7 @@ def gbvs_saliency(image_filenames, image_ids):
     print("Successfully computed {} features".format(len(feats)))
 
     assert(len(feats) == len(image_ids))
-    return feats
+    return image_ids, feats
 
 
 def mc_bit(image_filenames, image_ids):
