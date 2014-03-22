@@ -2,8 +2,14 @@
 
 ## Current
 
-- Replace convnet feature computation: decaf -> caffe
-    - Compute multiple levels of convnet at once
+- With Helen:
+    - integrate her Flickr-scraping code into Vislab, and run it again to update the new dataset with tags
+    - form Pinterest dataset of roughly the same size and styles as Flickr dataset
+        : goal is to test Flickr classifiers on this dataset, and vice versa, which enables a new section of cross-dataset results
+    - make the results server use Mongo (and then can populate dataframes from filtered results there)
+
+- Compute caffe fc6 features and complete prediction on flickr run on cluster
+
 
 ## Today
 
@@ -12,11 +18,9 @@
     - Modify Caffe to be able to take label file as separate from feature file.
     - Modify Caffe to be able to take multiple feature files (should be easy, as separate layers).
 
-- Integrate Helen's tags for the flickr dataset
-
-- Integrate Trent's negative set into Flickr dataset
-
 ## Next
+
+- Integrate Trent's negative set into Flickr dataset?
 
 - Generate Sphinx autodoc and display it on my doc page
 - Compute pairwise distances for images for different features
@@ -80,3 +84,6 @@ x publish website for documentation, from docs/ directory
 x set the redis and mongodb server hostname and port in config file
 x put Adobe copyright text in relevant files
 x integrate feature.py and _feature.py: right now, messy nesting
+x Replace convnet feature computation: decaf -> caffe
+x Expand Flickr set to 5000 examples for 20 different styles (added Bokeh. Detailed, Texture).
+x integrate Pinsplorer code into Vislab
