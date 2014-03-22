@@ -1,6 +1,7 @@
 import ava
 import flickr
 import wikipaintings
+import pinterest
 import pascal
 import behance
 
@@ -19,6 +20,9 @@ DATASETS = {
     },
     'wikipaintings_artist': {
         'fn': wikipaintings.get_artist_df
+    },
+    'pinterest_80k': {
+        'fn': pinterest.get_pins_80k_df
     },
     'pascal': {
         'fn': pascal.get_clf_df

@@ -4,17 +4,71 @@ Copyright Helen Han 2013.
 Script to scrape Pinterest board, pin, and user information.
 Takes command-line argument for which of these to do.
 Stores results in database.
+
+We got a *lot* of data: 1.3M pins for about 40 queries, 20 of which
+come from the Flickr style dataset.
 """
 # coding=utf-8
 #!/usr/bin/python
 import time
+import numpy as np
+import pandas as pd
 import sys
 import bs4
 import pymongo
 from selenium import webdriver
 import traceback
 import vislab
-import vislab.util
+import vislab.datasets.flickr
+
+
+def get_pins_80k_df(force=False):
+    """
+    This dataset is exactly the same as the Flickr dataset, except using
+    Pinterest board queries to fetch the results.
+    """
+    underscored_style_names = vislab.datasets.flickr.underscored_style_names
+    filename = vislab.config['paths']['shared_data'] + \
+        '/pins_df_80k_mar2014.h5'
+    df = vislab.util.load_or_generate_df(
+        filename, _fetch_pins_80k_df, force)
+    df['_split'] = vislab.dataset.get_train_test_split(
+        df[underscored_style_names])
+    df['_split'][df[underscored_style_names].sum(1) > 1] = 'test'
+    return df
+
+
+def _fetch_pins_80k_df():
+    pins_df = pd.read_hdf('../data/unshared/pins_df_mar21.h5', 'df')
+    pins_df.columns = [_.lower() for _ in pins_df.columns]
+    query_names = [
+        'query_' + style.lower()
+        for style in vislab.datasets.flickr.style_names
+    ]
+
+    indices = []
+    for query_name in query_names:
+        if not query_name in pins_df.columns:
+            print style
+        ind = pins_df[query_name]
+        indices += pins_df.index[ind][
+            np.random.permutation(ind.sum())[:4000]].tolist()
+    assert len(indices) == len(np.unique(indices))
+
+    pins_df_small = pins_df.ix[indices][query_names]
+    # should be all 4000:
+    print pins_df_small[query_names].sum(0)
+    # should be only 1:
+    print pins_df_small[query_names].sum(1).value_counts()
+
+    # Rename to match Flickr's names
+    assert np.all(pins_df_small.columns == query_names)
+    pins_df_small.columns = vislab.datasets.flickr.underscored_style_names
+
+    pins_df_small['image_url'] = pins_df['img']
+    pins_df_small['page_url'] = [
+        'http://pinterest.com/pin/{}/'.format(_) for _ in pins_df_small.index]
+    return pins_df_small
 
 
 def get_driver(driver_width=6000, driver_height=3000, limit=3):

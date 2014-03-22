@@ -1,28 +1,40 @@
 ## Fixes
 
-## Current
-
-- With Helen:
-    - integrate her Flickr-scraping code into Vislab, and run it again to update the new dataset with tags
-    - form Pinterest dataset of roughly the same size and styles as Flickr dataset
-        : goal is to test Flickr classifiers on this dataset, and vice versa, which enables a new section of cross-dataset results
-    - make the results server use Mongo (and then can populate dataframes from filtered results there)
-
-- Compute caffe fc6 features and complete prediction on flickr run on cluster
-
-
 ## Today
+
+- Merge dev to master
+- Compute fc6 features on flickr
+- Cache fc6 on flickr to vw
+- Compute fc6 features on wikipaintings
+- Cache fc6 on wikipaintings to vw
+- Compute fc6 features on pinterest
+- Cache fc6 on pinterest to vw
+- Compute fc7 features on flickr
+- Cache fc7 on flickr to vw
+- Compute fc7 features on wikipaintings
+- Cache fc7 on wikipaintings to vw
+- Compute fc7 features on pinterest
+- Cache fc7 on pinterest to vw
+
+
+## Tomorrow
+
+- Form list of experiments that need to be run, rank by importance
+
+## Next
+
+- make sure Helen send me her Flickr-scraping code, so that I can integrate it into Vislab, and run it again to update the new dataset with tags
+
+Single-person classification accuracy:
+    - how good is a single person at predicting the style classification task? the ava task?
 
 - Replace classifier: VW -> caffe
     - In feature.py, output to several HDF5 files (of max size 2GB) instead of just one.
     - Modify Caffe to be able to take label file as separate from feature file.
     - Modify Caffe to be able to take multiple feature files (should be easy, as separate layers).
 
-## Next
-
-- Integrate Trent's negative set into Flickr dataset?
-
 - Generate Sphinx autodoc and display it on my doc page
+
 - Compute pairwise distances for images for different features
 
 - Features
@@ -32,15 +44,11 @@
     - make featurization server: gets filename, outputs result back on queue
     - implement presence of text classifier
 
-Single-person classification accuracy:
-    - how good is a single person at predicting the style classification task? the ava task?
-
 Evaluation
     - average over multiple random subsets of test-balanced data
 
 Datasets
     - make memorability/interestingness dataset interface (aude's data with extra interestingness scores)
-    - store widths and heights in database for better layout on client
     - weight AVA examples according to inverse distance to mean (should work better than the delta method)
 
 Results analysis
@@ -61,6 +69,8 @@ Job queue system
     - launch workers separately from the script that submits jobs for them, but with their own script
     - be able to kill workers with scancel
     - report when workers get killed
+
+- make the results server use Mongo (and then can populate dataframes from filtered results there)
 
 Misc
     - need util function for syncing up dataframe with mongodb collection. useful for datasets.
@@ -87,3 +97,5 @@ x integrate feature.py and _feature.py: right now, messy nesting
 x Replace convnet feature computation: decaf -> caffe
 x Expand Flickr set to 5000 examples for 20 different styles (added Bokeh. Detailed, Texture).
 x integrate Pinsplorer code into Vislab
+x store image and page urls in the pinterest dataset: rsync the notebook from elbow first, don't want to re-write that code
+x also, give pinterest dataset names exactly like the Flickr dataset

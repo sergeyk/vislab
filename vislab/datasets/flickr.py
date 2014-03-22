@@ -16,7 +16,7 @@ import vislab.util
 # Mapping of style names to group ids.
 styles = {
     'Bokeh': ['1543486@N25'],
-    'Bright, Energetic': ['799643@N24'],
+    'Bright': ['799643@N24'],
     'Depth of Field': ['75418467@N00', '407825@N20'],
     'Detailed': ['1670588@N24', '1131378@N23'],
     'Ethereal': ['907784@N22'],
@@ -47,7 +47,7 @@ def get_df(force=False):
     Assign train/test split to the data, making sure that items with
     more than one label end up in the test split.
     """
-    filename = vislab.config['paths']['shared_data'] + '/flickr_df.h5'
+    filename = vislab.config['paths']['shared_data'] + '/flickr_df_mar2014.h5'
     df = vislab.util.load_or_generate_df(
         filename, _fetch_df, force)
     df['_split'] = vislab.dataset.get_train_test_split(
