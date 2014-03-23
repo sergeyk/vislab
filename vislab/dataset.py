@@ -134,7 +134,7 @@ def fetch_image_filenames_for_ids(image_ids, dataset_name):
             continue
 
         try:
-            print("Download image for {}: {}".format(dataset_name, image_id))
+            print("Download image for {}: {}".format(dataset_name, filename))
             r = requests.get(url)
             with open(filename, 'wb') as f:
                 f.write(r.content)

@@ -2,24 +2,45 @@
 
 ## Today
 
-- Merge dev to master
-- Compute fc6 features on flickr
-- Cache fc6 on flickr to vw
-- Compute fc6 features on wikipaintings
-- Cache fc6 on wikipaintings to vw
-- Compute fc6 features on pinterest
-- Cache fc6 on pinterest to vw
-- Compute fc7 features on flickr
-- Cache fc7 on flickr to vw
-- Compute fc7 features on wikipaintings
-- Cache fc7 on wikipaintings to vw
-- Compute fc7 features on pinterest
-- Cache fc7 on pinterest to vw
+- try out predict command on cluster
 
+o Compute fc6 features on flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=flickr
+
+- Compute fc6 features on wikipaintings
+    (technically, current results are fc6, so no need to recompute)
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=wikipaintings &&     python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=wikipaintings
+
+o Compute fc6 features on pinterest
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=pinterest_80k &&     python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=pinterest_80k
+
+x Compute fc7 features on flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=flickr
+
+x Compute fc7 features on wikipaintings
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=wikipaintings
+
+x Compute fc7 features on pinterest
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=pinterest_80k
+
+- PROBLEM: cannot get vlg_extractor to work right now
+
+- Compute mc_bit features on flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=flickr && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=flickr
+
+- Compute mc_bit features on pinterest
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=pinterest_80k
+
+- Dig up old stuff:
+    : not much to be found!
+    - found predict databases dump from oct31
+    - no features, no trained classifiers (so have to re-train pascal)
+
+- Make list of prediction experiments that need to be run
 
 ## Tomorrow
 
-- Form list of experiments that need to be run, rank by importance
+- restart data view server
 
 ## Next
 
@@ -89,13 +110,3 @@ Bugs to fix:
 
 ## Done
 
-x every occurrence of vislab.repo_dirname should be replaced by path in vislab.config
-x publish website for documentation, from docs/ directory
-x set the redis and mongodb server hostname and port in config file
-x put Adobe copyright text in relevant files
-x integrate feature.py and _feature.py: right now, messy nesting
-x Replace convnet feature computation: decaf -> caffe
-x Expand Flickr set to 5000 examples for 20 different styles (added Bokeh. Detailed, Texture).
-x integrate Pinsplorer code into Vislab
-x store image and page urls in the pinterest dataset: rsync the notebook from elbow first, don't want to re-write that code
-x also, give pinterest dataset names exactly like the Flickr dataset

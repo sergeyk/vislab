@@ -182,7 +182,7 @@ def mc_bit(image_filenames, image_ids):
     Compute the mc_bit feature provided by the vlg_extractor package,
     which should be installed in ext/.
     """
-    input_dirname = vislab.image.IMAGES_DIRNAME
+    input_dirname = os.path.dirname(image_filenames[0])
     image_filenames = [
         os.path.relpath(fname, input_dirname) for fname in image_filenames]
     f, list_filename = tempfile.mkstemp()
@@ -190,7 +190,7 @@ def mc_bit(image_filenames, image_ids):
         f.write('\n'.join(image_filenames) + '\n')
 
     output_dirname = tempfile.mkdtemp()
-    cmd = 'ext/vlg_extractor_v1.1.1_linux/vlg_extractor.sh'
+    cmd = './vlg_extractor.sh'
     cmd += ' --parameters-dir={} --extract_mc_bit=ASCII {} {} {}'.format(
         'data/picodes_data', list_filename, input_dirname, output_dirname)
 
@@ -198,7 +198,7 @@ def mc_bit(image_filenames, image_ids):
         print("Starting {}".format(cmd))
         p = subprocess.Popen(
             shlex.split(cmd),
-            cwd=os.path.expanduser('~/work/vislab')
+            cwd=os.path.expanduser(vislab.config['paths']['vlg_extractor'])
         )
         p.wait()
     except Exception as e:

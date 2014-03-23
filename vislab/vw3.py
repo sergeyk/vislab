@@ -33,7 +33,7 @@ def _feat_for_vw(id_, feat_name, feat, decimals=6):
         feat = np.around(feat, decimals)
 
         # Set things that are almost 0 to 0.
-        tolerance = 10**-decimals
+        tolerance = 10 ** -decimals
         feat[np.abs(feat) <= tolerance] = 0
 
         s = ' '.join(
@@ -77,25 +77,19 @@ def write_data_in_vw_format(feat_df, feat_name, output_filename):
         gzip = True
 
     t = time.time()
-    feat_lines = []
-    for ix, row in feat_df.iterrows():
-        if ndarray_feat:
-            feat = row.values[0]
-            # Check if there is only a single value here, and wrap if so
-            try:
-                len(feat)
-            except:
-                feat = np.array([feat])
-        else:
-            feat = row.values
-        feat_lines.append(_feat_for_vw(ix, feat_name, feat))
-    logging.info('{}: forming lines took {:.3f} s'.format(
-        fn_name, time.time() - t))
-
-    t = time.time()
     with open(output_filename, 'w') as f:
-        f.write('\n'.join(feat_lines) + '\n')
-    logging.info('{}: writing file took {:.3f} s'.format(
+        for ix, row in feat_df.iterrows():
+            if ndarray_feat:
+                feat = row.values[0]
+                # Check if there is only a single value here, and wrap if so
+                try:
+                    len(feat)
+                except:
+                    feat = np.array([feat])
+            else:
+                feat = row.values
+            f.write(_feat_for_vw(ix, feat_name, feat) + '\n')
+    logging.info('{}: forming and writing lines took {:.3f} s'.format(
         fn_name, time.time() - t))
 
     if gzip:
