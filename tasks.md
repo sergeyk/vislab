@@ -2,16 +2,18 @@
 
 ## Today
 
-- try out predict command on cluster
+x PROBLEM: cannot get vlg_extractor to work right now
 
-o Compute fc6 features on flickr
+- Make VW write its stuff to /tscratch when training, but copy all but the cache files to central location. this way, parallel learning can happen without overload disk, but we still are able to use source_dataset stuff
+
+x Compute fc6 features on flickr
     cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=flickr
 
 - Compute fc6 features on wikipaintings
     (technically, current results are fc6, so no need to recompute)
     cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=wikipaintings &&     python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=wikipaintings
 
-o Compute fc6 features on pinterest
+x Compute fc6 features on pinterest
     cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=pinterest_80k &&     python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=pinterest_80k
 
 x Compute fc7 features on flickr
@@ -23,12 +25,15 @@ x Compute fc7 features on wikipaintings
 x Compute fc7 features on pinterest
     cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=pinterest_80k
 
-- PROBLEM: cannot get vlg_extractor to work right now
+x Distribute features to all machines
+
+x Compute fc7 on PASCAL
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=pascal --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=pascal && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=pascal
 
 - Compute mc_bit features on flickr
     cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=flickr && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=flickr
 
-- Compute mc_bit features on pinterest
+o Compute mc_bit features on pinterest
     cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=pinterest_80k
 
 - Dig up old stuff:
@@ -37,6 +42,7 @@ x Compute fc7 features on pinterest
     - no features, no trained classifiers (so have to re-train pascal)
 
 - Make list of prediction experiments that need to be run
+    - always use 8 workers
 
 ## Tomorrow
 
@@ -109,4 +115,4 @@ Bugs to fix:
     - preds_panel seems to contain objects instead of floats! yet sorting and comparisons still work fine. get a handle on this.
 
 ## Done
-
+x try out predict command on cluster

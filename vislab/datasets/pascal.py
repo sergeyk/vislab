@@ -57,6 +57,11 @@ def get_clf_df(VOCyear='VOC2012', force=False, args=None):
         for col in label_df.columns
     ]
 
+    label_df['image_filename'] = [
+        '{}/JPEGImages/{}.jpg'.format(vislab.config['paths'][VOCyear], _)
+        for _ in label_df.index
+    ]
+
     return label_df
 
 

@@ -484,8 +484,8 @@ def predict(args=None):
     # Set the number of passes. Less passes for quadratic features.
     n_train = dataset['train_df'].shape[0]
 
-    # Rule of thumb: 3M examples.
-    n_iter = max(2, min(int(np.ceil(3e6 / n_train)), 160))
+    # Rule of thumb: 3M passes.
+    n_iter = max(4, min(int(np.ceil(3e6 / n_train))))
     num_passes = np.array(sorted(set([n_iter / 3, n_iter]))).astype(int)
 
     if args.quadratic is not None:

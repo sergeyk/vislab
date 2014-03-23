@@ -111,7 +111,7 @@ def gist(image_ids, image_filenames, max_size=256):
     return image_ids, feats
 
 
-def lab_hist(image_filenames, image_ids):
+def lab_hist(image_ids, image_filenames):
     """
     Standard feature as described in [1].
     A histogram in L*a*b* space, having 4, 14, and 14 bins in each dimension
@@ -143,7 +143,7 @@ def lab_hist(image_filenames, image_ids):
     return image_ids, feats
 
 
-def gbvs_saliency(image_filenames, image_ids):
+def gbvs_saliency(image_ids, image_filenames):
     f, output_filename = tempfile.mkstemp()
     output_filename += '.mat'
 
@@ -177,7 +177,7 @@ def gbvs_saliency(image_filenames, image_ids):
     return image_ids, feats
 
 
-def mc_bit(image_filenames, image_ids):
+def mc_bit(image_ids, image_filenames):
     """
     Compute the mc_bit feature provided by the vlg_extractor package,
     which should be installed in ext/.
@@ -193,6 +193,7 @@ def mc_bit(image_filenames, image_ids):
     cmd = './vlg_extractor.sh'
     cmd += ' --parameters-dir={} --extract_mc_bit=ASCII {} {} {}'.format(
         'data/picodes_data', list_filename, input_dirname, output_dirname)
+    print(cmd)
 
     try:
         print("Starting {}".format(cmd))
