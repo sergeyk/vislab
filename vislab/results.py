@@ -4,7 +4,6 @@ Code for parsing results of prediction tasks.
 import sklearn.metrics
 import numpy as np
 import pandas as pd
-import re
 import vislab
 import vislab.results_viz
 import vislab.dataset_viz
@@ -136,7 +135,7 @@ def multiclass_metrics_feat_comparison(
         else:
             print("WARNING: no split info in the preds panel.")
 
-        print('*'*20 + feature + '*'*20)
+        print('*' * 20 + feature + '*' * 20)
         feat_metrics[feature] = multiclass_metrics(
             mc_pred_df, pred_prefix, balanced, random_preds,
             with_plot, with_print)
@@ -200,19 +199,15 @@ def multiclass_metrics(
     metrics = {}
 
     # Get the list of labels.
-    r = re.compile(pred_prefix)
     pred_cols, label_cols = map(list, zip(*[
         (col, col.replace(pred_prefix + '_', ''))
         for col in mc_pred_df.columns
-        if r.match(col)
+        if col.startswith(pred_prefix)
     ]))
 
     # Make two dataframes: for labels and predictions.
-    # Drop those rows that don't have a single positive label.
     label_df = mc_pred_df[label_cols]
-    ind = label_df.sum(1) > 0
-    label_df = label_df[ind]
-    pred_df = mc_pred_df[pred_cols][ind]
+    pred_df = mc_pred_df[pred_cols]
 
     # Get rid of those labels with less than min_pos examples
     good_cols = label_df.sum(0) >= min_pos
@@ -220,12 +215,21 @@ def multiclass_metrics(
     good_pred_cols = [pred_prefix + '_' + x for x in good_cols]
     label_df = label_df[good_cols]
     pred_df = pred_df[good_pred_cols]
-
     label_cols = label_df.columns.tolist()
 
+    # Drop those rows that don't have a single positive label.
+    ind = label_df.sum(1) > 0
+    label_df = label_df[ind]
+    pred_df = pred_df[ind]
+
+    assert np.all(label_df.sum(1) > 0)
+
     # Get vector of multi-class labels.
-    # TODO: take random argmax if multiple
-    y_true = label_df.values.argmax(1)
+    y_true = []
+    for row in label_df.values:
+        ind = np.where(row)[0]
+        y_true.append(ind[np.random.randint(len(ind))])
+    y_true = np.array(y_true)
 
     # Balance the labels.
     if balanced:
@@ -236,7 +240,6 @@ def multiclass_metrics(
             np.where(label_df[label])[0][permutation(count, min_count)]
             for label, count in counts.iteritems()
         ]))
-
         y_true = y_true[selected_ind]
         pred_df = pred_df.iloc[selected_ind]
         label_df = label_df.iloc[selected_ind]
@@ -329,7 +332,7 @@ def multiclass_metrics(
 
 
 def print_metrics(metrics, name):
-    print('-'*60)
+    print('-' * 60)
     if len(name) > 0:
         name = 'on {}'.format(name)
     print("Classification metrics {}".format(name))

@@ -151,7 +151,7 @@ def _cache_cmd(
     # Run all data through VW to cache it.
     cache_cmd = "{} | {} | {}".format(
         paste_cmd, filter_cmd, vw_cmd)
-    cache_cmd += " -k --cache_file {} --bit_precision {} --noop".format(
+    cache_cmd += " -k --cache_file {} --bit_precision {}".format(
         cache_filename, bit_precision)
     if num_labels > 2:
         cache_cmd += ' --oaa {}'.format(num_labels)
@@ -488,16 +488,17 @@ class VW(object):
     - can calculate importance here, instead of relying on the dataframe
     """
     def __init__(
-            self, dirname, num_workers=6, bit_precision=18,
-            num_passes=[25],
+            self, dirname, dataset_name,
+            num_workers=6, bit_precision=18, num_passes=[25],
             loss=['hinge', 'logistic'],
             l1=['0', '1e-6', '1e-9'],
             l2=['0', '1e-6', '1e-9'],
             quadratic=None):
         # Actual output directory will have bit_precision info in name,
         # because cache files are dependent on the precision.
+        self.partial_dirname = '{}_b{}'.format(dataset_name, bit_precision)
         self.dirname = vislab.util.makedirs(
-            dirname + '_b{}'.format(bit_precision))
+            os.path.join(dirname, self.partial_dirname))
         self.bit_precision = bit_precision
         self.num_workers = num_workers
 

@@ -2,55 +2,38 @@
 
 ## Today
 
-x PROBLEM: cannot get vlg_extractor to work right now
+These are the collections:
+flickr_mar23.bson
+flickr_on_pinterest_80k_mar23.bson
+pascal_mar23.bson
+pascal_mc_mar23.bson
+pascal_mc_on_flickr_mar23.bson
+pascal_mc_on_pinterest_80k_mar23.bson
+pascal_mc_on_wikipaintings_mar23.bson
+pinterest_80k_mar23.bson
+pinterest_80k_on_flickr_mar23.bson
+wikipaintings_mar23.bson
 
-- Make VW write its stuff to /tscratch when training, but copy all but the cache files to central location. this way, parallel learning can happen without overload disk, but we still are able to use source_dataset stuff
+- Run the fusion of classes and features classification experiments
+    - Output pascal metaclass classifiers as features
 
-x Compute fc6 features on flickr
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=flickr
+o Compute imagenet features on flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_imagenet --dataset=flickr --num_workers=25 && python vislab/feature.py cache_to_h5 --features=caffe_imagenet --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_imagenet --dataset=flickr
 
-- Compute fc6 features on wikipaintings
-    (technically, current results are fc6, so no need to recompute)
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=wikipaintings &&     python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=wikipaintings
+o Compute imagenet features on pinterest
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_imagenet --dataset=pinterest_80k --num_workers=25 && python vislab/feature.py cache_to_h5 --features=caffe_imagenet --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=caffe_imagenet --dataset=pinterest_80k
 
-x Compute fc6 features on pinterest
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=pinterest_80k &&     python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=pinterest_80k
+- ! restart data view server and launch on flapjack
 
-x Compute fc7 features on flickr
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=flickr
+- ! package up all results: make sure that trent has means of displaying and parsing results himself
 
-x Compute fc7 features on wikipaintings
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=wikipaintings
+- Flickr tag demo: download flickr tags using Helen's code, and see if it's interesting to search through
 
-x Compute fc7 features on pinterest
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=pinterest_80k
-
-x Distribute features to all machines
-
-x Compute fc7 on PASCAL
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=pascal --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=pascal && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=pascal
-
-- Compute mc_bit features on flickr
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=flickr && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=flickr
-
-o Compute mc_bit features on pinterest
-    cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=pinterest_80k
-
-- Dig up old stuff:
-    : not much to be found!
-    - found predict databases dump from oct31
-    - no features, no trained classifiers (so have to re-train pascal)
-
-- Make list of prediction experiments that need to be run
-    - always use 8 workers
-
-## Tomorrow
-
-- restart data view server
+- look at Pinterest captions and see if it's interesting to search through
 
 ## Next
 
-- make sure Helen send me her Flickr-scraping code, so that I can integrate it into Vislab, and run it again to update the new dataset with tags
+- integrate helen's flickr tag-scraping code and run on my data locally
 
 Single-person classification accuracy:
     - how good is a single person at predicting the style classification task? the ava task?
@@ -116,3 +99,38 @@ Bugs to fix:
 
 ## Done
 x try out predict command on cluster
+x PROBLEM: cannot get vlg_extractor to work right now
+x Make VW write its stuff to /tscratch when training, but copy all but the cache files to central location. this way, parallel learning can happen without overload disk, but we still are able to use source_dataset stuff
+x Distribute features to all machines
+x Dig up old stuff:
+    : not much to be found!
+    - found predict databases dump from oct31
+    - no features, no trained classifiers (so have to re-train pascal)
+x output noise features for all datasets and distribute
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=noise --dataset=flickr && cd ~/work/vislab-git && python vislab/feature.py cache_to_vw --features=noise --dataset=flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=noise --dataset=pinterest_80k && cd ~/work/vislab-git && python vislab/feature.py cache_to_vw --features=noise --dataset=pinterest_80k
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=noise --dataset=wikipaintings && cd ~/work/vislab-git && python vislab/feature.py cache_to_vw --features=noise --dataset=wikipaintings
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=noise --dataset=pascal && cd ~/work/vislab-git && python vislab/feature.py cache_to_vw --features=noise --dataset=pascal
+x Compute fc6 features on flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=flickr
+x Compute fc6 features on pinterest
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=pinterest_80k &&     python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=pinterest_80k
+x Compute fc7 features on flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=flickr && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=flickr
+x Compute fc7 features on wikipaintings
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=wikipaintings
+x Compute fc7 features on pinterest
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=pinterest_80k
+x Compute fc7 on PASCAL
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc7 --dataset=pascal --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc7 --dataset=pascal && python vislab/feature.py cache_to_vw --features=caffe_fc7 --dataset=pascal
+x Compute mc_bit features on pinterest
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=pinterest_80k --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=pinterest_80k && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=pinterest_80k
+x Compute mc_bit features on flickr
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=mc_bit --dataset=flickr --num_workers=20 && python vislab/feature.py cache_to_h5 --features=mc_bit --dataset=flickr && python vislab/feature.py cache_to_vw --features=mc_bit --dataset=flickr
+x properly save predict results
+x Compute fc6 features on wikipaintings
+    cd ~/work/vislab-git && python vislab/feature.py compute --features=caffe_fc6 --dataset=wikipaintings --num_workers=20 && python vislab/feature.py cache_to_h5 --features=caffe_fc6 --dataset=wikipaintings && python vislab/feature.py cache_to_vw --features=caffe_fc6 --dataset=wikipaintings
+x Run full slate of classification experiments without mc_bit
+x Run full slate of dataset-on-dataset classification experiments using fc_7
+x Run classification experiments with mc_bit
+x get pinterest on flickr or flickr on pinterest AP numbers

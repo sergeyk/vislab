@@ -11,7 +11,8 @@
         "shared_data": "~/work/vislab-git/data/shared",
         "static_data": "~/work/vislab-git/data/static",
         "feats": "~/work/vislab-git/data/feats",
-        "predict": "~/work/vislab-git/data/predict",
+        "predict_stable": "~/work/vislab-git/data/predict_stable",
+        "predict_temp": "~/work/vislab-git/data/predict_temp",
         "results": "~/work/vislab-git/data/results",
         "caffe": "~/work/caffe-bvlc",
         "vlg_extractor": "~/work/vlg_extractor_v1.1.0"

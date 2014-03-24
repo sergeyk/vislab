@@ -38,6 +38,11 @@ FEATURES = {
     },
 
     # caffe:
+    'caffe_imagenet': {
+        'fn': functools.partial(vislab.features.caffe, layer='prob'),
+        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
+    },
+
     'caffe_fc6': {
         'fn': functools.partial(vislab.features.caffe, layer='fc6'),
         'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
