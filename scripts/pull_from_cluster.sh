@@ -1,7 +1,8 @@
 #!/bin/zsh
 
-rsync -ravz sergeyk@flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/shared/rqworkers ./data/shared/
-rsync -ravz sergeyk@flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/shared/predict ./data_shared/
-rsync -ravz sergeyk@flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/shared/db ./data/shared/
-rsync -ravz sergeyk@flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/shared/redis ./data/shared/
-rsync -ravz sergeyk@flapjack.icsi.berkeley.edu:/u/sergeyk/work/vislab/data/results ./data/
+rsync -rtazP sergeyk@flapjack1.icsi.berkeley.edu:/u/sergeyk/work/vislab-git/data/shared/rqworkers ./data/shared/
+rsync -rtazP sergeyk@flapjack1.icsi.berkeley.edu:/u/sergeyk/work/vislab-git/data/shared/predict ./data_shared/
+rsync -rtazP sergeyk@flapjack1.icsi.berkeley.edu:/u/sergeyk/work/vislab-git/data/shared/db ./data/shared/
+rsync -rtazP sergeyk@flapjack1.icsi.berkeley.edu:/u/sergeyk/work/vislab-git/data/shared/redis ./data/shared/
+rsync -rtazP sergeyk@flapjack1.icsi.berkeley.edu:/u/sergeyk/work/vislab-git/data/results ./data/
+rsync -rtazP sergeyk@flapjack1.icsi.berkeley.edu:/u/sergeyk/work/vislab-git/data/mongodump ./data/

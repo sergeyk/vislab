@@ -16,6 +16,7 @@ import bson
 import vislab.utils.cmdline
 import vislab.dataset
 import vislab.features
+import vislab.vw3
 
 DB_NAME = 'vislab_feats'
 
@@ -37,14 +38,19 @@ FEATURES = {
     },
 
     # caffe:
-    'caffe_fc6': {
-        'fn': functools.partial(vislab.features.caffe, layer='fc6'),
-        'cpus_per_task': 4, 'mem': 2000, 'chunk_size': 30,
+    'caffe_imagenet': {
+        'fn': functools.partial(vislab.features.caffe, layer='prob'),
+        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
     },
 
     'caffe_fc6': {
+        'fn': functools.partial(vislab.features.caffe, layer='fc6'),
+        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
+    },
+
+    'caffe_fc7': {
         'fn': functools.partial(vislab.features.caffe, layer='fc7'),
-        'cpus_per_task': 4, 'mem': 2000, 'chunk_size': 30,
+        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
     },
 
     # matlab:
@@ -106,7 +112,7 @@ def extract_features(
         vislab.config['paths']['feats'], dataset_name))
     h5_filename = '{}/{}.h5'.format(dirname, feat_name)
 
-    collection = _get_feat_collection(feat_name)
+    collection = _get_feat_collection(dataset_name, feat_name)
     collection.ensure_index('image_id')
 
     # Exclude ids that already have computed features in the database.
@@ -139,7 +145,7 @@ def extract_features(
         for id_chunk in id_chunks
     ]
     vislab.utils.distributed.map_through_rq(
-        _extract_features_for_image_ids, args_list,
+        vislab.feature._extract_features_for_image_ids, args_list,
         dataset_name + '_' + feat_name,
         num_workers=num_workers, mem=mem, cpus_per_task=cpus_per_task,
         async=(num_workers > 1))
@@ -151,7 +157,7 @@ def _extract_features_for_image_ids(
     Download images, compute features, and store to database, for the
     given list of image_ids in dataset_name, with feat_name.
     """
-    collection = _get_feat_collection(feat_name)
+    collection = _get_feat_collection(dataset_name, feat_name)
     image_filenames = vislab.dataset.fetch_image_filenames_for_ids(
         image_ids, dataset_name)
     if len(image_ids) == 0:
@@ -161,8 +167,9 @@ def _extract_features_for_image_ids(
     _store_in_db(collection, image_ids, feats)
 
 
-def _get_feat_collection(feat_name):
-    return vislab.util.get_mongodb_client()[DB_NAME][feat_name]
+def _get_feat_collection(dataset_name, feat_name):
+    db_name = '{}_{}'.format(DB_NAME, dataset_name)
+    return vislab.util.get_mongodb_client()[db_name][feat_name]
 
 
 def _store_in_db(collection, image_ids, feats):
@@ -182,7 +189,9 @@ def _store_in_db(collection, image_ids, feats):
         }, upsert=True)
 
 
-def _cache_to_h5(dataset_name, image_ids, feat_name, force=False):
+def _cache_to_h5(
+        dataset_name, image_ids, feat_name, standardize=False, force=False):
+    print force
     dirname = vislab.util.makedirs(
         os.path.join(vislab.config['paths']['feats'], dataset_name))
 
@@ -192,7 +201,7 @@ def _cache_to_h5(dataset_name, image_ids, feat_name, force=False):
             dataset_name, feat_name))
         return
 
-    collection = _get_feat_collection(feat_name)
+    collection = _get_feat_collection(dataset_name, feat_name)
     print('{} records in collection'.format(collection.count()))
 
     cursor = collection.find({'image_id': {'$in': image_ids}})
@@ -210,35 +219,22 @@ def _cache_to_h5(dataset_name, image_ids, feat_name, force=False):
     # Drop all feature vectors with NaN's
     df = pd.DataFrame(np.vstack(feats), image_ids_)
     df = df.dropna()
-    X = df.values
-    index = df.index
-
-    # Standardize data if needed. But don't standardize if:
-    #   - rows are L1-normalized
-    #   - value range is within [-1, 1]
-    l1_normalized = np.allclose(X.sum(1), 0, atol=1e-5)
-    good_range = X.min() >= -1 and X.max() <= 1
-    if feat.dtype == 'float32' and not (l1_normalized or good_range):
-        print("Standardizing data")
-        mean = X.mean(0)
-        std = X.std(0)
-        X -= mean
-        X /= std
-
-    df = pd.DataFrame({'feat': [row for row in X]}, index)
 
     # drop duplicates
     df['image_id'] = df.index
     df = df.drop_duplicates('image_id')
     del df['image_id']
+    print("{} rows remain after duplicates removed".format(df.shape[0]))
 
-    try:
-        df.to_hdf(filename, 'df', mode='w')
-    except:
-        df.to_pickle(filename)
+    if standardize and feat.dtype == 'float32':
+        print("Standardizing data")
+        df.values = (df.values - df.values.mean(0)) / df.values.std(0)
+
+    df.to_hdf(filename, 'df', complib='blosc')
 
 
-def _cache_to_vw(dataset_name, image_ids, feature_name, force=False):
+def _cache_to_vw(
+        dataset_name, image_ids, feature_name, standardize=None, force=False):
     """
     Output VW-formatted feature values to GZIP'd file for the given image ids.
     If h5 cache of features exists, writes from there.
@@ -281,16 +277,13 @@ def _write_features_for_vw_from_h5(
     """
     h5_filename = '{}/{}/{}.h5'.format(
         vislab.config['paths']['feats'], dataset_name, feature_name)
-    try:
-        df = pd.read_hdf(h5_filename, 'df')
-    except:
-        df = pd.read_pickle(h5_filename)
+    df = pd.read_hdf(h5_filename, 'df')
+    df.index = df.index.astype(str)
     sys.stderr.write(
         "_write_features_for_vw_from_h5: Count for feature {}: {}\n".format(
             feature_name, df.shape[0]))
-    df.index = df.index.astype(str)
 
-    # TODO: why does this segfault without this line? stupid
+    # NOTE: this line is necessary... saw segfaults without it
     good_ids = [x for x in image_ids if x in df.index]
     df = df.ix[good_ids]
     df = df.dropna()
@@ -303,7 +296,7 @@ def _write_features_for_vw_from_h5(
 
 def _write_features_for_vw_from_db(image_ids, dataset_name, feature_name):
     # Connect to DB and get a cursor with all image_ids.
-    collection = _get_feat_collection(feature_name)
+    collection = _get_feat_collection(dataset_name, feature_name)
     cursor = collection.find({'image_id': {'$in': image_ids}})
     fn_name = '_write_features_for_vw_from_db'
     sys.stderr.write("{}: Count for feature {}: {}. Matching ids: {}\n".format(
@@ -315,28 +308,6 @@ def _write_features_for_vw_from_db(image_ids, dataset_name, feature_name):
         feat = cPickle.loads(document['feat'])
         s = vislab.vw3._feat_for_vw(document['image_id'], feature_name, feat)
         sys.stdout.write(s + '\n')
-
-
-def load_features_for_image_ids(dataset_name, image_ids, feat_name):
-    """
-    Load features from cache of database into a DataFrame.
-    Note that not all image_ids may be present in the cache.
-    The returned DataFrame has only those image_ids that are in the database.
-
-    Parameters
-    ----------
-    image_ids: list of string
-    feat_name: name of the feature function
-
-    Returns
-    -------
-    df: pandas.DataFrame
-    """
-    filename = '{}/{}.h5'.format(vislab.config['paths']['feats'], feat_name)
-    if not os.path.exists(filename):
-        raise ValueError("Cached features do not exist for {}: {}".format(
-            dataset_name, feat_name))
-    raise NotImplementedError()
 
 
 ## Command-line interface.
@@ -360,7 +331,7 @@ def cache_to_h5(args=None):
     Output features in the database for the ids in the loaded dataset to
     HDF5 cache file, one for each type of feature.
     """
-    _cache('h5', args)
+    _cache(_cache_to_h5, 'h5', args)
 
 
 def cache_to_vw(args=None):
@@ -368,10 +339,10 @@ def cache_to_vw(args=None):
     Output features in the database for the ids in the loaded dataset to
     VW format gzip file, one for each type of feature.
     """
-    _cache('vw', args)
+    _cache(_cache_to_vw, 'vw', args)
 
 
-def _cache(name, args=None):
+def _cache(fn, name, args=None):
     if args is None:
         args = vislab.utils.cmdline.get_args(
             'feature', 'cache_to_{}'.format(name),
@@ -379,12 +350,9 @@ def _cache(name, args=None):
         )
     df = vislab.dataset.get_df_with_args(args)
     image_ids = df.index.tolist()
-    if name == 'h5':
-        fn = _cache_to_h5
-    else:
-        fn = _cache_to_vw
     for feature in args.features:
-        fn(args.dataset, image_ids, feature, args.force_features)
+        fn(args.dataset, image_ids, feature,
+           args.standardize, args.force_features)
 
 
 if __name__ == '__main__':

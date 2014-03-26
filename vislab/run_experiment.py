@@ -4,149 +4,66 @@ AVA, Flickr, and Wikipaintings datasets.
 """
 import argparse
 import itertools
-import vislab.datasets
 
 
 def cmds_for_experiment(experiment_name, args):
     ## AVA
     # AVA Aesthetic experiment replicates the CVPR 12 paper evaluation
     # vs number of images used and 'delta' (threshold of positive clf).
-    if experiment_name == 'ava':
-        # # TODO: Currently, not using num_test, num_train, delta.
-        # num_test = 50000
-        # flags = '--collection_name=ava'
-        # num_train_list = [5000, 25000, 50000, 100000,  150000, 200000]
-        # deltas = [0, 1]
-        # tasks = [
-        #     ['clf_rating_mean'],
-        #     ['clf_rating_std'],
-        #     ['regr_rating_mean'],
-        #     ['regr_rating_std']
-        # ]
-        raise NotImplementedError()
+    if experiment_name == 'flickr':
+        flags = '--dataset=flickr --collection_name=flickr_mar23'
+        prediction_labels = [['style_*']]
 
-    ## AVA STYLE
-    # AVA Style experiment runs on a ~25K subset of AVA that has style
-    # labels. The predicted labels are the style labels and the
-    # mean and std of the rating distribution. On the latter, we do both
-    # classification and regression.
-    elif experiment_name == 'ava_aesth':
-        ratings_df = vislab.datasets.ava.get_ratings_df()
+    elif experiment_name == 'pinterest_80k':
+        flags = '--dataset=pinterest_80k --collection_name=pinterest_80k_mar23'
+        prediction_labels = [['style_*']]
 
-        flags = '--dataset=ava_style --collection_name=ava_style_aesth_oct29'
-        prediction_labels = [
-            [x] for x in ratings_df.columns if x.endswith('_bin')
-        ]
-
-    elif experiment_name == 'ava_style':
-        style_df = vislab.datasets.ava.get_style_df()
-
-        flags = '--dataset=ava_style --collection_name=ava_style_oct17'
-        flags = '--dataset=ava_style --collection_name=ava_style_split_oct17'
-        flags = '--dataset=ava_style --collection_name=ava_style_oct21'
-        prediction_labels = [
-            [x] for x in style_df.columns if not x.startswith('_')
-        ]
-
-    elif experiment_name == 'pascal_on_ava_style':
-        flags = '--dataset=ava_style --source_dataset=pascal --collection_name=pascal_meta_on_ava_oct29'
-        prediction_labels = [
-            [x] for x in [
-                'metaclass_person', 'metaclass_animal',
-                'metaclass_indoor', 'metaclass_vehicle',
-                'class_dog', 'class_cat', 'class_horse', 'class_car', 'class_bicycle', 'class_bird'
-            ]
-        ]
-
-    elif experiment_name == 'flickr_on_ava_style':
-        flags = '--dataset=ava_style --source_dataset=flickr --collection_name=flickr_on_ava_style_oct30'
-        prediction_labels = [['"style_*"']]
-
-    elif experiment_name == 'wikipaintings_on_ava_style':
-        flags = '--dataset=ava_style --source_dataset=wikipaintings --collection_name=wp_on_ava_style_oct30'
-        prediction_labels = [['"style_*"']]
-
-    ## FLICKR STYLE
-    # Flickr experiment runs on a ~50K Flickr style groups dataset.
-    elif experiment_name == 'flickr':
-        df = vislab.datasets.flickr.load_flickr_df()
-        flags = '--dataset=flickr --collection_name=aug29'
-        prediction_labels = [
-            [x] for x in df.columns if not x.startswith('_')
-        ]
-
-    elif experiment_name == 'pascal_on_flickr':
-        flags = '--dataset=flickr --source_dataset=pascal --collection_name=pascal_on_flickr_oct29'
-        prediction_labels = [
-            [x] for x in [
-                'metaclass_person', 'metaclass_animal',
-                'metaclass_indoor', 'metaclass_vehicle',
-                'class_dog', 'class_cat', 'class_horse', 'class_car', 'class_bicycle', 'class_bird'
-            ]
-        ]
-
-    elif experiment_name == 'wikipaintings_on_flickr':
-        flags = '--dataset=flickr --source_dataset=wikipaintings --collection_name=wp_on_flickr_oct30'
-        prediction_labels = [['"style_*"']]
-
-    ## WIKIPAINTINGS
-    # Wikipaintings experiment runs on a ~100K set of paintings crawled
-    # from wikipaintings.org, classifying style labels.
-    elif experiment_name == 'wikipaintings_style':
-        style_df = vislab.datasets.wikipaintings.get_style_df()
-        flags = '--dataset=wikipaintings --collection_name=wikipaintings_sep26'
-        prediction_labels = [
-            [x] for x in style_df.columns if not x.startswith('_')
-        ]
-
-    elif experiment_name == 'pascal_on_wikipaintings':
-        flags = '--dataset=wikipaintings --source_dataset=pascal --collection_name=pascal_on_wp_oct29'
-        prediction_labels = [
-            [x] for x in [
-                'metaclass_person', 'metaclass_animal',
-                'metaclass_indoor', 'metaclass_vehicle',
-                'class_dog', 'class_cat', 'class_horse', 'class_car', 'class_bicycle', 'class_bird'
-            ]
-        ]
-
-    elif experiment_name == 'flickr_on_wikipaintings':
-        flags = '--dataset=wikipaintings --source_dataset=flickr --collection_name=flickr_on_wp_oct30'
-        prediction_labels = [['"style_*"']]
-
-    ## PASCAL
-    elif experiment_name == 'pascal_metaclass':
-        df = vislab.datasets.pascal.get_clf_df()
-        flags = '--dataset=pascal --collection_name=pascal_mc_oct16'
-        prediction_labels = [
-            [x] for x in df.columns if x.startswith('metaclass_')
-        ]
+    elif experiment_name == 'wikipaintings':
+        flags = '--dataset=wikipaintings --collection_name=wikipaintings_mar23'
+        prediction_labels = [['style_*']]
 
     elif experiment_name == 'pascal':
-        df = vislab.datasets.pascal.get_clf_df()
-        flags = '--dataset=pascal --collection_name=pascal_oct16'
-        flags = '--dataset=pascal --collection_name=pascal_oct22'
-        flags = '--dataset=pascal --collection_name=pascal_oct29'
-        prediction_labels = [
-            [x] for x in df.columns if x.startswith('class_')
-        ]
+        flags = '--dataset=pascal --collection_name=pascal_mar23'
+        prediction_labels = [['class_*']]
+
+    elif experiment_name == 'pascal_mc':
+        flags = '--dataset=pascal_mc --collection_name=pascal_mc_mar23'
+        prediction_labels = [['metaclass_*']]
+
+    elif experiment_name == 'pascal_mc_on_wikipaintings':
+        flags = '--dataset=wikipaintings --source_dataset=pascal_mc'
+        flags += ' --collection_name=pascal_mc_on_wikipaintings_mar23'
+        prediction_labels = [['metaclass_*']]
+
+    elif experiment_name == 'pascal_mc_on_flickr':
+        flags = '--dataset=flickr --source_dataset=pascal_mc'
+        flags += ' --collection_name=pascal_mc_on_flickr_mar23'
+        prediction_labels = [['metaclass_*']]
+
+    elif experiment_name == 'pascal_mc_on_pinterest_80k':
+        flags = '--dataset=pinterest_80k --source_dataset=pascal_mc'
+        flags += ' --collection_name=pascal_mc_on_pinterest_80k_mar23'
+        prediction_labels = [['metaclass_*']]
+
+    elif experiment_name == 'pinterest_80k_on_flickr':
+        flags = '--dataset=flickr --source_dataset=pinterest_80k'
+        flags += ' --collection_name=pinterest_80k_on_flickr_mar23'
+        prediction_labels = [['"style_*"']]
+
+    elif experiment_name == 'flickr_on_pinterest_80k':
+        flags = '--dataset=pinterest_80k --source_dataset=flickr'
+        flags += ' --collection_name=flickr_on_pinterest_80k_mar23'
+        prediction_labels = [['"style_*"']]
+
+    elif experiment_name == 'flickr_on_pascal_mc':
+        flags = '--dataset=pascal --source_dataset=flickr'
+        flags += ' --collection_name=flickr_on_pascal_mar23'
+        prediction_labels = [['"style_*"']]
 
     elif experiment_name == 'flickr_on_pascal':
-        flags = '--dataset=pascal --source_dataset=flickr --collection_name=flickr_on_pascal_oct30'
+        flags = '--dataset=pascal_mc --source_dataset=flickr'
+        flags += ' --collection_name=flickr_on_pascal_mc_mar23'
         prediction_labels = [['"style_*"']]
-
-    elif experiment_name == 'wikipaintings_on_pascal':
-        flags = '--dataset=pascal --source_dataset=wikipaintings --collection_name=wp_on_pascal_oct30'
-        prediction_labels = [['"style_*"']]
-
-    elif experiment_name == 'behance_illustration':
-        flags = '--dataset=behance_illustration --collection_name=behance_dec28'
-        prediction_labels = [[x] for x in [
-            'tag_3d', 'tag_animals', 'tag_city', 'tag_fantasy', 'tag_food',
-            'tag_girl', 'tag_ink', 'tag_lettering', 'tag_logo', 'tag_minimal',
-            'tag_nature', 'tag_pencil', 'tag_portrait', 'tag_retro',
-            'tag_skull', 'tag_surreal', 'tag_vector', 'tag_vintage',
-            'tag_watercolor', 'tag_wood'
-        ]]
 
     else:
         raise ValueError("Unknown experiment_name")
@@ -158,14 +75,13 @@ def cmds_for_experiment(experiment_name, args):
     # The second element is either an empty string or 'all', which
     # activates quadratic expansion of the features in the list.
     feature_quadratic = [
-        #('noise', ''),
-        #('mc_bit', ''),
+        # ('noise', ''),
         #('gist_256', ''),
         #('lab_hist', ''),
         #('gbvs_saliency', ''),
-        ('decaf_fc6', ''),
-        #('decaf_fc6_flatten', ''),
-        #('decaf_imagenet', ''),
+        # ('mc_bit', ''),
+        ('caffe_fc6', ''),
+        # ('caffe_fc7', ''),
         #('fusion_ava_style_oct22', '')
     ]
 
@@ -181,22 +97,21 @@ def cmds_for_experiment(experiment_name, args):
     for setting in settings:
         features, quadratic, prediction_label = setting
 
-        # Thanks to VW memory handling and unix pipes everywhere, memory
+        # Thanks to VW tmemory handling and unix pipes everywhere, memory
         # requirements are crazy low. But IO requirements are high, so
         # still have to be careful when submitting concurrent jobs.
         #
         # With 24 bits, at most 360m VM is consumed per VW instance.
         # We're using 18 bits, so it's like 8m.
         # But the most memory is used when caching, and that's done by 3
-        # workers, so let's go with at least 12 GB.
-        # We'll go with 2x that to be safe.
-        mem = max(720 * args.num_workers, 12000)
+        # workers, so let's go with at least 9 GB.
+        mem = max(720 * args.num_workers, 9000)
 
-        python_cmd = "python vislab/predict.py predict {}".format(
+        python_cmd = 'python vislab/predict.py predict {}'.format(
             flags)
-        python_cmd += " --prediction_label={} --features={}".format(
+        python_cmd += ' --prediction_label="{}" --features="{}"'.format(
             prediction_label, features)
-        python_cmd += " --mem={} --num_workers={}".format(
+        python_cmd += ' --mem={} --num_workers={}'.format(
             mem, args.num_workers)
 
         if len(quadratic) > 0:
@@ -225,7 +140,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--num_workers',
         help="number of workers to use in processing jobs",
-        type=int, default=9)
+        type=int, default=8)
     parser.add_argument(
         '--slurm', action='store_true')
     parser.add_argument(

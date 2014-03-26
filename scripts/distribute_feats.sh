@@ -1,17 +1,11 @@
 #!/bin/bash
 
-# Run from flapjack!
-echo "RUN THIS ONLY FROM FLAPJACK!"
-sleep 5
+echo "RUN THIS ONLY FROM FLAPJACK1 (or whatever the main store of feats is)!"
+sleep 3
 
-rsync -rav --progress data/feats orange1:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats orange2:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats orange3:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats orange4:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats orange5:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats orange6:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats banana1:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats banana2:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats banana3:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats banana4:/u/sergeyk/work/aphrodite/data/ &
-rsync -rav --progress data/feats /u/vis/x1/sergeyk/aphrodite/ &
+DIRNAME=/tscratch/tmp/sergeyk/vislab_feats
+
+MACHINES="flapjack2,orange1,orange2,orange3,orange4,orange5,orange6,banana1,banana2,banana3,banana4"
+echo $MACHINES | tr "," "\n" | parallel -j 4 rsync -trP --exclude '*.h5' $DIRNAME/ {}:$DIRNAME
+
+rsync -rav $FEAT_DIR/ /u/vis/x1/sergeyk/vislab_feats &

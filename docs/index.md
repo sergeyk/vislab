@@ -4,17 +4,17 @@ title: Home
 ---
 # Vislab
 
-## Overview
+Vislab is a set of Python modules for visual recognition:
 
-Vislab is a set of modules for visual recognition:
-
-- Preparing a dataset.
-- Computing features on images.
-- Splitting the dataset into train/val/test, and training/testing a predictor.
-- Evaluating prediction results, outputting figures and tables.
-- Displaying dataset and prediction results in a web interface.
+- Dataset interfaces (ImageNet, PASCAL VOC, AVA, our Flickr style, Pinterest style, Wikipaintings datasets).
+- Distributed computation of image features.
+- Training and testing predictors for classification and regression tasks.
+- Evaluation of prediction results, with nice figures, confusion matrices, tables.
+- Web UI for easy exploration of data and prediction results.
 
 It is released under the BSD 2-clause [license]({{site.repo}}/blob/master/LICENSE.txt).
+
+The [github repository](https://github.com/sergeyk/vislab) contains all source code and issue tracker.
 
 ## Documentation
 

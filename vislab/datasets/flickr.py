@@ -2,14 +2,19 @@
 Copyright Sergey Karayev / Adobe - 2013.
 Written during internship at Adobe CTL, San Francisco.
 
+Contributors:
+- Helen Han - 2014 (get_tags_and_desc).
+
 Make dataset of images with style labels by querying Flickr Groups using
 the Flickr API.
 
-Also consult notebooks/flickr_dataset.ipynb
+Consult notebooks/flickr_dataset.ipynb for usage examples.
 """
+import time
 import urllib2
 import pandas as pd
 import json
+import flickr_api
 import vislab
 import vislab.util
 
@@ -53,6 +58,51 @@ def get_df(force=False):
     df['_split'] = vislab.dataset.get_train_test_split(
         df[underscored_style_names])
     df['_split'][df[underscored_style_names].sum(1) > 1] = 'test'
+    return df
+
+
+def get_tags_and_desc(df):
+    """
+    For a given dataset, use the API to get the photo tags and
+    description for each image. Store to MongoDB during the process,
+    then form DataFrame to return.
+    """
+    flickr_api.API_KEY = vislab.config['api_keys']['flickr']
+
+    collection = vislab.util.get_mongodb_client()['flickr']['desc_and_tags']
+
+    t = time.time()
+    counter = 0
+    for id_, url in df['page_url'].iteritems():
+        if not vislab.util.zero_results(collection, {'id': id_}):
+            continue
+
+        try:
+            data = flickr_api._doget('flickr.photos.getInfo', photo_id=id_)
+            photo = data.rsp.photo
+            tags = []
+            if 'tag' in dir(photo.tags):
+              if '__len__' in dir(photo.tags.tag):
+                for i in range(0, len(photo.tags.tag)):
+                  tags.append(photo.tags.tag[i].raw)
+              elif 'text' in dir(photo.tags.tag):
+                tags = [photo.tags.tag.raw]
+            collection.insert({
+                'id': id_,
+                'tags': tags,
+                'description': data.rsp.photo.description.text
+            })
+
+        except flickr_api.FlickrError as e:
+            print(e)
+
+        counter += 1
+        if time.time() - t > 5:
+            print('On image {}/{}'.format(counter, df.shape[0]))
+            t = time.time()
+
+    df = pd.DataFrame(list(collection.find()))
+    df.set_index('id', inplace=True)
     return df
 
 
@@ -182,4 +232,10 @@ def populate_database(photos_per_style=100):
 
 
 if __name__ == '__main__':
-    populate_database(photos_per_style=5000)
+    # populate_database(photos_per_style=5000)
+
+    # Query the API for tags and descriptions.
+    df = get_df()
+    df = df[df['_split'] == 'test']
+    tags_df = get_tags_and_desc(df)
+    print tags_df

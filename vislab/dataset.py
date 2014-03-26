@@ -128,14 +128,15 @@ def fetch_image_filenames_for_ids(image_ids, dataset_name):
         urls = df['image_url'].loc[image_ids]
 
     good_filenames = []
-    for filename, url in zip(filenames, urls):
+    for i in range(len(filenames)):
+        filename = filenames[i]
         if os.path.exists(filename):
             good_filenames.append(filename)
             continue
 
         try:
-            print("Download image for {}: {}".format(dataset_name, image_id))
-            r = requests.get(url)
+            print("Download image for {}: {}".format(dataset_name, filename))
+            r = requests.get(urls[i])
             with open(filename, 'wb') as f:
                 f.write(r.content)
             good_filenames.append(filename)

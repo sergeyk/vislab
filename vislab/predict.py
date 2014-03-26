@@ -484,20 +484,17 @@ def predict(args=None):
     # Set the number of passes. Less passes for quadratic features.
     n_train = dataset['train_df'].shape[0]
 
-    # Rule of thumb: 3M examples.
-    n_iter = max(2, min(int(np.ceil(3e6 / n_train)), 160))
+    # Rule of thumb: 1M data points, or at least 3 full passes.
+    n_iter = max(3, min(n_train, int(np.ceil(1e6 / n_train))))
     num_passes = np.array(sorted(set([n_iter / 3, n_iter]))).astype(int)
-
-    if args.quadratic is not None:
-        num_passes /= 2
 
     vislab.vw.train_and_test(
         args.collection_name, dataset, args.features,
         force=args.force_predict, num_workers=args.num_workers,
         num_passes=num_passes.tolist(),
         loss=loss_functions,
-        l1=[0, 1e-9],
-        l2=[0, 1e-9],
+        l1=[0, 1e-7],
+        l2=[0, 1e-7],
         quadratic=args.quadratic,
         bit_precision=args.bit_precision)
 

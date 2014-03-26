@@ -16,6 +16,7 @@ def add_cmdline_args(group_name, parser):
     if group_name == 'common':
         parser.add_argument(
             '--force',
+            action="store_true",
             default=False)
         parser.add_argument(
             '--random_seed',
@@ -41,6 +42,7 @@ def add_cmdline_args(group_name, parser):
         parser.add_argument(
             '--force_dataset',
             help="Force reloading of dataset from scratch",
+            action="store_true",
             default=False)
 
     # Stuff for selecting list of features and forcing their overwrite.
@@ -49,6 +51,11 @@ def add_cmdline_args(group_name, parser):
             '--features',
             help="Comma-separated list of FEATURES from vislab/feature.py",
             default='size')
+        parser.add_argument(
+            '--standardize',
+            help="Standardize features during caching?",
+            action="store_true",
+            default=False)
         parser.add_argument(
             '--force_features',
             help="force overwrite of existing features",

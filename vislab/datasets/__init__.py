@@ -25,7 +25,10 @@ DATASETS = {
         'fn': pinterest.get_pins_80k_df
     },
     'pascal': {
-        'fn': pascal.get_clf_df
+        'fn': pascal.get_class_df
+    },
+    'pascal_mc': {
+        'fn': pascal.get_metaclass_df
     },
     'behance_photo': {
         'fn': behance.get_photo_df

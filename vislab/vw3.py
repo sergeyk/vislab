@@ -33,7 +33,7 @@ def _feat_for_vw(id_, feat_name, feat, decimals=6):
         feat = np.around(feat, decimals)
 
         # Set things that are almost 0 to 0.
-        tolerance = 10**-decimals
+        tolerance = 10 ** -decimals
         feat[np.abs(feat) <= tolerance] = 0
 
         s = ' '.join(
@@ -77,25 +77,19 @@ def write_data_in_vw_format(feat_df, feat_name, output_filename):
         gzip = True
 
     t = time.time()
-    feat_lines = []
-    for ix, row in feat_df.iterrows():
-        if ndarray_feat:
-            feat = row.values[0]
-            # Check if there is only a single value here, and wrap if so
-            try:
-                len(feat)
-            except:
-                feat = np.array([feat])
-        else:
-            feat = row.values
-        feat_lines.append(_feat_for_vw(ix, feat_name, feat))
-    logging.info('{}: forming lines took {:.3f} s'.format(
-        fn_name, time.time() - t))
-
-    t = time.time()
     with open(output_filename, 'w') as f:
-        f.write('\n'.join(feat_lines) + '\n')
-    logging.info('{}: writing file took {:.3f} s'.format(
+        for ix, row in feat_df.iterrows():
+            if ndarray_feat:
+                feat = row.values[0]
+                # Check if there is only a single value here, and wrap if so
+                try:
+                    len(feat)
+                except:
+                    feat = np.array([feat])
+            else:
+                feat = row.values
+            f.write(_feat_for_vw(ix, feat_name, feat) + '\n')
+    logging.info('{}: forming and writing lines took {:.3f} s'.format(
         fn_name, time.time() - t))
 
     if gzip:
@@ -157,7 +151,7 @@ def _cache_cmd(
     # Run all data through VW to cache it.
     cache_cmd = "{} | {} | {}".format(
         paste_cmd, filter_cmd, vw_cmd)
-    cache_cmd += " -k --cache_file {} --bit_precision {} --noop".format(
+    cache_cmd += " -k --cache_file {} --bit_precision {}".format(
         cache_filename, bit_precision)
     if num_labels > 2:
         cache_cmd += ' --oaa {}'.format(num_labels)
@@ -494,16 +488,17 @@ class VW(object):
     - can calculate importance here, instead of relying on the dataframe
     """
     def __init__(
-            self, dirname, num_workers=6, bit_precision=18,
-            num_passes=[25],
+            self, dirname, dataset_name,
+            num_workers=6, bit_precision=18, num_passes=[25],
             loss=['hinge', 'logistic'],
             l1=['0', '1e-6', '1e-9'],
             l2=['0', '1e-6', '1e-9'],
             quadratic=None):
         # Actual output directory will have bit_precision info in name,
         # because cache files are dependent on the precision.
+        self.partial_dirname = '{}_b{}'.format(dataset_name, bit_precision)
         self.dirname = vislab.util.makedirs(
-            dirname + '_b{}'.format(bit_precision))
+            os.path.join(dirname, self.partial_dirname))
         self.bit_precision = bit_precision
         self.num_workers = num_workers
 

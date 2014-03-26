@@ -111,7 +111,7 @@ def gist(image_ids, image_filenames, max_size=256):
     return image_ids, feats
 
 
-def lab_hist(image_filenames, image_ids):
+def lab_hist(image_ids, image_filenames):
     """
     Standard feature as described in [1].
     A histogram in L*a*b* space, having 4, 14, and 14 bins in each dimension
@@ -143,7 +143,7 @@ def lab_hist(image_filenames, image_ids):
     return image_ids, feats
 
 
-def gbvs_saliency(image_filenames, image_ids):
+def gbvs_saliency(image_ids, image_filenames):
     f, output_filename = tempfile.mkstemp()
     output_filename += '.mat'
 
@@ -177,12 +177,12 @@ def gbvs_saliency(image_filenames, image_ids):
     return image_ids, feats
 
 
-def mc_bit(image_filenames, image_ids):
+def mc_bit(image_ids, image_filenames):
     """
     Compute the mc_bit feature provided by the vlg_extractor package,
     which should be installed in ext/.
     """
-    input_dirname = vislab.image.IMAGES_DIRNAME
+    input_dirname = os.path.dirname(image_filenames[0])
     image_filenames = [
         os.path.relpath(fname, input_dirname) for fname in image_filenames]
     f, list_filename = tempfile.mkstemp()
@@ -190,15 +190,16 @@ def mc_bit(image_filenames, image_ids):
         f.write('\n'.join(image_filenames) + '\n')
 
     output_dirname = tempfile.mkdtemp()
-    cmd = 'ext/vlg_extractor_v1.1.1_linux/vlg_extractor.sh'
+    cmd = './vlg_extractor.sh'
     cmd += ' --parameters-dir={} --extract_mc_bit=ASCII {} {} {}'.format(
         'data/picodes_data', list_filename, input_dirname, output_dirname)
+    print(cmd)
 
     try:
         print("Starting {}".format(cmd))
         p = subprocess.Popen(
             shlex.split(cmd),
-            cwd=os.path.expanduser('~/work/vislab')
+            cwd=os.path.expanduser(vislab.config['paths']['vlg_extractor'])
         )
         p.wait()
     except Exception as e:
