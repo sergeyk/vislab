@@ -35,6 +35,7 @@ def get_pins_80k_df(force=False):
     df['_split'] = vislab.dataset.get_train_test_split(
         df[underscored_style_names])
     df['_split'][df[underscored_style_names].sum(1) > 1] = 'test'
+
     return df
 
 
