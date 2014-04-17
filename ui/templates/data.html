@@ -11,14 +11,17 @@
     <!-- <script src="/static/jquery-2.1.0.min.js"></script> -->
     <script>
     $(document).ready(function() {
-        $('#query').change(function() {
-            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/1';
+        $('#dataset').change(function() {
+            window.location = '/data/' + $('#dataset').val() + '/' + $('#style').val() + '/' + $('#pins_per_user').val() + '/1';
+        });
+        $('#style').change(function() {
+            window.location = '/data/' + $('#dataset').val() + '/' + $('#style').val() + '/' + $('#pins_per_user').val() + '/1';
         });
         $('#pins_per_user').change(function() {
-            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
+            window.location = '/data/' + $('#dataset').val() + '/' + $('#style').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
         });
         $('#page').change(function() {
-            window.location = '/data/' + $('#query').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
+            window.location = '/data/' + $('#dataset').val() + '/' + $('#style').val() + '/' + $('#pins_per_user').val() + '/' + $('#page').val();
         });
     });
     </script>
@@ -49,14 +52,14 @@
 <div class="images">
 {% for image in images %}
     <div class="result">
-        <a href="{{image.pin_url}}">
-            <img src="{{image.img}}" width="160px" />
+        <a href="{{image.page_url}}">
+            <img src="{{image.image_url}}" width="160px" />
         </a>
-        <div style="text-align: center;">
+<!--         <div style="text-align: center;">
             <a href="{{image.board_url}}">{{image.board_name}}</a>
             |
             <a href="{{image.user_url}}">{{image.username}}</a>
-        </div>
+        </div> -->
     </div>
 {% endfor %}
 </div>
