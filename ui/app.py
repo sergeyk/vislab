@@ -7,41 +7,46 @@ TODO
 - Display the number of results on the page.
 - Switch to getting data from a mongo database instead of loading df.
 """
-import os
-import pandas as pd
 import flask
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
+import vislab.datasets
 
 app = flask.Flask(__name__)
 
-pins_df = pd.read_hdf(os.path.expanduser(
-    '~/work/vislab/data/shared/pins_df_feb28.h5'), 'df')
-query_names = [
-    _[6:] for _ in pins_df.columns.tolist()
-    if _.startswith('query_')
-]
+pins_df = vislab.datasets.pinterest.get_pins_80k_df()
+flickr_df = vislab.datasets.flickr.get_df()
+style_names = vislab.datasets.flickr.underscored_style_names
 
 
 @app.route('/')
 def index():
      return flask.redirect(flask.url_for(
-        'data', style_name='pastel', pins_per_user=5, page=1))
+        'data', dataset_name='pinterest', style_name='style_Pastel',
+        pins_per_user=5, page=1)
+    )
 
 
-@app.route('/data/<style_name>/<int:pins_per_user>/<int:page>')
-def data(style_name, pins_per_user, page):
+@app.route('/data/<dataset_name>/<style_name>/<int:pins_per_user>/<int:page>')
+def data(dataset_name, style_name, pins_per_user, page):
+    if dataset_name == 'flickr':
+        df = flickr_df
+    elif dataset_name == 'pinterest':
+        df = pins_df
+    else:
+        raise Exception("Unknown dataset")
+
     results_per_page = 7 * 20
 
     # Filter on style.
-    df = pins_df
     if style_name != 'all':
-        df = pins_df[pins_df['query_{}'.format(style_name)]]
+        df = df[df[style_name]]
 
     # Filter on pins per user
-    df = df.groupby('username').head(pins_per_user)
-    df.set_index(df.index.get_level_values(1), inplace=True)
+    # TODO: bring this back
+    # df = df.groupby('username').head(pins_per_user)
+    # df.set_index(df.index.get_level_values(1), inplace=True)
 
     # Paginate
     num_pages = df.shape[0] / results_per_page
@@ -50,7 +55,8 @@ def data(style_name, pins_per_user, page):
 
     # Set filter options
     select_options = [
-        ('query', ['all'] + query_names, style_name),
+        ('dataset', ['flickr', 'pinterest'], dataset_name),
+        ('style', ['all'] + style_names, style_name),
         ('pins_per_user', [1, 5, 100], pins_per_user),
         ('page', range(1, num_pages), page),
     ]
@@ -59,11 +65,6 @@ def data(style_name, pins_per_user, page):
     images = []
     for ix, row in df.iterrows():
         image_info = row.to_dict()
-        image_info['pin_url'] = 'http://pinterest.com/pin/{}'.format(ix)
-        image_info['user_url'] = 'http://pinterest.com/{}'.format(
-            image_info['username'])
-        image_info['board_url'] = 'http://pinterest.com/{}/{}'.format(
-            image_info['username'], image_info['board_name'])
         images.append(image_info)
 
     return flask.render_template(
