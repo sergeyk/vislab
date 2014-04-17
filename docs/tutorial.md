@@ -91,7 +91,7 @@ Now let's run a classification experiment on the Wikipaintings dataset.
 
 First order of business is assembling the dataset.
 Originally, this involved scraping ~100K records from the Wikipaintings.org website.
-No one should have to do that more than once, so simply download our pre-packaged data from this [Dropbox folder](https://www.dropbox.com/sh/our2zcaaqfi2e6d/1rZs5J4xhl).
+No one should have to do that more than once, so simply download our pre-packaged data from this [Dropbox folder](https://www.dropbox.com/sh/8x6fdlftt2w3z4g/gM0Fx_4pLn).
 Copy the whole thing to `vislab-git/data/shared` -- or simply symlink directly to the dropbox directory:
 
     mkdir data
