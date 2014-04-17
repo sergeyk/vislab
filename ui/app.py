@@ -12,17 +12,11 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 import vislab.datasets
-import pymongo
-import pandas as pd
 
 app = flask.Flask(__name__)
-
 pins_df = vislab.datasets.pinterest.get_pins_80k_df()
 flickr_df = vislab.datasets.flickr.get_df()
 style_names = vislab.datasets.flickr.underscored_style_names
-client = pymongo.MongoClient('localhost', 27017)
-pins_cursor = client['pinscraping']['pins'].find()
-#pins_df = pd.DataFrame(list(pins_cursor))
 
 @app.route('/')
 def index():
