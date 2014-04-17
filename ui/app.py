@@ -12,13 +12,17 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 import vislab.datasets
+import pymongo
+import pandas as pd
 
 app = flask.Flask(__name__)
 
 pins_df = vislab.datasets.pinterest.get_pins_80k_df()
 flickr_df = vislab.datasets.flickr.get_df()
 style_names = vislab.datasets.flickr.underscored_style_names
-
+client = pymongo.MongoClient('localhost', 27017)
+pins_cursor = client['pinscraping']['pins'].find()
+#pins_df = pd.DataFrame(list(pins_cursor))
 
 @app.route('/')
 def index():
@@ -38,11 +42,12 @@ def data(dataset_name, style_name, pins_per_user, page):
         raise Exception("Unknown dataset")
 
     results_per_page = 7 * 20
-
     # Filter on style.
     if style_name != 'all':
         df = df[df[style_name]]
-
+        num_results = len(df)
+    #from IPython import embeb
+    #embed()
     # Filter on pins per user
     # TODO: bring this back
     # df = df.groupby('username').head(pins_per_user)
@@ -58,7 +63,7 @@ def data(dataset_name, style_name, pins_per_user, page):
         ('dataset', ['flickr', 'pinterest'], dataset_name),
         ('style', ['all'] + style_names, style_name),
         ('pins_per_user', [1, 5, 100], pins_per_user),
-        ('page', range(1, num_pages), page),
+        ('page', range(1, num_pages), page)
     ]
 
     # Fetch images and render.
@@ -68,7 +73,10 @@ def data(dataset_name, style_name, pins_per_user, page):
         images.append(image_info)
 
     return flask.render_template(
-        'data.html', images=images, select_options=select_options
+        'data.html', images=images, select_options=select_options,
+        num_results=num_results,
+        start_results=results_per_page * (page-1),
+        end_results=results_per_page * page
     )
 
 
