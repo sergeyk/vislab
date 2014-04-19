@@ -12,6 +12,7 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 import vislab.datasets
+import pymongo
 
 app = flask.Flask(__name__)
 pins_df = vislab.datasets.pinterest.get_pins_80k_df()
@@ -28,29 +29,30 @@ def index():
 
 @app.route('/data/<dataset_name>/<style_name>/<int:pins_per_user>/<int:page>')
 def data(dataset_name, style_name, pins_per_user, page):
+    client = pymongo.MongoClient('localhost', 27017)
     if dataset_name == 'flickr':
-        df = flickr_df
+        db = client['ui_dfs']['flickr_df']
     elif dataset_name == 'pinterest':
-        df = pins_df
+        db = client['ui_dfs']['pins_df']
     else:
         raise Exception("Unknown dataset")
 
     results_per_page = 7 * 20
     # Filter on style.
-    if style_name != 'all':
-        df = df[df[style_name]]
-        num_results = len(df)
-    #from IPython import embeb
-    #embed()
+    if style_name !=  0:
+        results = list(db.find({style_name: True}))
+    else:
+        results = list(db.find())
+    num_results = len(results)
     # Filter on pins per user
     # TODO: bring this back
     # df = df.groupby('username').head(pins_per_user)
     # df.set_index(df.index.get_level_values(1), inplace=True)
 
     # Paginate
-    num_pages = df.shape[0] / results_per_page
+    num_pages = num_results / results_per_page
     start = page * results_per_page
-    df = df.iloc[start:min(df.shape[0], start + results_per_page)]
+    results = results[start:min(num_results, start + results_per_page)]
 
     # Set filter options
     select_options = [
@@ -61,10 +63,7 @@ def data(dataset_name, style_name, pins_per_user, page):
     ]
 
     # Fetch images and render.
-    images = []
-    for ix, row in df.iterrows():
-        image_info = row.to_dict()
-        images.append(image_info)
+    images = results
 
     return flask.render_template(
         'data.html', images=images, select_options=select_options,
