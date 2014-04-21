@@ -12,13 +12,11 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 import vislab.datasets
+import pymongo
+import numpy
 
 app = flask.Flask(__name__)
-
-pins_df = vislab.datasets.pinterest.get_pins_80k_df()
-flickr_df = vislab.datasets.flickr.get_df()
 style_names = vislab.datasets.flickr.underscored_style_names
-
 
 @app.route('/')
 def index():
@@ -26,14 +24,30 @@ def index():
         'data', dataset_name='pinterest', style_name='style_Pastel',
         pins_per_user=5, page=1)
     )
-
+def insert_dfs(db, collection):
+    print "Inserting df for {}".format(collection)
+    if collection == 'flickr_df':
+        df = vislab.datasets.flickr.get_df()
+    elif collection == 'pins_df':
+        df = vislab.datasets.pinterest.get_pins_80k_df()
+    for i in range(df.shape[0]):
+        d = df.iloc[i].to_dict()
+        for k, v in d.iteritems():
+            if type(d[k]) is numpy.bool_:
+                d[k] = bool(d[k])
+        db.insert(d)
 
 @app.route('/data/<dataset_name>/<style_name>/<int:pins_per_user>/<int:page>')
 def data(dataset_name, style_name, pins_per_user, page):
+    client = pymongo.MongoClient('localhost', 27017)
     if dataset_name == 'flickr':
-        df = flickr_df
+        db = client['ui_dfs']['flickr_df']
+        if db.count() == 0:
+            insert_dfs(db, 'flickr_df')
     elif dataset_name == 'pinterest':
-        df = pins_df
+        db = client['ui_dfs']['pins_df']
+        if db.count() == 0:
+            insert_dfs(db, 'pins_df')
     else:
         raise Exception("Unknown dataset")
 
@@ -41,7 +55,9 @@ def data(dataset_name, style_name, pins_per_user, page):
 
     # Filter on style.
     if style_name != 'all':
-        df = df[df[style_name]]
+        cursor = db.find({style_name: True})
+    else:
+        cursor = db.find()
 
     # Filter on pins per user
     # TODO: bring this back
@@ -49,9 +65,11 @@ def data(dataset_name, style_name, pins_per_user, page):
     # df.set_index(df.index.get_level_values(1), inplace=True)
 
     # Paginate
-    num_pages = df.shape[0] / results_per_page
+    num_results = cursor.count()
+    num_pages = num_results / results_per_page
     start = page * results_per_page
-    df = df.iloc[start:min(df.shape[0], start + results_per_page)]
+    end = min(num_results, start + results_per_page)
+    results = cursor[start:end]
 
     # Set filter options
     select_options = [
@@ -62,13 +80,13 @@ def data(dataset_name, style_name, pins_per_user, page):
     ]
 
     # Fetch images and render.
-    images = []
-    for ix, row in df.iterrows():
-        image_info = row.to_dict()
-        images.append(image_info)
+    images = results
 
     return flask.render_template(
-        'data.html', images=images, select_options=select_options
+        'data.html', images=images, select_options=select_options,
+        num_results=num_results,
+        start_results=results_per_page * (page-1),
+        end_results=results_per_page * page
     )
 
 
