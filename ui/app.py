@@ -12,36 +12,63 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 import vislab.datasets
+import numpy
+import time
 
+client = vislab.util.get_mongodb_client()
 app = flask.Flask(__name__)
-
-pins_df = vislab.datasets.pinterest.get_pins_80k_df()
-flickr_df = vislab.datasets.flickr.get_df()
 style_names = vislab.datasets.flickr.underscored_style_names
 
 
 @app.route('/')
 def index():
-     return flask.redirect(flask.url_for(
+    return flask.redirect(flask.url_for(
         'data', dataset_name='pinterest', style_name='style_Pastel',
         pins_per_user=5, page=1)
     )
 
 
+def get_database(dataset_name):
+    """
+    Return MongoDB database for the given dataset_name
+    Load the DataFrame and insert into Mongo, if not already present.
+    """
+    dataset_info = {
+        'flickr': vislab.datasets.flickr.get_df,
+        'pinterest': vislab.datasets.pinterest.get_pins_80k_df
+    }
+
+    db = client['ui_dfs'][dataset_name]
+    if db.count() == 0:
+        print "Inserting DF for {}".format(dataset_name)
+        try:
+            df = dataset_info[dataset_name]()
+        except:
+            raise Exception("Unknown dataset: {}".format(dataset_name))
+        t = time.time()
+        for i in range(df.shape[0]):
+            if time.time() - t > 2.5:
+                print('... on {}/{}'.format(i, df.shape[0]))
+                t = time.time()
+            d = df.iloc[i].to_dict()
+            for k, v in d.iteritems():
+                if type(d[k]) is numpy.bool_:
+                    d[k] = bool(d[k])
+            db.insert(d)
+    return db
+
+
 @app.route('/data/<dataset_name>/<style_name>/<int:pins_per_user>/<int:page>')
 def data(dataset_name, style_name, pins_per_user, page):
-    if dataset_name == 'flickr':
-        df = flickr_df
-    elif dataset_name == 'pinterest':
-        df = pins_df
-    else:
-        raise Exception("Unknown dataset")
+    db = get_database(dataset_name)
 
     results_per_page = 7 * 20
 
     # Filter on style.
     if style_name != 'all':
-        df = df[df[style_name]]
+        cursor = db.find({style_name: True})
+    else:
+        cursor = db.find()
 
     # Filter on pins per user
     # TODO: bring this back
@@ -49,9 +76,11 @@ def data(dataset_name, style_name, pins_per_user, page):
     # df.set_index(df.index.get_level_values(1), inplace=True)
 
     # Paginate
-    num_pages = df.shape[0] / results_per_page
+    num_results = cursor.count()
+    num_pages = num_results / results_per_page
     start = page * results_per_page
-    df = df.iloc[start:min(df.shape[0], start + results_per_page)]
+    end = min(num_results, start + results_per_page)
+    results = cursor[start:end]
 
     # Set filter options
     select_options = [
@@ -62,13 +91,13 @@ def data(dataset_name, style_name, pins_per_user, page):
     ]
 
     # Fetch images and render.
-    images = []
-    for ix, row in df.iterrows():
-        image_info = row.to_dict()
-        images.append(image_info)
+    images = results
 
     return flask.render_template(
-        'data.html', images=images, select_options=select_options
+        'data.html', images=images, select_options=select_options,
+        num_results=num_results,
+        start_results=results_per_page * (page - 1),
+        end_results=results_per_page * page
     )
 
 
