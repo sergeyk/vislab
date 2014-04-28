@@ -4,63 +4,64 @@ The older code for the same tasks is in vislab/app.py
 We start with the Pinterest data here.
 
 TODO
-- Display the number of results on the page.
-- Switch to getting data from a mongo database instead of loading df.
+- port the result-displaying capability from old vislab/app.py
 """
 import flask
-from tornado.wsgi import WSGIContainer
-from tornado.httpserver import HTTPServer
-from tornado.ioloop import IOLoop
-import vislab.datasets
+import tornado.wsgi
+import tornado.httpserver
 import numpy
 import time
+import vislab.datasets
 
-client = vislab.util.get_mongodb_client()
+mongo_client = vislab.util.get_mongodb_client()
 app = flask.Flask(__name__)
 style_names = vislab.datasets.flickr.underscored_style_names
 
 
 @app.route('/')
 def index():
+    """
+    Redirect to the data page for Flickr:Pastel.
+    """
     return flask.redirect(flask.url_for(
-        'data', dataset_name='pinterest', style_name='style_Pastel',
-        pins_per_user=5, page=1)
+        'data', dataset_name='flickr', style_name='style_Pastel', page=1)
     )
 
 
-def get_database(dataset_name):
+def get_collection(dataset_name):
     """
-    Return MongoDB database for the given dataset_name
-    Load the DataFrame and insert into Mongo, if not already present.
+    Return MongoDB collection for the given dataset_name.
+    If not already present, then load the DataFrame from cache and
+    insert into Mongo.
     """
-    dataset_info = {
+    dataset_loaders = {
         'flickr': vislab.datasets.flickr.get_df,
         'pinterest': vislab.datasets.pinterest.get_pins_80k_df
     }
 
-    db = client['ui_dfs'][dataset_name]
-    if db.count() == 0:
-        print "Inserting DF for {}".format(dataset_name)
-        try:
-            df = dataset_info[dataset_name]()
-        except:
-            raise Exception("Unknown dataset: {}".format(dataset_name))
+    collection = mongo_client['ui_datasets'][dataset_name]
+    if collection.count() == 0:
+        print "Inserting dataset DF for {}".format(dataset_name)
+        df = dataset_loaders[dataset_name]()
+
         t = time.time()
         for i in range(df.shape[0]):
             if time.time() - t > 2.5:
-                print('... on {}/{}'.format(i, df.shape[0]))
                 t = time.time()
+                print('... on {}/{}'.format(i, df.shape[0]))
+
             d = df.iloc[i].to_dict()
             for k, v in d.iteritems():
                 if type(d[k]) is numpy.bool_:
                     d[k] = bool(d[k])
-            db.insert(d)
-    return db
+            collection.insert(d)
+
+    return collection
 
 
-@app.route('/data/<dataset_name>/<style_name>/<int:pins_per_user>/<int:page>')
-def data(dataset_name, style_name, pins_per_user, page):
-    db = get_database(dataset_name)
+@app.route('/data/<dataset_name>/<style_name>/<int:page>')
+def data(dataset_name, style_name, page):
+    db = get_collection(dataset_name)
 
     results_per_page = 7 * 20
 
@@ -69,11 +70,6 @@ def data(dataset_name, style_name, pins_per_user, page):
         cursor = db.find({style_name: True})
     else:
         cursor = db.find()
-
-    # Filter on pins per user
-    # TODO: bring this back
-    # df = df.groupby('username').head(pins_per_user)
-    # df.set_index(df.index.get_level_values(1), inplace=True)
 
     # Paginate
     num_results = cursor.count()
@@ -86,7 +82,6 @@ def data(dataset_name, style_name, pins_per_user, page):
     select_options = [
         ('dataset', ['flickr', 'pinterest'], dataset_name),
         ('style', ['all'] + style_names, style_name),
-        ('pins_per_user', [1, 5, 100], pins_per_user),
         ('page', range(1, num_pages), page),
     ]
 
@@ -108,6 +103,7 @@ if __name__ == '__main__':
         print("Debug mode")
         app.run(debug=True, host='0.0.0.0', port=5000)
     else:
-        http_server = HTTPServer(WSGIContainer(app))
+        http_server = tornado.httpserver.HTTPServer(
+            tornado.wsgi.WSGIContainer(app))
         http_server.listen(5000)
-        IOLoop.instance().start()
+        tornado.ioloop.IOLoop.instance().start()
