@@ -70,7 +70,7 @@ table, caption, tbody, tfoot, thead, tr, th, td {
 
 body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-weight: lighter;
+  font-weight: 300;
   font-size: 12px;
   line-height: 1.5em;
   color: #333333;
@@ -132,7 +132,6 @@ div {
 div.result {
   display: inline-block;
   margin: 5px;
-  font-size: .8em;
 }
 div.green {
   border: 3px solid yellowgreen;
