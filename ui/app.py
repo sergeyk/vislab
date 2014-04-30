@@ -84,9 +84,11 @@ def get_collection(dataset_name):
 
 @app.route('/')
 def index():
-    """
-    Redirect to the data page for Flickr:Pastel.
-    """
+    return flask.render_template('index.html')
+
+
+@app.route('/data')
+def data_default():
     return flask.redirect(flask.url_for(
         'data', dataset_name='flickr', style_name='style_Pastel', page=1
     ))
