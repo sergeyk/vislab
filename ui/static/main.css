@@ -63,9 +63,13 @@ table, caption, tbody, tfoot, thead, tr, th, td {
   vertical-align: baseline;
 }
 
-#data-scatterplot {
-  margin: auto;
-  width: 620px;
+label {
+  white-space:nowrap;
+}
+
+.above-images {
+  margin: 0 auto 1em auto;
+  width: 680px;
 }
 
 body {

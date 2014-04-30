@@ -1,16 +1,17 @@
 <!doctype html>
 <html>
 <head>
-    <title>VisLab: Data Explorer</title>
+    <title>VisLab: {{page_type}}</title>
 
     <link href="/static/main.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.css" />
-    <!-- <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.min.css" /> -->
+    <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.min.css" />
 
-    <script src="/static/jquery-2.1.0.js"></script>
-    <!-- <script src="/static/jquery-2.1.0.min.js"></script> -->
+    <!-- <script src="/static/jquery-2.1.0.js"></script> -->
+    <script src="/static/jquery-2.1.0.min.js"></script>
     <script>
     $(document).ready(function() {
+        // The page-reloading function constructs the URL out of all
+        // the selectors' values.
         var selection = function() {
             var string = '';
             {% for name, options, selected_value in select_options %}
@@ -18,6 +19,8 @@
             {% endfor %}
             window.location = '/{{page_type}}' + string;
         };
+
+        // Assign the page-reloading function to all selectors.
         {% for name, options, selected_value in select_options %}
             $('#{{name}}').change(selection);
         {% endfor %}
@@ -28,13 +31,12 @@
 <body>
 <div class="container center">
 <h1>
-    <a href="/"><i class="icon-home"></i></a>&nbsp;
-    VisLab: Data
+    <a href="/">VisLab</a>: {{page_type}}
 </h1>
 
-<div id="search-options" style="display: block;">
+<div class="above-images">
     {% for name, options, selected_value in select_options %}
-    <label for="{{name}}">{{name}}</label>
+    <label>{{name}}
     <select id="{{name}}">
         {% for x in options %}
             {% if selected_value == x %}
@@ -43,11 +45,11 @@
                 <option value="{{ x }}">{{ x }}</option>
             {% endif %}
         {% endfor %}
-    </select>
+    </select></label>
     {% endfor %}
 </div>
 
-<div>
+<div class="above-images">
     {{start_results}} to {{end_results}} of {{num_results}} results
 </div>
 

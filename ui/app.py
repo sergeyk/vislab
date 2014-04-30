@@ -176,10 +176,10 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     select_options = [
         ('experiment', ['flickr_mar23'], experiment),
         ('setting', all_preds[experiment].keys(), setting),
-        ('style', ['all'] + style_names, style),
+        ('style', style_names, style),
         ('split', ['all', 'train', 'val', 'test'], split),
-        ('gt_label', ['all', 'positive', 'negative'], gt_label),
-        ('pred_label', ['all', 'positive', 'negative'], pred_label),
+        ('actual_label', ['all', 'positive', 'negative'], gt_label),
+        ('predicted_label', ['all', 'positive', 'negative'], pred_label),
         ('confidence', ['increasing', 'decreasing'], confidence),
         ('page', range(1, num_pages), page)
     ]
