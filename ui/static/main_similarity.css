@@ -1,3 +1,5 @@
+@import url(http://fonts.googleapis.com/css?family=Quicksand:300,400);
+
 /*
   Some stuff from CSS Toast.
 */
@@ -63,17 +65,13 @@ table, caption, tbody, tfoot, thead, tr, th, td {
   vertical-align: baseline;
 }
 
-label {
-  white-space:nowrap;
-}
-
-.above-images {
-  margin: 0 auto 1em auto;
-  width: 680px;
+#data-scatterplot {
+  margin: auto;
+  width: 620px;
 }
 
 body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Quicksand", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 300;
   font-size: 12px;
   line-height: 1.5em;
@@ -81,10 +79,9 @@ body {
 }
 
 h1, .alpha {
-  font-size: 2em;
+  font-size: 3em;
   line-height: 1.5em;
   margin: 0 0 .75em 0;
-  font-variant: small-caps;
 }
 
 h2, .beta {
@@ -108,12 +105,13 @@ a img {
 
 a {
   color: #333333;
-  text-decoration: none;
+  text-decoration: underline;
   -webkit-transition: color .3s ease-in;
   transition: color .3s ease-in;
 }
 a:not(:hover) {
   color: #999999;
+  text-decoration: none;
 }
 
 td, th {
@@ -129,13 +127,18 @@ div {
   vertical-align: top;
 }
 
-#images {
+p {
+  margin-bottom: 1em;
+}
+
+.images {
   width: 1360px;
 }
 
 div.result {
   display: inline-block;
-  margin: 5px;
+  margin: 0px;
+  font-size: .8em;
 }
 div.green {
   border: 3px solid yellowgreen;

@@ -20,7 +20,8 @@
     },
     "api_keys": {
         "flickr": "",
-        "behance": ""
+        "behance": "",
+        "500px": ["", ""]
     },
     "servers": {
         "mongo": ["0.0.0.0", 27017],
