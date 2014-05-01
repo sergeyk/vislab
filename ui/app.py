@@ -21,7 +21,20 @@ import vislab._results
 mongo_client = vislab.util.get_mongodb_client()
 app = flask.Flask(__name__)
 style_names = vislab.datasets.flickr.underscored_style_names
+db_name = 'all_preds'
 
+def insert_df(df, collection):
+    t = time.time()
+    for i in range(df.shape[0]):
+        if time.time() - t > 2.5:
+            t = time.time()
+            print('... on {}/{}'.format(i, df.shape[0]))
+
+        d = df.iloc[i].to_dict()
+        for k, v in d.iteritems():
+            if type(d[k]) is np.bool_:
+                d[k] = bool(d[k])
+        collection.insert(d)
 
 def load_pred_results(all_preds, results_dirname, experiment_name):
     """
@@ -29,21 +42,23 @@ def load_pred_results(all_preds, results_dirname, experiment_name):
     Also, make positive predictions positive and negative negative, to
     simplify future sorting by confidence.
     """
-    threshold_df = pd.read_hdf(
-        '{}/{}_thresholds.h5'.format(results_dirname, experiment_name), 'df')
+    collection = mongo_client[db_name][experiment_name]
+    if collection.count() == 0:
+        threshold_df = pd.read_hdf(
+            '{}/{}_thresholds.h5'.format(results_dirname, experiment_name), 'df')
 
-    _, preds_panel = vislab._results.load_pred_results(
-        experiment_name, results_dirname,
-        multiclass=True, force=False)
-
-    # TODO: load into mongo collections instead
-    for setting in preds_panel.minor_axis:
-        df_ = preds_panel.minor_xs(setting)
-        for style_name in style_names:
-            df_['pred_' + style_name] -= threshold_df.loc[style_name, setting]
-            df_['abs_pred_' + style_name] = np.abs(df_['pred_' + style_name])
-        all_preds[experiment_name][setting] = df_
-
+        _, preds_panel = vislab._results.load_pred_results(
+            experiment_name, results_dirname,
+            multiclass=True, force=False)
+        # TODO: load into mongo collections instead
+        for setting in preds_panel.minor_axis:
+            df_ = preds_panel.minor_xs(setting)
+            for style_name in style_names:
+                df_['pred_' + style_name] -= threshold_df.loc[style_name, setting]
+                df_['abs_pred_' + style_name] = np.abs(df_['pred_' + style_name])
+            #all_preds[experiment_name][setting] = df_
+            df_['setting'] = setting
+            insert_df(df_, collection)
 
 results_dirname = vislab.config['paths']['shared_data'] + '/results_mar23'
 all_preds = defaultdict(dict)  # TODO: use a mongo database instead
@@ -66,19 +81,7 @@ def get_collection(dataset_name):
     if collection.count() == 0:
         print "Inserting dataset DF for {}".format(dataset_name)
         df = dataset_loaders[dataset_name]()
-
-        t = time.time()
-        for i in range(df.shape[0]):
-            if time.time() - t > 2.5:
-                t = time.time()
-                print('... on {}/{}'.format(i, df.shape[0]))
-
-            d = df.iloc[i].to_dict()
-            for k, v in d.iteritems():
-                if type(d[k]) is np.bool_:
-                    d[k] = bool(d[k])
-            collection.insert(d)
-
+        insert_df(df, collection)
     return collection
 
 
@@ -131,27 +134,41 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     """
     # TODO: use mongo throughout
 
-    df = all_preds[experiment][setting]
+    #df = all_preds[experiment][setting]
+    #df = mongo_client[experiment].find({'setting': setting})
+
+    query = {'setting': str(setting)}
+    sort_key = ''
+    sort_dir = 1
 
     if split != 'all':
-        df = df[df['split'] == split]
-
+        #df = df[df['split'] == split]
+        query['split'] = str(split)
     if gt_label == 'positive':
-        df = df[df[style]]
+        #???
+        #df = df[df[style]]
+        query[style] = True
     elif gt_label == 'negative':
-        df = df[df[style] == False]
-
+        #df = df[df[style] == False]
+        query[style] = False
     if pred_label == 'positive':
-        df = df[df['pred_' + style] > 0]
+        #df = df[df['pred_' + style] > 0]
+        query['pred_{}'.format(style)] = {"$gt" : 0}
     elif pred_label == 'negative':
-        df = df[df['pred_' + style] <= 0]
-
+        #df = df[df['pred_' + style] <= 0]
+        query['pred_{}'.format(style)] = {"$lte" : 0}
     if confidence == 'increasing':
-        df.sort('abs_pred_' + style, ascending=True, inplace=True)
+        #df.sort('abs_pred_' + style, ascending=True, inplace=True)
+        sort_key = 'abs_pred_{}'.format(style)
+        sort_dir = 1
     else:
-        df.sort('abs_pred_' + style, ascending=False, inplace=True)
+        #df.sort('abs_pred_' + style, ascending=False, inplace=True)
+        sort_key = 'abs_pred_{}'.format(style)
+        sort_dir = -1
 
-    num_results = df.shape[0]
+    cursor = mongo_client[db_name][experiment].find(query).sort(sort_key, sort_dir)
+    #num_results = df.shape[0]
+    num_results = cursor.count()
     results_per_page = 7 * 20
     num_pages = num_results / results_per_page
 
@@ -159,7 +176,12 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     end_ind = min(num_results, start_ind + results_per_page)
 
     if num_results > 0:
-        df = df.iloc[start_ind:end_ind]
+        #df = df.iloc[start_ind:end_ind]
+        results = cursor[start_ind:end_ind]
+
+        from IPython import embed
+        embed()
+
         df['page_url'] = flickr_df['page_url']
         df['image_url'] = flickr_df['image_url']
 
