@@ -6,7 +6,8 @@ We start with the Pinterest data here.
 TODO
 - switch from using dataframes for results to mongo
 - make image page that displays all the true labels and pred values for
-    a given image
+    a given image-
+- rename 'index' to 'image_id'
 """
 import flask
 import tornado.wsgi
@@ -14,7 +15,6 @@ import tornado.httpserver
 import numpy as np
 import time
 import pandas as pd
-from collections import defaultdict
 import vislab.datasets
 import vislab._results
 
@@ -23,6 +23,7 @@ app = flask.Flask(__name__)
 style_names = vislab.datasets.flickr.underscored_style_names
 db_name = 'all_preds'
 experiment_name = 'flickr_mar23'
+
 
 def insert_df(df, collection):
     t = time.time()
@@ -40,6 +41,7 @@ def insert_df(df, collection):
     print('inserting ....')
     collection.insert(dict_list)
 
+
 def load_pred_results(results_dirname, experiment_name, settings):
     """
     Load prediction results into accessible form.
@@ -47,11 +49,13 @@ def load_pred_results(results_dirname, experiment_name, settings):
     simplify future sorting by confidence.
     """
     collection = mongo_client[db_name][experiment_name]
-    _, preds_panel = vislab._results.load_pred_results(
-        experiment_name, results_dirname,
-        multiclass=True, force=False)
-    settings += preds_panel.minor_axis
+
     if collection.count() == 0:
+        _, preds_panel = vislab._results.load_pred_results(
+            experiment_name, results_dirname,
+            multiclass=True, force=False)
+        settings += preds_panel.minor_axis.tolist()
+
         threshold_df = pd.read_hdf(
             '{}/{}_thresholds.h5'.format(results_dirname, experiment_name), 'df')
 
@@ -62,7 +66,11 @@ def load_pred_results(results_dirname, experiment_name, settings):
                 df_['abs_pred_' + style_name] = np.abs(df_['pred_' + style_name])
             df_['setting'] = setting
             df_ = df_.reset_index()
+
             insert_df(df_, collection)
+
+    else:
+        settings += collection.distinct('setting')
 
 settings = []
 results_dirname = vislab.config['paths']['shared_data'] + '/results_mar23'
@@ -100,6 +108,7 @@ def data_default():
         'data', dataset_name='flickr', style_name='style_Pastel', page=1
     ))
 
+
 @app.route('/results')
 def results_default():
     return flask.redirect(flask.url_for(
@@ -135,25 +144,31 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     page:
         index of paginated results
     """
+    t = time.time()
+
     query = {'setting': str(setting)}
     sort_key = 'abs_pred_{}'.format(style)
     sort_dir = 1
     if split != 'all':
         query['split'] = str(split)
+
     if gt_label == 'positive':
         query[style] = True
     elif gt_label == 'negative':
         query[style] = False
+
     if pred_label == 'positive':
-        query['pred_{}'.format(style)] = {"$gt" : 0}
+        query['pred_{}'.format(style)] = {"$gt": 0}
     elif pred_label == 'negative':
-        query['pred_{}'.format(style)] = {"$lte" : 0}
+        query['pred_{}'.format(style)] = {"$lte": 0}
+
     if confidence == 'increasing':
         sort_dir = 1
     else:
         sort_dir = -1
 
-    cursor = mongo_client[db_name][experiment].find(query).sort(sort_key, sort_dir)
+    cursor = mongo_client[db_name][experiment].find(query)
+    cursor = cursor.sort(sort_key, sort_dir)
     num_results = cursor.count()
     results_per_page = 7 * 20
     num_pages = num_results / results_per_page
@@ -163,9 +178,6 @@ def results(experiment, setting, style, split, gt_label, pred_label,
 
     if num_results > 0:
         results = list(cursor[start_ind:end_ind])
-
-        page_urls = flickr_df['page_url'].to_dict()
-        image_urls = flickr_df['image_url'].to_dict()
         for result in results:
             result['page_url'] = flickr_df['page_url'][result['index']]
             result['image_url'] = flickr_df['image_url'][result['index']]
@@ -192,7 +204,8 @@ def results(experiment, setting, style, split, gt_label, pred_label,
         num_results=num_results,
         start_results=results_per_page * (page - 1),
         end_results=results_per_page * page,
-        page_type='results'
+        page_type='results',
+        time_elapsed=(time.time() - t)
     )
 
 

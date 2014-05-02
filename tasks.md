@@ -4,6 +4,8 @@
 
 ## Fixes
 
+- make sure name of every dataset df index is "image_id"
+
 ## Next
 
 - UI
