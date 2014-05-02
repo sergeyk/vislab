@@ -26,6 +26,7 @@ experiment_name = 'flickr_mar23'
 
 def insert_df(df, collection):
     t = time.time()
+    dict_list = []
     for i in range(df.shape[0]):
         if time.time() - t > 2.5:
             t = time.time()
@@ -35,7 +36,9 @@ def insert_df(df, collection):
         for k, v in d.iteritems():
             if type(d[k]) is np.bool_:
                 d[k] = bool(d[k])
-        collection.insert(d)
+        dict_list.append(d)
+    print('inserting ....')
+    collection.insert(dict_list)
 
 def load_pred_results(results_dirname, experiment_name, settings):
     """
