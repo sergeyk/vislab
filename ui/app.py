@@ -117,6 +117,27 @@ def results_default():
         gt_label='all', pred_label='positive', confidence='decreasing', page=1
     ))
 
+@app.route('/image/<int:img_id>')
+def image_page(img_id):
+    collection = mongo_client[db_name][experiment_name]
+    page_url = flickr_df['page_url'][str(img_id)]
+    image_url = flickr_df['image_url'][str(img_id)]
+    fields = {'_id':0}
+    #from IPython import embed
+    #embed()
+    for style in style_names:
+        fields['pred_{}'.format(style)] = 1
+    doc = collection.find({'index': str(img_id)}, fields)[0]
+    df = pd.DataFrame({0: doc})
+    table = df.to_html()
+
+    return flask.render_template('image_page.html',
+        image_url=image_url,
+        page_url=page_url,
+        table=table
+    )
+
+
 
 @app.route('/results/<experiment>/<setting>/<style>/<split>/<gt_label>/<pred_label>/<confidence>/<int:page>')
 def results(experiment, setting, style, split, gt_label, pred_label,
@@ -145,6 +166,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
         index of paginated results
     """
     t = time.time()
+    collection = mongo_client[db_name][experiment]
 
     query = {'setting': str(setting)}
     sort_key = 'abs_pred_{}'.format(style)
@@ -167,7 +189,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     else:
         sort_dir = -1
 
-    cursor = mongo_client[db_name][experiment].find(query)
+    cursor = collection.find(query)
     cursor = cursor.sort(sort_key, sort_dir)
     num_results = cursor.count()
     results_per_page = 7 * 20
@@ -179,7 +201,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     if num_results > 0:
         results = list(cursor[start_ind:end_ind])
         for result in results:
-            result['page_url'] = flickr_df['page_url'][result['index']]
+            #result['page_url'] = flickr_df['page_url'][result['index']]
             result['image_url'] = flickr_df['image_url'][result['index']]
             result['caption'] = 'conf: {:.2f} | gt: {}'.format(
                 result['pred_' + style],
