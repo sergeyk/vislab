@@ -38,8 +38,10 @@ def insert_df(df, collection):
             if type(d[k]) is np.bool_:
                 d[k] = bool(d[k])
         dict_list.append(d)
-    print('inserting ....')
-    collection.insert(dict_list)
+        if i % 1000 == 0:
+            print('inserting ....')
+            collection.insert(dict_list)
+            dict_list = []
 
 
 def load_pred_results(results_dirname, experiment_name, settings):
