@@ -4,10 +4,8 @@ The older code for the same tasks is in vislab/app.py
 We start with the Pinterest data here.
 
 TODO
-- switch from using dataframes for results to mongo
-- make image page that displays all the true labels and pred values for
-    a given image-
-- rename 'index' to 'image_id'
+----
+- rename 'index' to 'image_id' when dataset changes accordingly
 """
 import flask
 import tornado.wsgi
@@ -38,8 +36,11 @@ def insert_df(df, collection):
             if type(d[k]) is np.bool_:
                 d[k] = bool(d[k])
         dict_list.append(d)
-    print('inserting ....')
-    collection.insert(dict_list)
+
+        if i % 1000 == 0:
+            print('inserting batch...')
+            collection.insert(dict_list)
+            dict_list = []
 
 
 def load_pred_results(results_dirname, experiment_name, settings):
@@ -57,13 +58,17 @@ def load_pred_results(results_dirname, experiment_name, settings):
         settings += preds_panel.minor_axis.tolist()
 
         threshold_df = pd.read_hdf(
-            '{}/{}_thresholds.h5'.format(results_dirname, experiment_name), 'df')
+            '{}/{}_thresholds.h5'.format(results_dirname, experiment_name),
+            'df'
+        )
 
         for setting in settings:
             df_ = preds_panel.minor_xs(setting)
             for style_name in style_names:
-                df_['pred_' + style_name] -= threshold_df.loc[style_name, setting]
-                df_['abs_pred_' + style_name] = np.abs(df_['pred_' + style_name])
+                df_['pred_' + style_name] -= \
+                    threshold_df.loc[style_name, setting]
+                df_['abs_pred_' + style_name] = \
+                    np.abs(df_['pred_' + style_name])
             df_['setting'] = setting
             df_ = df_.reset_index()
 
@@ -118,6 +123,49 @@ def results_default():
     ))
 
 
+@app.route('/image/<int:img_id>')
+def image_page(img_id):
+    collection = mongo_client[db_name][experiment_name]
+    page_url = flickr_df['page_url'][str(img_id)]
+    image_url = flickr_df['image_url'][str(img_id)]
+    fields = {'_id': 0}
+
+    for style in style_names:
+        fields['pred_{}'.format(style)] = 1
+    doc = collection.find({'index': str(img_id)}, fields)[0]
+    df = pd.DataFrame({0: doc}).sort_index(by=[0], ascending=[False])
+    table = df.to_html()
+    table = str(table).replace(
+        "<th></th>\n", "<th>Style Prediction</th>\n", 1)
+    table = table.replace(
+        "<th>0</th>\n", "<th>Confidence</th>\n", 1)
+    conf = list(df[0])
+    colors = [0] * len(conf)
+    green = [0, 0, 0]
+    pink = [255, 0, 0]
+    for i in range(0, len(conf)):
+        st = (abs(conf[i]) / 1.8)
+        if conf[i] > 0:
+            green[0] = (1 - st) * 180 + 18
+            green[1] = (1 - st) * 80 + 118
+            green[2] = (1 - st) * 180 + 18
+            colors[i] = \
+                hex(green[0])[2:] + hex(green[1])[2:] + hex(green[2])[2:]
+        else:
+            pink[1] = 204 - st * 70
+            pink[2] = 204 - st * 70
+            colors[i] = hex(pink[0])[2:] + hex(pink[1])[2:] + hex(pink[2])[2:]
+        table = table.replace(
+            "<th>pred_style_",
+            "<th bgcolor='{}'>pred_style_".format(colors[i]),
+            1
+        )
+    return flask.render_template(
+        'image.html', page_type='image results',
+        image_url=image_url, page_url=page_url, table=table
+    )
+
+
 @app.route('/results/<experiment>/<setting>/<style>/<split>/<gt_label>/<pred_label>/<confidence>/<int:page>')
 def results(experiment, setting, style, split, gt_label, pred_label,
             confidence, page):
@@ -145,6 +193,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
         index of paginated results
     """
     t = time.time()
+    collection = mongo_client[db_name][experiment]
 
     query = {'setting': str(setting)}
     sort_key = 'abs_pred_{}'.format(style)
@@ -167,7 +216,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     else:
         sort_dir = -1
 
-    cursor = mongo_client[db_name][experiment].find(query)
+    cursor = collection.find(query)
     cursor = cursor.sort(sort_key, sort_dir)
     num_results = cursor.count()
     results_per_page = 7 * 20
@@ -179,7 +228,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     if num_results > 0:
         results = list(cursor[start_ind:end_ind])
         for result in results:
-            result['page_url'] = flickr_df['page_url'][result['index']]
+            #result['page_url'] = flickr_df['page_url'][result['index']]
             result['image_url'] = flickr_df['image_url'][result['index']]
             result['caption'] = 'conf: {:.2f} | gt: {}'.format(
                 result['pred_' + style],

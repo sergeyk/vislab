@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>VisLab: {{page_type}}</title>
+
+    <link href="/static/main.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.min.css" />
+</head>
+
+<body>
+<div class="container">
+
+<h1>
+    <a href="/">VisLab</a>: {{page_type}}
+</h1>
+
+<div class="grid">
+    <div class="unit one-of-two">
+        <h2>Image</h2>
+        <a href="{{page_url}}">
+            <img src="{{image_url}}"/>
+        </a>
+    </div>
+    <div class="unit one-of-two">
+        <h2>Predictions</h2>
+        {{table|safe}}
+    </div>
+</div>
+
+</body>
+</html>
