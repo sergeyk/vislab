@@ -128,9 +128,24 @@ def image_page(img_id):
     for style in style_names:
         fields['pred_{}'.format(style)] = 1
     doc = collection.find({'index': str(img_id)}, fields)[0]
-    df = pd.DataFrame({0: doc})
+    df = pd.DataFrame({0: doc}).sort_index(by=[0], ascending=[False])
     table = df.to_html()
-
+    table = str(table).replace("<th></th>\n",
+            "<th>Style Prediction</th>\n", 1)
+    table = table.replace("<th>0</th>\n",
+            "<th>Confidence</th>\n", 1)
+    conf = list(df[0])
+    colors = [0] * len(conf)
+    green = [18, 118, 18]
+    for i in range(0, len(conf)):
+        colors[i] = hex(green[0])[2:] + hex(green[1])[2:] + hex(green[2])[2:]
+        green[0] += 10
+        green[1] += 6
+        green[2] += 10
+        table = table.replace("<th>pred_style_",
+                "<th bgcolor='{}'>pred_style_".format(colors[i]), 1)
+    from IPython import embed
+    embed()
     return flask.render_template('image_page.html',
         image_url=image_url,
         page_url=page_url,
