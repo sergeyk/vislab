@@ -6,13 +6,17 @@
 
 - make sure name of every dataset df index is "image_id"
 
+- a substantial number of flickr_80k images are now missing. should update dataset, or at least exclude the missing ones? can tell which are missing using the convert_gif function in bashrc
+
+- batch up insertion into database in ui/app.py: flapjack1 is not liking the massive insertion
+
 ## Next
 
+- make downloading and resizing images a job-queue based thing
+
 - UI
-    - make the results server use Mongo (and then can populate dataframes from filtered results there)
-    - add basic results view to current UI
-    - add advanced results view: `source_dataset` support and so on
-    - restart data view server and launch on flapjack
+    - make more experiments available in the results UI
+    - make single-image results page
 
 - Run the fusion of classes and features classification experiments
     - Output pascal metaclass classifiers as features

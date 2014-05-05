@@ -8,10 +8,79 @@ import numpy as np
 import pandas as pd
 import requests
 import os
+import subprocess
+import csv
 import vislab
 import vislab.utils.cmdline
 import vislab.utils.distributed
 import vislab.datasets
+
+
+def download_images(df, dirname, num_cpus=6):
+    """
+    Download images from a dataset to a directory.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Must have column 'image_url', and a unique index that can be
+        used as filenames.
+    dirname: str
+        Images will be downloaded to dirname/originals.
+    num_cpus: int
+        Downloading will be parallelized with this many processes.
+    """
+    vislab.util.makedirs(dirname + '/original')
+    df[['image_url']].to_csv(
+        dirname + '/image_url.csv',
+        sep=' ', header=None, quoting=csv.QUOTE_ALL
+    )
+    cmd = 'parallel --gnu -a image_url.csv --colsep=" " -j {} '.format(
+        num_cpus)
+    cmd += '"wget {{2}} -P original/{{1}}.jpg"\n'
+    with open(dirname + '/download_cmd.sh', 'w') as f:
+        f.write(cmd)
+    subprocess.call(
+        ['sh', dirname + '/download_cmd.sh'], shell=True, cwd=dirname)
+
+
+def resize_images(dirname, size, num_cpus=6):
+    vislab.util.makedirs(dirname + '/{}px'.format)
+    # TODO clean up below
+    [
+        'mkdir {}px'.format(size),
+        'parallel -a _temp_photo_names.txt -j {0} "convert original/{{}} -resize {1}\> {1}px/{{}}"'.format(num_cpus, size),
+        'parallel -a _temp_photo_names.txt -j {} "identify original/{{}}" > _sizes.txt'.format(num_cpus),
+    ]
+
+
+def get_image_sizes(dirname, num_cpus=6):
+    # TODO: borrow code from above, or write job-queue based approach
+    pass
+
+
+def dl_and_resize_images(df, dirname, size, num_cpus=6):
+    """
+    Download images from a dataset to a directory.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Must have column 'image_url', and a unique index that can be
+        used as filenames.
+    dirname: str
+        Images will be downloaded to dirname/originals.
+    num_cpus: int
+        Downloading will be parallelized with this many processes.
+    """
+    # Load in the image sizes
+    size_df = pd.read_csv(dirname + '/_sizes.txt', sep=' ', header=None)
+    size_df = pd.DataFrame({
+        'photo_id': [_[:-4] for _ in size_df[0]],
+        'width': [int(_.split('x')[0]) for _ in size_df[2]],
+        'height': [int(_.split('x')[1]) for _ in size_df[2]]
+    })
+    return size_df
 
 
 def get_train_test_split(df_, test_frac=0.2, random_seed=42):
