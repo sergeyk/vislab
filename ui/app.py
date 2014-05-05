@@ -136,16 +136,21 @@ def image_page(img_id):
             "<th>Confidence</th>\n", 1)
     conf = list(df[0])
     colors = [0] * len(conf)
-    green = [18, 118, 18]
+    green = [0, 0, 0]
+    pink = [255, 0, 0]
     for i in range(0, len(conf)):
-        colors[i] = hex(green[0])[2:] + hex(green[1])[2:] + hex(green[2])[2:]
-        green[0] += 10
-        green[1] += 6
-        green[2] += 10
+        st = (abs(conf[i])/1.8)
+        if conf[i] > 0:
+            green[0] = (1-st)*180 + 18
+            green[1] = (1-st)*80 + 118
+            green[2] = (1-st)*180 + 18
+            colors[i] = hex(green[0])[2:] + hex(green[1])[2:] + hex(green[2])[2:]
+        else:
+            pink[1] = 204 - st*70
+            pink[2] = 204 - st*70
+            colors[i] = hex(pink[0])[2:] + hex(pink[1])[2:] + hex(pink[2])[2:]
         table = table.replace("<th>pred_style_",
-                "<th bgcolor='{}'>pred_style_".format(colors[i]), 1)
-    from IPython import embed
-    embed()
+            "<th bgcolor='{}'>pred_style_".format(colors[i]), 1)
     return flask.render_template('image_page.html',
         image_url=image_url,
         page_url=page_url,
