@@ -160,18 +160,15 @@ def image_page(experiment, setting, style, img_id):
             pink[1] = 204 - st * 70
             pink[2] = 204 - st * 70
             colors[i] = hex(pink[0])[2:] + hex(pink[1])[2:] + hex(pink[2])[2:]
-        if styles[style_list[i].replace('pred_', '')]:
-            table = table.replace(
-                "<th>pred_style_",
-                "<th bgcolor='{}'>+</th><th bgcolor='{}'>pred_style_".format(green_hex, colors[i]),
-                1
-                )
-        else:
-            table = table.replace(
-                "<th>pred_style_",
-                "<th bgcolor='{}'>-</th><th bgcolor='{}'>pred_style_".format(red_hex, colors[i]),
-                1
-                )
+
+        style_name = style_list[i].replace('pred_', '')
+        color = green_hex if styles[style_name] else red_hex
+        table = table.replace(
+            "<th>pred_style_",
+            "<th bgcolor='{}'>+</th><th bgcolor='{}'>pred_style_".format(
+                color, colors[i]),
+            1
+        )
 
     return flask.render_template(
         'image.html', page_type='image results',
@@ -180,7 +177,8 @@ def image_page(experiment, setting, style, img_id):
     )
 
 
-@app.route('/results/<experiment>/<setting>/<style>/<split>/<gt_label>/<pred_label>/<confidence>/<int:page>')
+@app.route('/results/<experiment>/<setting>/<style>/<split>/<gt_label>'
+           '/<pred_label>/<confidence>/<int:page>')
 def results(experiment, setting, style, split, gt_label, pred_label,
             confidence, page):
     """
