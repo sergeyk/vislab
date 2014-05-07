@@ -120,28 +120,36 @@ def results_default():
     ))
 
 
-@app.route('/image/<int:img_id>')
-def image_page(img_id):
+@app.route('/image/<experiment>/<setting>/<style>/<int:img_id>')
+def image_page(experiment, setting, style, img_id):
     collection = mongo_client[db_name][experiment_name]
     page_url = flickr_df['page_url'][str(img_id)]
     image_url = flickr_df['image_url'][str(img_id)]
     fields = {'_id': 0}
-
+    gt_fields = {'_id': 0}
     for style in style_names:
         fields['pred_{}'.format(style)] = 1
+        gt_fields[style] = 1
     doc = collection.find({'index': str(img_id)}, fields)[0]
+    styles = collection.find({'index': str(img_id)}, gt_fields)[0]
+    gt_style = [k for k, v in styles.items() if v][0].replace('style_', '')
     df = pd.DataFrame({0: doc}).sort_index(by=[0], ascending=[False])
     table = df.to_html()
     table = str(table).replace(
-        "<th></th>\n", "<th>Style Prediction</th>\n", 1)
+        "<th></th>\n", "<th>Ground Truth</th><th>Style Prediction</th>\n", 1)
     table = table.replace(
         "<th>0</th>\n", "<th>Confidence</th>\n", 1)
     conf = list(df[0])
+    d = df.to_dict()[0]
+    style_list = sorted(d, key=d.__getitem__)
+    style_list.reverse()
     colors = [0] * len(conf)
+    green_hex = '30L83L30L'
+    red_hex = 'ffc5Lc5L'
     green = [0, 0, 0]
     pink = [255, 0, 0]
     for i in range(0, len(conf)):
-        st = (abs(conf[i]) / 1.8)
+        st = (abs(conf[i]) / 1.9)
         if conf[i] > 0:
             green[0] = (1 - st) * 180 + 18
             green[1] = (1 - st) * 80 + 118
@@ -152,14 +160,23 @@ def image_page(img_id):
             pink[1] = 204 - st * 70
             pink[2] = 204 - st * 70
             colors[i] = hex(pink[0])[2:] + hex(pink[1])[2:] + hex(pink[2])[2:]
-        table = table.replace(
-            "<th>pred_style_",
-            "<th bgcolor='{}'>pred_style_".format(colors[i]),
-            1
-        )
+        if styles[style_list[i].replace('pred_', '')]:
+            table = table.replace(
+                "<th>pred_style_",
+                "<th bgcolor='{}'>+</th><th bgcolor='{}'>pred_style_".format(green_hex, colors[i]),
+                1
+                )
+        else:
+            table = table.replace(
+                "<th>pred_style_",
+                "<th bgcolor='{}'>-</th><th bgcolor='{}'>pred_style_".format(red_hex, colors[i]),
+                1
+                )
+
     return flask.render_template(
         'image.html', page_type='image results',
-        image_url=image_url, page_url=page_url, table=table
+        image_url=image_url, page_url=page_url, table=table,
+        gt_style=gt_style
     )
 
 
@@ -251,7 +268,10 @@ def results(experiment, setting, style, split, gt_label, pred_label,
         start_results=results_per_page * (page - 1),
         end_results=results_per_page * page,
         page_type='results',
-        time_elapsed=(time.time() - t)
+        time_elapsed=(time.time() - t),
+        experiment=experiment,
+        setting=setting,
+        style=style
     )
 
 
