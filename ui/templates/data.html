@@ -58,7 +58,7 @@
 {% for image in images %}
     <div class="result">
         <!--<a href="{{image.page_url}}">--!>
-        <a href="/image/{{image.index}}">
+        <a href="/image/{{experiment}}/{{setting}}/{{style}}/{{image.index}}">
             <img src="{{image.image_url}}" width="160px" />
         </a>
         <div>{{image.caption}}</div>
