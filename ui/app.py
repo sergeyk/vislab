@@ -1,20 +1,18 @@
 """
 This file, vislab/ui/app.py, is the updated data and results viewing ui.
 The older code for the same tasks is in vislab/app.py
-We start with the Pinterest data here.
 
 TODO
 ----
 - rename 'index' to 'image_id' when dataset changes accordingly
 """
 import flask
-import tornado.wsgi
-import tornado.httpserver
 import numpy as np
 import time
 import pandas as pd
 import vislab.datasets
 import vislab._results
+import ui.util
 
 mongo_client = vislab.util.get_mongodb_client()
 app = flask.Flask(__name__)
@@ -38,7 +36,6 @@ def insert_df(df, collection):
         dict_list.append(d)
 
         if i % 1000 == 0:
-            print('inserting batch...')
             collection.insert(dict_list)
             dict_list = []
 
@@ -260,6 +257,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
 
 @app.route('/data/<dataset_name>/<style_name>/<int:page>')
 def data(dataset_name, style_name, page):
+    t = time.time()
     db = get_collection(dataset_name)
 
     results_per_page = 7 * 20
@@ -289,18 +287,10 @@ def data(dataset_name, style_name, page):
         num_results=num_results,
         start_results=results_per_page * (page - 1),
         end_results=results_per_page * page,
+        time_elapsed=time.time() - t,
         page_type='data'
     )
 
 
 if __name__ == '__main__':
-    import sys
-    debug = len(sys.argv) > 1 and sys.argv[1] == 'debug'
-    if debug:
-        print("Debug mode")
-        app.run(debug=True, host='0.0.0.0', port=5000)
-    else:
-        http_server = tornado.httpserver.HTTPServer(
-            tornado.wsgi.WSGIContainer(app))
-        http_server.listen(5000)
-        tornado.ioloop.IOLoop.instance().start()
+    ui.util.start_from_terminal(app)
