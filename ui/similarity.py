@@ -1,3 +1,4 @@
+import numpy as np
 import flask
 import vislab.collection
 import vislab.datasets
@@ -5,8 +6,11 @@ import vislab.utils.redis_q
 import util
 
 app = flask.Flask(__name__)
-collection = vislab.collection.Collection()
-collection_name = 'flickr'
+
+# TODO: get this working again
+# collection = vislab.collection.Collection('ui_datasets')
+# collection_name = 'flickr'
+df = vislab.datasets.flickr.get_df()
 
 
 @app.route('/')
@@ -16,10 +20,12 @@ def index():
 
 @app.route('/similar_to_random')
 def similar_to_random():
-    # TODO: figure this out
-    image_id = collection.get_random_id(collection_name)
-    return flask.redirect(flask.url_for(
-        'similar_to_id', image_id=image_id))
+    # TODO: get this working again
+    # image_id = collection.get_random_id(collection_name)
+    image_id = df.index[np.random.randint(df.shape[0] + 1)]
+    # TODO: actually, need to get random ind from searchable_collection,
+    # since it might be a downsampled set
+    return flask.redirect(flask.url_for('similar_to_id', image_id=image_id))
 
 
 @app.route('/similar_to/<image_id>')
@@ -32,7 +38,7 @@ def similar_to_id(image_id):
     select_options = {
         'feature': {
             'name': 'feature',
-            'options': ['deep fc6', 'style scores']
+            'options': ['caffe fc6']
         },
         'distance': {
             'name': 'distance_metric',
@@ -42,7 +48,7 @@ def similar_to_id(image_id):
 
     args = util.get_query_args(
         defaults={
-            'feature': 'deep fc6',
+            'feature': 'caffe fc6',
             'distance': 'euclidean',
             'page': 1,
         },
@@ -79,7 +85,9 @@ def similar_to_id(image_id):
     for results_data, prediction in zip(results_sets, prediction_options):
         results_data['title'] = prediction
 
-    image_info = collection.find_by_id(image_id, collection_name)
+    # TODO: get this working again
+    # image_info = collection.find_by_id(image_id, collection_name)
+    image_info = df.loc[image_id].to_dict()
 
     return flask.render_template(
         'similarity.html', args=args,

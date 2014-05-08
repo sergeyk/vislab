@@ -1,34 +1,28 @@
 """
 A searchable collection of images, listening for jobs on a Redis queue.
 """
-import operator
-import os
 import sys
+import operator
+import time
 import bottleneck as bn
 import pandas as pd
 import numpy as np
-import time
 import sklearn.metrics.pairwise as metrics
-from vislab.utils import redis_q
-import vislab.datasets.wikipaintings
+import vislab
+import vislab.utils.redis_q
+import vislab.datasets
 
 
-data_dir = os.path.expanduser('~/work/vislab/data')
+feats_dir = vislab.config['paths']['feats']
+experiment_dir = vislab.config['paths']['shared_data'] + '/results_mar23'
 feat_filenames = {
     'flickr': {
-        'style scores': data_dir + '/results/flickr_decaf_fc6_preds.h5',
-        'deep fc6': data_dir + '/feats/flickr/decaf_fc6_arr_df.h5',
-        #'deep pool5': data_dir + '/feats/flickr/decaf_fc6_flatten.h5'
-    },
-    'wikipaintings': {
-        'deep fc6': data_dir + '/feats/wikipaintings/decaf_fc6_arr_df.h5',
-        #'deep pool5': data_dir + '/feats/wikipaintings/decaf_fc6_flatten.h5'
+        'caffe fc6': feats_dir + '/flickr/caffe_fc6.h5',
+        'style scores': experiment_dir + '/flickr_mar23_preds_caffe_fc6_df.h5'
     }
 }
-
 dataset_loaders = {
-    'flickr': vislab.datasets.flickr.load_flickr_df,
-    'wikipaintings': vislab.datasets.wikipaintings.get_df
+    'flickr': vislab.datasets.flickr.get_df
 }
 
 
@@ -38,6 +32,7 @@ class SearchableCollection(object):
     """
     def __init__(self, dataset_name):
         assert(dataset_name in dataset_loaders)
+        t = time.time()
 
         # Load image information in a dataframe.
         self.images = dataset_loaders[dataset_name]()
@@ -57,7 +52,11 @@ class SearchableCollection(object):
 
         # Append predictions to the images DataFrame.
         if 'style scores' in self.features:
-            self.images = self.images.join(self.features['style scores'])
+            self.images = self.images.join(
+                self.features['style scores'], rsuffix='preds')
+
+        print('Initialized SearchableCollection in {:.3f} s'.format(
+            time.time() - t))
 
     def nn_by_id_many_filters(self, image_id, feature, distance, page=1,
                               filter_conditions_list=None, results_per_page=8):
@@ -68,6 +67,9 @@ class SearchableCollection(object):
         print(feature)
         assert(feature in self.features)
         t = time.time()
+
+        from IPython import embed
+        embed()
 
         # Get all distances to query
         images = self.images
@@ -188,7 +190,7 @@ def run_worker(dataset_name='flickr'):
     registered_functions = {
         'nn_by_id_many_filters': collection.nn_by_id_many_filters
     }
-    redis_q.poll_for_jobs(
+    vislab.utils.redis_q.poll_for_jobs(
         registered_functions, 'similarity_server')
 
 

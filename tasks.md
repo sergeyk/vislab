@@ -11,6 +11,8 @@
 
 ## Fixes
 
+- abstract the insertion of dataframes into mongo under vislab/collection, and make use of it in ui/app.py
+
 - make sure name of every dataset df index is "image_id"
 
 - a substantial number of flickr_80k images are now missing. should update dataset, or at least exclude the missing ones? can tell which are missing using the convert_gif function in bashrc
