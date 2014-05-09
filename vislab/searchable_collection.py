@@ -68,9 +68,6 @@ class SearchableCollection(object):
         assert(feature in self.features)
         t = time.time()
 
-        from IPython import embed
-        embed()
-
         # Get all distances to query
         images = self.images
         feats = self.features[feature]
@@ -170,6 +167,8 @@ def nn(feat, feats, distance='euclidean', K=-1):
         dists = metrics.euclidean_distances(feat, feats, squared=True)
     elif distance == 'chi_square':
         dists = -metrics.additive_chi2_kernel(feat, feats)
+    elif distance == 'dot':
+        dists = -np.dot(feat, feats)
 
     dists = dists.flatten()
     if K > 0:

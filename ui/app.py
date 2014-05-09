@@ -16,9 +16,6 @@ import ui.util
 
 mongo_client = vislab.util.get_mongodb_client()
 app = flask.Flask(__name__)
-style_names = vislab.datasets.flickr.underscored_style_names
-db_name = 'all_preds'
-experiment_name = 'flickr_mar23'
 
 
 def insert_df(df, collection):
@@ -40,11 +37,11 @@ def insert_df(df, collection):
             dict_list = []
 
 
-def load_pred_results(results_dirname, experiment_name, settings):
+def load_pred_results(results_dirname, db_name, experiment_name, settings):
     """
     Load prediction results into accessible form.
     Also, make positive predictions positive and negative negative, to
-    simplify future sorting by confidence.
+    simplify sorting by confidence.
     """
     collection = mongo_client[db_name][experiment_name]
 
@@ -52,12 +49,11 @@ def load_pred_results(results_dirname, experiment_name, settings):
         _, preds_panel = vislab._results.load_pred_results(
             experiment_name, results_dirname,
             multiclass=True, force=False)
-        settings += preds_panel.minor_axis.tolist()
+        settings[experiment_name] = preds_panel.minor_axis.tolist()
 
-        threshold_df = pd.read_hdf(
-            '{}/{}_thresholds.h5'.format(results_dirname, experiment_name),
-            'df'
-        )
+        filename = '{}/{}_thresholds_and_accs.h5'.format(
+            results_dirname, experiment_name)
+        threshold_df = pd.read_hdf(filename, 'threshold_df')
 
         for setting in settings:
             df_ = preds_panel.minor_xs(setting)
@@ -72,12 +68,20 @@ def load_pred_results(results_dirname, experiment_name, settings):
             insert_df(df_, collection)
 
     else:
-        settings += collection.distinct('setting')
+        settings[experiment_name] = collection.distinct('setting')
 
-settings = []
-results_dirname = vislab.config['paths']['shared_data'] + '/results_mar23'
-load_pred_results(results_dirname, experiment_name, settings)
-flickr_df = vislab.datasets.flickr.get_df()  # TODO: get rid of this
+
+settings = {}
+results_dirname = vislab.config['paths']['shared_data'] + '/results'
+db_name = 'all_preds'
+experiment_names = ['flickr_mar23', 'wikipaintings']
+for experiment_name in experiment_names:
+    load_pred_results(results_dirname, db_name, experiment_name, settings)
+
+# TODO: get rid of this! use mongo!
+style_names = vislab.datasets.flickr.underscored_style_names
+flickr_df = vislab.datasets.flickr.get_df()
+wp_df = vislab.datasets.wikipaintings.get_df()
 
 
 def get_collection(dataset_name):
@@ -240,7 +244,6 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     if num_results > 0:
         results = list(cursor[start_ind:end_ind])
         for result in results:
-            #result['page_url'] = flickr_df['page_url'][result['index']]
             result['image_url'] = flickr_df['image_url'][result['index']]
             result['caption'] = 'conf: {:.2f} | gt: {}'.format(
                 result['pred_' + style],

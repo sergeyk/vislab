@@ -1,15 +1,23 @@
 ## For BMVC
 
+- output threshold_df's for more experiments
+
 - Run the fusion of classes and features classification experiments
     - Output pascal metaclass classifiers as features
 
 - Test caffe-based classifier accuracy
+
+- Look at Flickr tag search results
+
+- Generate table of machine Flickr accuracies vs. human Flickr accuracies
 
 ## Ideas
 
 - Can dataset be equalized by content (to get unbiased style performance numbers)
 
 ## Fixes
+
+- never pass pred_prefix into a function; it should be a canonical constant
 
 - abstract the insertion of dataframes into mongo under vislab/collection, and make use of it in ui/app.py
 
@@ -21,10 +29,9 @@
 
 - make downloading and resizing images a job-queue based thing
 
-
 - Large-scale style-filtered search demo:
     - compute fc6 features on a large set of pinterest images that don't overlap with my training set
-    - compute fc6 features on a large set of flickr interesting images
+    - compute fc6 features on a large set of flickr images for some tag query
 
 - Generate Sphinx autodoc and display it on my doc page
 

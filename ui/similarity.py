@@ -28,8 +28,8 @@ def similar_to_random():
     return flask.redirect(flask.url_for('similar_to_id', image_id=image_id))
 
 
-@app.route('/similar_to/<image_id>')
-def similar_to_id(image_id):
+@app.route('/similar_to/<image_id>/<feature>/<distance>')
+def similar_to_id(image_id, feature, distance):
     """
     This function does double duty: it returns both the rendered HTML
     and the JSON results, depending on whether the json arg is set.
@@ -42,7 +42,7 @@ def similar_to_id(image_id):
         },
         'distance': {
             'name': 'distance_metric',
-            'options': ['euclidean', 'manhattan']
+            'options': ['euclidean', 'dot', 'manhattan', 'chi_square']
         }
     }
 
