@@ -1,12 +1,119 @@
 """
 Code for parsing results of prediction tasks.
 """
-import sklearn.metrics
+import sys
 import numpy as np
 import pandas as pd
+from collections import defaultdict
+import sklearn.metrics
 import vislab
 import vislab.results_viz
 import vislab.dataset_viz
+
+
+def pred_accuracy_at_threshold(
+        df_, gt_col, threshold, pred_prefix='pred_', verbose=False):
+    """
+    Parameters
+    ----------
+    df_: pandas.DataFrame
+    gt_col: string
+    threshold: float
+        Threshold for positive predictions.
+    pred_prefix: string
+    verbose: boolean
+        Print classification report if true.
+
+    Returns
+    -------
+    acc: float
+        Accuracy on df_[gt_col] using
+        df_[pred_prefix + gt_col] > threshold.
+    """
+    preds = (df_[pred_prefix + gt_col] > threshold).values
+    pos_ind = np.where(df_[gt_col])[0]
+    neg_ind = np.where(df_[gt_col] == False)[0]
+    np.random.seed(0)
+    ind = np.hstack((
+        pos_ind,
+        np.random.choice(neg_ind, size=pos_ind.shape[0], replace=False)
+    ))
+    gt = df_[gt_col].values[ind].astype(bool)
+    preds = preds[ind]
+    if verbose:
+        print sklearn.metrics.classification_report(gt, preds)
+    return sklearn.metrics.accuracy_score(gt, preds)
+
+
+def learn_accuracy_threshold(
+        df_, gt_col, pred_prefix='pred_',
+        thresholds=np.logspace(-2, 0, 20) - 1):
+    """
+    Do cross-validation of thresholds for prediction accuracy.
+
+    Parameters
+    ----------
+    df_: pandas.DataFrame
+        Must have gt_col and pred_prefix + gt_col columns.
+    gt_col: string
+        Name of the boolean column we care about.
+    pred_prefix: string
+        Column at pref_prefix + gt_col contains the real-valued preds.
+    thresholds: iterable of float
+
+    Returns
+    -------
+    best_threshold: float
+    accs: list of float
+        Accuracies for the thresholds considered.
+    """
+    accs = [
+        pred_accuracy_at_threshold(
+            df_, gt_col, threshold, pred_prefix, verbose=False)
+        for threshold in thresholds
+    ]
+    best_threshold = thresholds[np.argmax(accs)]
+    return best_threshold, accs
+
+
+def learn_accuracy_thresholds_for_preds_panel(preds_panel):
+    """
+    Find the positive prediction thresholds that maximize accuracy
+    on the validation set for all settings and labels in preds_panel,
+    returning a DataFrame of thresholds and a DataFrame of test-set
+    accuracies.
+
+    Parameters
+    ----------
+    preds_panel: pandas.Panel
+        Such as is loaded by
+    """
+    thresholds = defaultdict(dict)
+    test_accs = defaultdict(dict)
+    pred_prefix = 'pred_'
+
+    for setting_name in preds_panel.minor_axis:
+        pred_df = preds_panel.minor_xs(setting_name)
+        pred_df_val = pred_df[pred_df['split'] == 'val']
+        pred_df_test = pred_df[pred_df['split'] == 'test']
+
+        pred_cols = [_ for _ in pred_df.columns if _.startswith(pred_prefix)]
+        gt_cols = [_.replace(pred_prefix, '') for _ in pred_cols]
+
+        for gt_col in gt_cols:
+            best_threshold, val_accs = learn_accuracy_threshold(
+                pred_df_val, gt_col, pred_prefix)
+
+            thresholds[setting_name][gt_col] = best_threshold
+
+            test_accs[setting_name][gt_col] = pred_accuracy_at_threshold(
+                pred_df_test, gt_col, best_threshold, pred_prefix)
+            sys.stdout.write('.')
+        sys.stdout.write('\n')
+
+    threshold_df = pd.DataFrame(thresholds)
+    acc_df = pd.DataFrame(test_accs)
+    return threshold_df, acc_df
 
 
 def regression_metrics(
