@@ -10,13 +10,13 @@ the Flickr API.
 
 Consult notebooks/flickr_dataset.ipynb for usage examples.
 """
-import time
 import urllib2
 import pandas as pd
 import json
-import flickr_api
 import vislab
+import vislab.dataset
 import vislab.util
+import vislab.utils.distributed2
 
 # Mapping of style names to group ids.
 styles = {
@@ -61,49 +61,43 @@ def get_df(force=False):
     return df
 
 
-def get_tags_and_desc(df):
+def get_tags_and_desc_worker(image_id):
+    import flickr_api
+    import vislab
+    flickr_api.API_KEY = vislab.config['api_keys']['flickr']
+    data = flickr_api._doget('flickr.photos.getInfo', photo_id=image_id)
+    photo = data.rsp.photo
+    tags = []
+    if 'tag' in dir(photo.tags):
+        if '__len__' in dir(photo.tags.tag):
+            for i in range(0, len(photo.tags.tag)):
+                tags.append(photo.tags.tag[i].raw)
+        elif 'text' in dir(photo.tags.tag):
+            tags = [photo.tags.tag.raw]
+    return {
+        'id': image_id,
+        'tags': tags,
+        'description': data.rsp.photo.description.text
+    }
+
+
+def get_tags_and_desc_manager(df):
     """
     For a given dataset, use the API to get the photo tags and
     description for each image. Store to MongoDB during the process,
     then form DataFrame to return.
     """
-    flickr_api.API_KEY = vislab.config['api_keys']['flickr']
+    job_info = {
+        'module': 'vislab.datasets.flickr',
+        'worker_fn': 'get_tags_and_desc_worker',
+        'db_name': 'flickr',
+        'collection_name': 'desc_and_tags'
+    }
 
-    collection = vislab.util.get_mongodb_client()['flickr']['desc_and_tags']
-
-    t = time.time()
-    counter = 0
-    for id_, url in df['page_url'].iteritems():
-        if not vislab.util.zero_results(collection, {'id': id_}):
-            continue
-
-        try:
-            data = flickr_api._doget('flickr.photos.getInfo', photo_id=id_)
-            photo = data.rsp.photo
-            tags = []
-            if 'tag' in dir(photo.tags):
-              if '__len__' in dir(photo.tags.tag):
-                for i in range(0, len(photo.tags.tag)):
-                  tags.append(photo.tags.tag[i].raw)
-              elif 'text' in dir(photo.tags.tag):
-                tags = [photo.tags.tag.raw]
-            collection.insert({
-                'id': id_,
-                'tags': tags,
-                'description': data.rsp.photo.description.text
-            })
-
-        except flickr_api.FlickrError as e:
-            print(e)
-
-        counter += 1
-        if time.time() - t > 5:
-            print('On image {}/{}'.format(counter, df.shape[0]))
-            t = time.time()
-
-    df = pd.DataFrame(list(collection.find()))
-    df.set_index('id', inplace=True)
-    return df
+    query_list = df.index.tolist()
+    kwargs_list = [{'image_id': _} for _ in df.index.tolist()]
+    vislab.utils.distributed2.submit_to_rq(
+        query_list, kwargs_list, job_info, 'get_tags_and_desc', 20)
 
 
 def _get_image_url(photo, size_flag=''):
@@ -237,5 +231,4 @@ if __name__ == '__main__':
     # Query the API for tags and descriptions.
     df = get_df()
     df = df[df['_split'] == 'test']
-    tags_df = get_tags_and_desc(df)
-    print tags_df
+    get_tags_and_desc_manager(df)
