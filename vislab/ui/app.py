@@ -12,7 +12,7 @@ import time
 import pandas as pd
 import vislab.datasets
 import vislab._results
-import ui.util
+import vislab.ui
 
 mongo_client = vislab.util.get_mongodb_client()
 app = flask.Flask(__name__)
@@ -74,14 +74,14 @@ def load_pred_results(results_dirname, db_name, experiment_name, settings):
 settings = {}
 results_dirname = vislab.config['paths']['shared_data'] + '/results'
 db_name = 'all_preds'
-experiment_names = ['flickr_mar23', 'wikipaintings']
+experiment_names = ['flickr_mar23']
 for experiment_name in experiment_names:
     load_pred_results(results_dirname, db_name, experiment_name, settings)
 
 # TODO: get rid of this! use mongo!
 style_names = vislab.datasets.flickr.underscored_style_names
 flickr_df = vislab.datasets.flickr.get_df()
-wp_df = vislab.datasets.wikipaintings.get_df()
+# wp_df = vislab.datasets.wikipaintings.get_df()
 
 
 def get_collection(dataset_name):
@@ -314,4 +314,4 @@ def data(dataset_name, style_name, page):
 
 
 if __name__ == '__main__':
-    ui.util.start_from_terminal(app)
+    vislab.ui.util.start_from_terminal(app)

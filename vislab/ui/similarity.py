@@ -3,7 +3,7 @@ import flask
 import vislab.collection
 import vislab.datasets
 import vislab.utils.redis_q
-import util
+import vislab.ui
 
 app = flask.Flask(__name__)
 
@@ -46,7 +46,7 @@ def similar_to_id(image_id, feature, distance):
         }
     }
 
-    args = util.get_query_args(
+    args = vislab.ui.util.get_query_args(
         defaults={
             'feature': 'caffe fc6',
             'distance': 'euclidean',
@@ -98,4 +98,4 @@ def similar_to_id(image_id, feature, distance):
 
 
 if __name__ == '__main__':
-    util.start_from_terminal(app)
+    vislab.ui.util.start_from_terminal(app)
