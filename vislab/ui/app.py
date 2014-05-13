@@ -254,7 +254,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     # Set filter options. Order matters.
     select_options = [
         ('experiment', ['flickr_mar23'], experiment),
-        ('setting', settings, setting),
+        ('setting', settings[experiment], setting),
         ('style', style_names, style),
         ('split', ['all', 'train', 'val', 'test'], split),
         ('actual_label', ['all', 'positive', 'negative'], gt_label),
