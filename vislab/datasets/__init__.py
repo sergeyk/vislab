@@ -30,6 +30,9 @@ DATASETS = {
     'pascal_mc': {
         'fn': pascal.get_metaclass_df
     },
+    'pascal_det': {
+        'fn': pascal.get_det_df
+    },
     'behance_photo': {
         'fn': behance.get_photo_df
     }

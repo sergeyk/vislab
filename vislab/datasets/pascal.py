@@ -87,6 +87,14 @@ def get_class_df(VOCyear='VOC2012', force=False, args=None):
     return label_df
 
 
+def get_det_df(VOCyear='VOC2012', force=False, args=None):
+    """
+    Load the image classification data, with metaclasses.
+    """
+    _, objects_df = load_pascal(VOCyear, force, args)
+    return objects_df
+
+
 def load_annotation_files(filenames, num_workers=1):
     t = time.time()
     if num_workers > 1:
