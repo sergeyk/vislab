@@ -3,8 +3,14 @@
     [
         {
             "path": ".",
-            "folder_exclude_patterns": ["data", ".ipynb_checkpoints"],
-            "file_exclude_patterns": ["*.mat", "*.pickle", "*.h5"]
+            "folder_exclude_patterns": [
+                "data",
+                ".ipynb_checkpoints"
+            ],
+            "file_exclude_patterns": [
+                "vislab.sublime-workspace",
+                "*.mat", "*.pickle", "*.h5"
+            ]
         }
     ]
 }

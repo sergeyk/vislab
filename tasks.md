@@ -1,19 +1,15 @@
-## For BMVC
-
-- output threshold_df's for more experiments
+## Experiments
 
 - Run the fusion of classes and features classification experiments
     - Output pascal metaclass classifiers as features
 
-- Test caffe-based classifier accuracy
+- Evaluate caffe-based classifier performance
 
-- Look at Flickr tag search results
-
-- Generate table of machine Flickr accuracies vs. human Flickr accuracies
+- Look at Flickr tags search results
 
 ## Ideas
 
-- Can dataset be equalized by content (to get unbiased style performance numbers)
+- Equalize dataset by content to get less biased style performance numbers
 
 ## Fixes
 
@@ -26,6 +22,10 @@
 - a substantial number of flickr_80k images are now missing. should update dataset, or at least exclude the missing ones? can tell which are missing using the convert_gif function in bashrc
 
 ## Next
+
+- implement image annotation UI
+
+- make caffe-based classifier module using JL's python bindings
 
 - make downloading and resizing images a job-queue based thing
 
@@ -63,7 +63,6 @@ Misc
     - need util function for syncing up dataframe with mongodb collection. useful for datasets.
     - graphically improve the image page table: say TP, FP, TN, FN, and color true/false with green/red as well
         :: Think of this as a general thing: want to be able to format tables with color depending on parameters, in Javacript. Publish blog post on the solution.
-
 
 - make diagram of data sources and labels and features and publish on blog
 
