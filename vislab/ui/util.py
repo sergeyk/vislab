@@ -1,9 +1,8 @@
 import optparse
 import json
 import flask
-from tornado.wsgi import WSGIContainer
-from tornado.httpserver import HTTPServer
-from tornado.ioloop import IOLoop
+import tornado.wsgi
+import tornado.httpserver
 
 
 def make_json_response(body, status_code=200):
@@ -45,10 +44,11 @@ def get_query_args(necessary=None, defaults=None, types=None):
 
 
 def start_tornado(app, port=5000):
-    http_server = HTTPServer(WSGIContainer(app))
+    http_server = tornado.httpserver.HTTPServer(
+        tornado.wsgi.WSGIContainer(app))
     http_server.listen(port)
     print("Tornado server starting on port {}".format(port))
-    IOLoop.instance().start()
+    tornado.ioloop.IOLoop.instance().start()
 
 
 def start_from_terminal(app):
