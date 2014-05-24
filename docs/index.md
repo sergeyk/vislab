@@ -16,6 +16,8 @@ It is released under the BSD 2-clause [license]({{site.repo}}/blob/master/LICENS
 
 The [github repository](https://github.com/sergeyk/vislab) contains all source code and issue tracker.
 
+Check out an image style classification [demo](http://demo.vislab.berkeleyvision.org/)!
+
 ## Documentation
 
 - Get started with the [tutorial](tutorial.html).
