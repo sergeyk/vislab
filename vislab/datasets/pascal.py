@@ -92,6 +92,8 @@ def get_det_df(VOCyear='VOC2012', force=False, args=None):
     Load the image classification data, with metaclasses.
     """
     _, objects_df = load_pascal(VOCyear, force, args)
+    objects_df[['xmin', 'ymin', 'xmax', 'ymax']] = \
+        objects_df[['xmin', 'ymin', 'xmax', 'ymax']].values.astype(int)
     return objects_df
 
 
