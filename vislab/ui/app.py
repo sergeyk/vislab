@@ -55,7 +55,7 @@ def load_pred_results(results_dirname, db_name, experiment_name, settings):
             results_dirname, experiment_name)
         threshold_df = pd.read_hdf(filename, 'threshold_df')
 
-        for setting in settings:
+        for setting in settings[experiment_name]:
             df_ = preds_panel.minor_xs(setting)
             for style_name in style_names:
                 df_['pred_' + style_name] -= \
@@ -74,14 +74,13 @@ def load_pred_results(results_dirname, db_name, experiment_name, settings):
 settings = {}
 results_dirname = vislab.config['paths']['shared_data'] + '/results'
 db_name = 'all_preds'
-experiment_names = ['flickr_mar23']
-for experiment_name in experiment_names:
-    load_pred_results(results_dirname, db_name, experiment_name, settings)
-
+experiment_names = ['flickr_mar23', 'wikipaintings_mar23']
 # TODO: get rid of this! use mongo!
 style_names = vislab.datasets.flickr.underscored_style_names
 flickr_df = vislab.datasets.flickr.get_df()
 # wp_df = vislab.datasets.wikipaintings.get_df()
+for experiment_name in experiment_names:
+    load_pred_results(results_dirname, db_name, experiment_name, settings)
 
 
 def get_collection(dataset_name):
