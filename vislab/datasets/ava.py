@@ -43,8 +43,11 @@ def get_ava_df(force=False, args=None):
     """
     Return DataFrame of the basic AVA dataset.
     """
-    return vislab.util.load_or_generate_df(
+    df = vislab.util.load_or_generate_df(
         AVA_DF_FILENAME, _load_ava_df, force, args)
+    urls_df = get_urls_df()
+    df = df.join(urls_df)
+    return df
 
 
 def get_ratings_df(force=False, args=None):
@@ -80,7 +83,9 @@ def get_style_df(force=False, args=None):
     style_df = vislab.util.load_or_generate_df(
         STYLE_DF_FILENAME, _load_style_df, force, args)
     ratings_df = vislab.datasets.ava.get_ratings_df()
-    return style_df.join(ratings_df)
+    urls_df = get_urls_df()
+    style_df = style_df.join(ratings_df).join(urls_df)
+    return style_df
 
 
 ## From-scratch loaders.
