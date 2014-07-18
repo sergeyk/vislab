@@ -17,6 +17,7 @@ import vislab.utils.cmdline
 import vislab.dataset
 import vislab.features
 import vislab.vw3
+import vislab.feature
 
 DB_NAME = 'vislab_feats'
 
