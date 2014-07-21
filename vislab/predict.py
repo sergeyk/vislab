@@ -487,14 +487,15 @@ def predict(args=None):
     # Rule of thumb: 1M data points, or at least 3 full passes.
     n_iter = max(3, min(n_train, int(np.ceil(1e6 / n_train))))
     num_passes = np.array(sorted(set([n_iter / 3, n_iter]))).astype(int)
+    l1 = [0, 1e-7]
+    l2 = [0, 1e-7]
 
     vislab.vw.train_and_test(
         args.collection_name, dataset, args.features,
         force=args.force_predict, num_workers=args.num_workers,
         num_passes=num_passes.tolist(),
         loss=loss_functions,
-        l1=[0, 1e-7],
-        l2=[0, 1e-7],
+        l1=l1, l2=l2,
         quadratic=args.quadratic,
         bit_precision=args.bit_precision)
 

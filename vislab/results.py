@@ -168,15 +168,15 @@ def binary_metrics(
     ----------
     pred_df: pandas.DataFrame
         Must contain 'label' (int or bool) and 'pred' (float) columns.
-    name: string ['']
+    name: string
         Name of the classification task: for example, the class name.
-    balanced: bool [True]
+    balanced: bool
         If True, the evaluation considers a class-balanced subset of
         the dataset.
-    with_plot: bool [False]
+    with_plot: bool
         If True, plot curves and return handles to figures (otherwise
         return handles to None).
-    with_print: bool [False]
+    with_print: bool
     """
     name = '{} balanced'.format(name) if balanced else name
 
@@ -387,12 +387,15 @@ def multiclass_metrics(
     # Get binary metrics for all classes.
     all_binary_metrics = {}
     for i, label in enumerate(label_cols):
-        pdf = pd.DataFrame({
-            'pred': pred_df['{}_{}'.format(pred_prefix, label)],
-            'label': label_df[label]
-        }, pred_df.index)
+        pdf = pd.DataFrame(
+            {
+                'pred': pred_df['{}_{}'.format(pred_prefix, label)],
+                'label': label_df[label]
+            },
+            pred_df.index
+        )
         all_binary_metrics[label] = binary_metrics(
-            pdf, 'name doesnt matter', False, False, False)
+            pdf, label, False, False, False)
     bin_df = pd.DataFrame(all_binary_metrics).T
 
     # Add mean of the numeric metrics.

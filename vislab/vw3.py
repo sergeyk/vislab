@@ -469,7 +469,7 @@ def _read_preds(filename, num_labels, loss_function):
 
     df.index = df.index.astype(str)
 
-    # If using logisitic loss, convert to [-1, 1].
+    # If using logistic loss, convert to [-1, 1].
     if loss_function == 'logistic':
         df = df.apply(lambda x: (2. / (1. + np.exp(-x)) - 1.), raw=True)
 
