@@ -202,13 +202,14 @@ def _train_vw_cmd(
         setting['l1'], setting['l2'], setting['num_passes'], setting['loss'])
     cmd += " --bit_precision {}".format(bit_precision)
 
-    if num_labels < 0:
-        assert(setting['loss'] not in ['hinge', 'logistic'])
-    elif num_labels > 2:
-        cmd += ' --oaa {}'.format(num_labels)
-
     if 'quadratic' in setting:
         cmd += ' -q {}'.format(setting['quadratic'])
+
+    if num_labels < 0:
+        assert(setting['loss'] not in ['hinge', 'logistic'])
+
+    if num_labels > 2 and from_model is None:
+        cmd += ' --oaa {}'.format(num_labels)
 
     # If we are training from scratch, then we will use all data.
     if from_model is None:
