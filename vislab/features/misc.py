@@ -9,7 +9,6 @@ and lab_hist
 import os
 import numpy as np
 from PIL import Image
-import leargist
 import tempfile
 import subprocess
 import shlex
@@ -22,7 +21,7 @@ import vislab.image
 
 
 def caffe(image_ids, image_filenames, layer='fc6', network='alexnet'):
-    import caffe.imagenet
+    import caffe
 
     networks = {
         'alexnet': {
@@ -40,13 +39,19 @@ def caffe(image_ids, image_filenames, layer='fc6', network='alexnet'):
         raise ValueError('Only networks supported: {}'.format(networks.keys()))
 
     # Initialize the network (takes ~1 s)
-    net = caffe.imagenet.ImageNetClassifier(**networks[network])
-    net.caffenet.set_phase_test()
-    net.caffenet.set_mode_cpu()
+    net = caffe.Classifier(
+        networks[network]['model_def_file'],
+        networks[network]['pretrained_model'],
+        mean_file=vislab.config['paths']['caffe'] + '/python/caffe/imagenet/ilsvrc_2012_mean.npy',
+        channel_swap=(2, 1, 0), input_scale=255
+    )
+    # net = caffe.imagenet.ImageNetClassifier(**networks[network])
+    net.set_phase_test()
+    net.set_mode_cpu()
 
-    if layer not in net.caffenet.blobs.keys():
+    if layer not in net.blobs.keys():
         raise ValueError('Only layers supported for this network: {}'.format(
-            net.caffenet.blobs.keys()))
+            net.blobs.keys()))
 
     good_image_ids = []
     feats = []
@@ -54,8 +59,8 @@ def caffe(image_ids, image_filenames, layer='fc6', network='alexnet'):
         try:
             # First, run the network fully forward by calling predict.
             # Then, for whatever blob we want, max across image crops.
-            net.predict(image_filename)
-            feats.append(net.caffenet.blobs[layer].data.max(0).flatten())
+            net.predict([caffe.io.load_image(image_filename)])
+            feats.append(net.blobs[layer].data.max(0).flatten())
             good_image_ids.append(image_id)
         except:
             continue
@@ -82,6 +87,8 @@ def size(image_ids, image_filenames):
 
 
 def gist(image_ids, image_filenames, max_size=256):
+    import leargist
+
     good_image_ids = []
     feats = []
     for image_id, filename in zip(image_ids, image_filenames):
