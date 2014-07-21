@@ -201,28 +201,32 @@ def binary_metrics(
 
     # Compute metrics.
     metrics = {}
+    y_true = pred_df['label'].values
+    y_pred_raw = pred_df['pred'].values
+    y_pred_bin = pred_df['pred_bin'].values
 
     results = sklearn.metrics.precision_recall_fscore_support(
-        pred_df['label'], pred_df['pred_bin'])
+        y_true, y_pred_bin)
+
     metrics['results_df'] = pd.DataFrame(
         np.array(results).T,
         columns=[['precision', 'recall', 'f1-score', 'support']],
         index=[['False', 'True']])
 
     metrics['mcc'] = sklearn.metrics.matthews_corrcoef(
-        pred_df['label'], pred_df['pred_bin'])
+        y_true, y_pred_bin)
 
     metrics['accuracy'] = sklearn.metrics.accuracy_score(
-        pred_df['label'], pred_df['pred_bin'])
+        y_true, y_pred_bin)
 
     metrics['pr_fig'], prec, rec, metrics['ap'] = \
-        get_pr_curve(pred_df['label'], pred_df['pred'], name, with_plot)
+        get_pr_curve(y_true, y_pred_raw, name, with_plot)
 
     metrics['ap_sklearn'] = sklearn.metrics.average_precision_score(
-        pred_df['label'], pred_df['pred'])
+        y_true, y_pred_raw)
 
     metrics['roc_fig'], fpr, tpr, metrics['auc'] = \
-        get_roc_curve(pred_df['label'], pred_df['pred'], name, with_plot)
+        get_roc_curve(y_true, y_pred_raw, name, with_plot)
 
     if with_print:
         print_metrics(metrics, name.format(name))
@@ -360,6 +364,10 @@ def multiclass_metrics(
     assert np.all(label_df.sum(1) > 0)
 
     # Get vector of multi-class labels.
+    # This deals with multiple things being true by picking just one.
+    # NOTE: assumes that labels are 0-index ints
+    # NOTE: if random is unseeded, this can lead to slight change in
+    # printed numbers, as different bases of support are used.
     y_true = []
     for row in label_df.values:
         ind = np.where(row)[0]
