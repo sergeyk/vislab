@@ -20,40 +20,18 @@ def similar_to_random():
     # TODO: actually, need to get random ind from searchable_collection,
     # since it might be a downsampled set
     # image_id = collection.get_random_id(collection_name)
-    return flask.redirect(flask.url_for('similar_to_id', image_id=image_id))
+    return flask.redirect(flask.url_for(
+        'similar_to_id', image_id=image_id, feature='caffe fc6', distance='dot'
+    ))
 
 
-@app.route('/similar_to/<image_id>')
-@app.route('/similar_to/<image_id>/<feature>')
 @app.route('/similar_to/<image_id>/<feature>/<distance>')
-def similar_to_id(image_id, feature='caffe fc6', distance='dot'):
+def similar_to_id(image_id, feature, distance):
     """
     This function does double duty: it returns both the rendered HTML
     and the JSON results, depending on whether the json arg is set.
     This keeps the parameter-parsing logic in one place.
     """
-    select_options = {
-        'feature': {
-            'name': 'feature',
-            'options': ['caffe fc6', 'caffe fc7']
-        },
-        'distance': {
-            'name': 'distance_metric',
-            'options': ['euclidean', 'dot', 'manhattan', 'chi_square']
-        }
-    }
-
-    args = vislab.ui.util.get_query_args(
-        defaults={
-            'feature': 'caffe fc6',
-            'distance': 'euclidean',
-            'page': 1,
-        },
-        types={
-            'page': int
-        }
-    )
-
     prediction_options = ['all']
     # prediction_options += [
     #     'pred_{}'.format(x)
@@ -69,9 +47,9 @@ def similar_to_id(image_id, feature='caffe fc6', distance='dot'):
 
     kwargs = {
         'image_id': image_id,
-        'feature': args['feature'],
-        'distance': args['distance'],
-        'page': args['page'],
+        'feature': feature,
+        'distance': distance,
+        'page': 1,  # TODO
         'filter_conditions_list': filter_conditions_list,
         'results_per_page': 32
     }
@@ -85,9 +63,17 @@ def similar_to_id(image_id, feature='caffe fc6', distance='dot'):
 
     image_info = df.loc[image_id].to_dict()
 
+    select_options = [
+        ('feature', ['caffe fc6', 'caffe fc7'], feature),
+        ('distance', ['dot', 'euclidean', 'manhattan', 'chi_square'], distance),
+    ]
+
     return flask.render_template(
-        'similarity.html', args=args,
+        'similarity.html',
         select_options=select_options,
+        image_id=image_id,
+        feature=feature,
+        distance=distance,
         image_info=image_info,
         results_sets=results_sets
     )

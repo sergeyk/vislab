@@ -18,7 +18,7 @@ experiment_dir = vislab.config['paths']['shared_data'] + '/results_mar23'
 feat_filenames = {
     'flickr': {
         'caffe fc6': feats_dir + '/flickr/caffe_fc6.h5',
-        # 'caffe fc7': feats_dir + '/flickr/caffe_fc7.h5',
+        'caffe fc7': feats_dir + '/flickr/caffe_fc7.h5',
     }
 }
 dataset_loaders = {
@@ -38,7 +38,7 @@ class SearchableCollection(object):
         self.images = dataset_loaders[dataset_name]()
 
         # Downsample [optional for dev].
-        # self.images = self.images.iloc[:10000]
+        self.images = self.images.iloc[:10000]
 
         # Load all features.
         self.features = {}

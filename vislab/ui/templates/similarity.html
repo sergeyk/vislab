@@ -6,48 +6,24 @@
     <link href="/static/main.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="/static/font-awesome-4.0.3/css/font-awesome.min.css" />
 
-    <script src="/static/jquery-1.10.2.min.js"></script>
+    <!-- <script src="/static/jquery-2.1.0.js"></script> -->
+    <script src="/static/jquery-2.1.0.min.js"></script>
     <script>
     $(document).ready(function() {
-        page = {{args.page}};
+        // The page-reloading function constructs the URL out of all
+        // the selectors' values.
+        var selection = function() {
+            var string = '';
+            {% for name, options, selected_value in select_options %}
+                string += '/' + $('#{{name}}').val();
+            {% endfor %}
+            window.location = '/similar_to/{{image_id}}' + string;
+        };
 
-        // Set selects to the passed-in arguments.
-        {% for arg_name, val in args.iteritems() %}
-            $("#{{arg_name}}").val("{{val}}");
+        // Assign the page-reloading function to all selectors.
+        {% for name, options, selected_value in select_options %}
+            $('#{{name}}').change(selection);
         {% endfor %}
-
-        var get_full_query = function(query) {
-            var full_query = {
-                'page': page
-            };
-            $('.query_arg').each(function(i, x) {
-                full_query[$(x).attr('id')] = $(x).val();
-            });
-            $.extend(full_query, query);
-            console.log(full_query);
-            return full_query;
-        };
-
-        var update_url_with_query = function(query) {
-            full_query = get_full_query(query);
-            var url = [location.protocol, '//', location.host, location.pathname].join('');
-            search_url = url + '?' + $.param(full_query);
-            window.location = search_url;
-        };
-
-        // Any change in drop-down menu triggers page reload.
-        $('select').change(function() {
-            page = 1;
-            update_url_with_query();
-        });
-
-        $('#prev-page').click(function() {
-            update_url_with_query({'page': Math.max(1, page - 1)});
-        });
-
-        $('#next-page').click(function() {
-            update_url_with_query({'page': page + 1});
-        });
     });
     </script>
 </head>
@@ -71,16 +47,19 @@
             <a href="/similar_to_random">[Go to a random image]</a>
         </p>
         <p>
-        {% for short_name, long_name_and_options in select_options.iteritems() %}
-        <label for="{{short_name}}">{{long_name_and_options.name}}</label>
-        <select id="{{short_name}}" class='query_arg'>
-            {% for x in long_name_and_options.options %}
-            <option value="{{ x }}">{{ x }}</option>
+        {% for name, options, selected_value in select_options %}
+        <label>{{name}}
+        <select id="{{name}}">
+            {% for x in options %}
+                {% if selected_value == x %}
+                    <option value="{{ x }}" selected>{{ x }}</option>
+                {% else %}
+                    <option value="{{ x }}">{{ x }}</option>
+                {% endif %}
             {% endfor %}
-        </select>
-        <br />
+        </select></label>
         {% endfor %}
-        </p>
+            </p>
 
         <h3>Explanation</h3>
         <p>
