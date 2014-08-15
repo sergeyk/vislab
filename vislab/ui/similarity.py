@@ -1,3 +1,7 @@
+"""
+Good images:
+12538220763
+"""
 import numpy as np
 import flask
 import vislab.collection
@@ -21,7 +25,7 @@ def similar_to_random():
     # since it might be a downsampled set
     # image_id = collection.get_random_id(collection_name)
     return flask.redirect(flask.url_for(
-        'similar_to_id', image_id=image_id, feature='caffe fc6', distance='dot'
+        'similar_to_id', image_id=image_id, feature='caffe fc6', distance='euclidean'
     ))
 
 
@@ -65,7 +69,15 @@ def similar_to_id(image_id, feature, distance):
 
     select_options = [
         ('feature', ['caffe fc6', 'caffe fc7'], feature),
-        ('distance', ['dot', 'euclidean', 'manhattan', 'chi_square'], distance),
+        (
+            'distance',
+            [
+                'dot', 'cosine',
+                'projected dot', 'projected cosine',
+                'euclidean', 'manhattan', 'chi_square'
+            ],
+            distance
+        ),
     ]
 
     return flask.render_template(

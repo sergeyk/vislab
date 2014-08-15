@@ -1,3 +1,7 @@
+## BMVC
+
+- make sure all results are archived
+
 ## Experiments
 
 - Run the fusion of classes and features classification experiments
@@ -7,10 +11,6 @@
 
 - Look at Flickr tags search results
 
-## Ideas
-
-- Equalize dataset by content to get less biased style performance numbers
-
 ## Fixes
 
 - never pass pred_prefix into a function; it should be a canonical constant
@@ -18,8 +18,6 @@
 - abstract the insertion of dataframes into mongo under vislab/collection, and make use of it in ui/app.py
 
 - make sure name of every dataset df index is "image_id"
-
-- a substantial number of flickr_80k images are now missing. should update dataset, or at least exclude the missing ones? can tell which are missing using the convert_gif function in bashrc
 
 ## Next
 
@@ -47,6 +45,8 @@
 - could be good figure: sort imagenet images for a few categories by beauty
 
 - to analyze the deep feature: see if you can regress to the color histogram feature from the deep feature
+
+- make similarity UI use same code as app.py
 
 Similarity demo
     - add paintings data

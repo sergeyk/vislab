@@ -11,6 +11,7 @@ import sklearn.metrics.pairwise as metrics
 import vislab
 import vislab.utils.redis_q
 import vislab.datasets
+import cPickle
 
 
 feats_dir = vislab.config['paths']['feats']
@@ -34,6 +35,10 @@ class SearchableCollection(object):
         assert(dataset_name in dataset_loaders)
         t = time.time()
 
+        # TODO: formalize
+        # Load Flickr weights
+        weights = cPickle.load(open('data/shared/flickr_finetune_weights.pickle'))
+
         # Load image information in a dataframe.
         self.images = dataset_loaders[dataset_name]()
 
@@ -42,16 +47,30 @@ class SearchableCollection(object):
 
         # Cache the image index.
         self.index = self.images.index.tolist()
+        # print self.index
 
         # Load all features.
         self.features = {}
+        self.features_norm = {}
+        self.M = {}
+        self.features_proj = {}
+        self.features_proj_norm = {}
         self.features_index = {}
         for feature_name, filename in feat_filenames[dataset_name].iteritems():
             try:
                 feats = pd.read_hdf(filename, 'df')
             except:
                 feats = pd.read_pickle(filename)
-            self.features[feature_name] = feats.ix[self.images.index].values
+            feats = feats.ix[self.images.index].values
+            self.features[feature_name] = feats
+            self.features_norm[feature_name] = np.sqrt(np.power(feats, 2).sum(1))
+
+            w = weights[feature_name][3]  # NOIR
+            M = np.diag(w)
+            self.M[feature_name] = M
+            feats_proj = np.dot(feats, M)
+            self.features_proj[feature_name] = feats_proj
+            self.features_proj_norm[feature_name] = np.sqrt(np.power(feats_proj, 2).sum(1))
 
         # Append predictions to the images DataFrame.
         if 'style scores' in self.features:
@@ -73,20 +92,11 @@ class SearchableCollection(object):
         t = time.time()
 
         # Get all distances to query
-        images = self.images
-        feats = self.features[feature]
-        feat = feats[self.index.index(image_id)]
-
-        print feats.shape
-        print feat.shape
-
-        print('elapsed: {:.3f}'.format(time.time() - t))
-
-        nn_ind, nn_dist = nn(feat, feats, distance)
+        nn_ind, nn_dist = self._nn(image_id, feature, distance)
         nn_df = pd.DataFrame(
             {'distance': nn_dist[1:]},
-            images.index[nn_ind[1:]])
-        images_nn_df = nn_df.join(images)
+            self.images.index[nn_ind[1:]])
+        images_nn_df = nn_df.join(self.images)
 
         # TODO: figure out what to do for paging
         start_ind = 0
@@ -109,46 +119,48 @@ class SearchableCollection(object):
             results_sets.append(results_data)
         return results_sets
 
-    def nn_by_id(
-            self, image_id, feature, distance='dot',
-            page=1, filter_conditions=None, results_per_page=32):
+    def _nn(self, image_id, feature, distance='cosine', K=-1):
         """
-        Fetch nearest neighbors for image at given id.
+        Exact nearest neighbor seach through exhaustive comparison.
         """
-        print('nn_by_id', feature)
-
-        from IPython import embed
-        embed()
-
-        assert(feature in self.features)
-        t = time.time()
-
-        # Filter on images if given filter.
-        images = filter_df(self.images, filter_conditions)
-        num_results = images.shape[0]
-
-        # Compute feature distances among candidates.
         feats = self.features[feature]
-        feat = feats.ix[image_id].values
-        feats = feats.ix[images.index].values
+        feats_norm = self.features_norm[feature]
+        feat = feats[self.index.index(image_id)]
 
-        # Discount the first element, because it's the query.
-        K = results_per_page * page
-        nn_ind, nn_dist = nn(feat, feats, distance, K + 1)
-        start_ind = (page - 1) * results_per_page + 1
+        if distance == 'manhattan':
+            dists = metrics.manhattan_distances(feat, feats)
 
-        result_images = images.iloc[nn_ind[start_ind:]]
-        result_images['image_id'] = result_images.index
-        result_images['distance'] = nn_dist[start_ind:]
-        results = [row.to_dict() for _, row in result_images.iterrows()]
+        elif distance == 'euclidean':
+            dists = metrics.euclidean_distances(feat, feats, squared=True)
 
-        return {
-            'results': results,
-            'start_ind': start_ind,
-            'page': page,
-            'num_results': num_results,
-            'time_elapsed': time.time() - t
-        }
+        elif distance == 'chi_square':
+            dists = -metrics.additive_chi2_kernel(feat, feats)
+
+        elif distance == 'dot':
+            dists = -np.dot(feats, feat)
+
+        elif distance == 'cosine':
+            dists = -np.dot(feats, feat) / feats_norm / np.linalg.norm(feat, 2)
+
+        elif distance == 'projected dot':
+            feats_proj = self.features_proj[feature]
+            dists = -np.dot(feats_proj, np.dot(self.M[feature], feat))
+
+        elif distance == 'projected cosine':
+            feats_proj = self.features_proj[feature]
+            feats_proj_norm = self.features_proj_norm[feature]
+            feat_proj = np.dot(self.M[feature], feat)
+            dists = -np.dot(feats_proj, feat_proj) / feats_proj_norm / np.linalg.norm(feat_proj, 2)
+
+        dists = dists.flatten()
+        if K > 0:
+            nn_ind = bn.argpartsort(dists, K).flatten()[:K]
+            nn_ind = nn_ind[np.argsort(dists[nn_ind])]
+        else:
+            nn_ind = np.argsort(dists)
+        nn_dist = dists[nn_ind]
+
+        return nn_ind, nn_dist
 
 
 def filter_df(df, conditions):
@@ -170,30 +182,6 @@ def filter_df(df, conditions):
     return df[ind]
 
 
-def nn(feat, feats, distance='euclidean', K=-1):
-    """
-    Exact nearest neighbor seach through exhaustive comparison.
-    """
-    if distance == 'manhattan':
-        dists = metrics.manhattan_distances(feat, feats)
-    elif distance == 'euclidean':
-        dists = metrics.euclidean_distances(feat, feats, squared=True)
-    elif distance == 'chi_square':
-        dists = -metrics.additive_chi2_kernel(feat, feats)
-    elif distance == 'dot':
-        dists = -np.dot(feats, feat)
-
-    dists = dists.flatten()
-    if K > 0:
-        nn_ind = bn.argpartsort(dists, K).flatten()[:K]
-        nn_ind = nn_ind[np.argsort(dists[nn_ind])]
-    else:
-        nn_ind = np.argsort(dists)
-    nn_dist = dists[nn_ind]
-
-    return nn_ind, nn_dist
-
-
 def run_worker(dataset_name='flickr'):
     """
     Initialize a searchable collection and start listening for jobs
@@ -202,7 +190,6 @@ def run_worker(dataset_name='flickr'):
     collection = SearchableCollection(dataset_name)
     registered_functions = {
         'nn_by_id_many_filters': collection.nn_by_id_many_filters,
-        'nn_by_id': collection.nn_by_id
     }
     vislab.utils.redis_q.poll_for_jobs(
         registered_functions, 'similarity_server')
