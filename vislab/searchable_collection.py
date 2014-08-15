@@ -38,17 +38,20 @@ class SearchableCollection(object):
         self.images = dataset_loaders[dataset_name]()
 
         # Downsample [optional for dev].
-        self.images = self.images.iloc[:10000]
+        # self.images = self.images.iloc[:10000]
+
+        # Cache the image index.
+        self.index = self.images.index.tolist()
 
         # Load all features.
         self.features = {}
+        self.features_index = {}
         for feature_name, filename in feat_filenames[dataset_name].iteritems():
             try:
                 feats = pd.read_hdf(filename, 'df')
             except:
                 feats = pd.read_pickle(filename)
-            feats = feats.ix[self.images.index]
-            self.features[feature_name] = feats
+            self.features[feature_name] = feats.ix[self.images.index].values
 
         # Append predictions to the images DataFrame.
         if 'style scores' in self.features:
@@ -72,8 +75,12 @@ class SearchableCollection(object):
         # Get all distances to query
         images = self.images
         feats = self.features[feature]
-        feat = feats.ix[image_id].values
-        feats = feats.ix[images.index].values
+        feat = feats[self.index.index(image_id)]
+
+        print feats.shape
+        print feat.shape
+
+        print('elapsed: {:.3f}'.format(time.time() - t))
 
         nn_ind, nn_dist = nn(feat, feats, distance)
         nn_df = pd.DataFrame(
