@@ -18,7 +18,7 @@ experiment_dir = vislab.config['paths']['shared_data'] + '/results_mar23'
 feat_filenames = {
     'flickr': {
         'caffe fc6': feats_dir + '/flickr/caffe_fc6.h5',
-        'style scores': experiment_dir + '/flickr_mar23_preds_caffe_fc6_df.h5'
+        # 'caffe fc7': feats_dir + '/flickr/caffe_fc7.h5',
     }
 }
 dataset_loaders = {
@@ -58,13 +58,14 @@ class SearchableCollection(object):
         print('Initialized SearchableCollection in {:.3f} s'.format(
             time.time() - t))
 
-    def nn_by_id_many_filters(self, image_id, feature, distance, page=1,
-                              filter_conditions_list=None, results_per_page=8):
+    def nn_by_id_many_filters(
+            self, image_id, feature, distance,
+            page=1, filter_conditions_list=None, results_per_page=8):
         """
         Return several sets of results, each filtered by different
         filter_conditions.
         """
-        print(feature)
+        print('nn_by_id_many_filters', feature)
         assert(feature in self.features)
         t = time.time()
 
@@ -101,12 +102,17 @@ class SearchableCollection(object):
             results_sets.append(results_data)
         return results_sets
 
-    def nn_by_id(self, image_id, feature, distance, page=1,
-                 filter_conditions=None, results_per_page=32):
+    def nn_by_id(
+            self, image_id, feature, distance='dot',
+            page=1, filter_conditions=None, results_per_page=32):
         """
         Fetch nearest neighbors for image at given id.
         """
-        print feature
+        print('nn_by_id', feature)
+
+        from IPython import embed
+        embed()
+
         assert(feature in self.features)
         t = time.time()
 
@@ -168,7 +174,7 @@ def nn(feat, feats, distance='euclidean', K=-1):
     elif distance == 'chi_square':
         dists = -metrics.additive_chi2_kernel(feat, feats)
     elif distance == 'dot':
-        dists = -np.dot(feat, feats)
+        dists = -np.dot(feats, feat)
 
     dists = dists.flatten()
     if K > 0:
@@ -183,11 +189,13 @@ def nn(feat, feats, distance='euclidean', K=-1):
 
 def run_worker(dataset_name='flickr'):
     """
-    Initialize a searchable collection and start listening for jobs.
+    Initialize a searchable collection and start listening for jobs
+    on a redis queue.
     """
     collection = SearchableCollection(dataset_name)
     registered_functions = {
-        'nn_by_id_many_filters': collection.nn_by_id_many_filters
+        'nn_by_id_many_filters': collection.nn_by_id_many_filters,
+        'nn_by_id': collection.nn_by_id
     }
     vislab.utils.redis_q.poll_for_jobs(
         registered_functions, 'similarity_server')
