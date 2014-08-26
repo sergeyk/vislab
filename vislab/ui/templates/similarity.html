@@ -90,7 +90,7 @@
     <div id="results">
     {% for result in results_data.results %}
         <div class="result">
-            <a href="/similar_to/{{result.image_id}}">
+            <a href="/similar_to/{{result.image_id}}/{{feature}}/{{distance}}">
                 <img src="{{result.image_url}}" width="160px" /><br />
                 <div class="caption">
                     {{ '{:.3f}'.format(result.distance) }}

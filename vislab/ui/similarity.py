@@ -68,13 +68,14 @@ def similar_to_id(image_id, feature, distance):
     image_info = df.loc[image_id].to_dict()
 
     select_options = [
-        ('feature', ['caffe fc6', 'caffe fc7'], feature),
+        ('feature', [
+                'caffe fc6',
+                'caffe fc7'
+            ], feature),
         (
             'distance',
             [
-                'dot', 'cosine',
-                'projected dot', 'projected cosine',
-                'euclidean', 'manhattan', 'chi_square'
+                'dot', 'cosine', 'euclidean', 'manhattan', 'chi_square'
             ],
             distance
         ),

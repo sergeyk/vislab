@@ -37,7 +37,7 @@ class SearchableCollection(object):
 
         # TODO: formalize
         # Load Flickr weights
-        weights = cPickle.load(open('data/shared/flickr_finetune_weights.pickle'))
+        # weights = cPickle.load(open('data/shared/flickr_finetune_weights.pickle'))
 
         # Load image information in a dataframe.
         self.images = dataset_loaders[dataset_name]()
@@ -51,10 +51,8 @@ class SearchableCollection(object):
 
         # Load all features.
         self.features = {}
+        # self.S = {}
         self.features_norm = {}
-        self.M = {}
-        self.features_proj = {}
-        self.features_proj_norm = {}
         self.features_index = {}
         for feature_name, filename in feat_filenames[dataset_name].iteritems():
             try:
@@ -64,13 +62,7 @@ class SearchableCollection(object):
             feats = feats.ix[self.images.index].values
             self.features[feature_name] = feats
             self.features_norm[feature_name] = np.sqrt(np.power(feats, 2).sum(1))
-
-            w = weights[feature_name][3]  # NOIR
-            M = np.diag(w)
-            self.M[feature_name] = M
-            feats_proj = np.dot(feats, M)
-            self.features_proj[feature_name] = feats_proj
-            self.features_proj_norm[feature_name] = np.sqrt(np.power(feats_proj, 2).sum(1))
+            # self.S[feature_name] = np.linalg.inv(np.cov(weights[feature_name].T))
 
         # Append predictions to the images DataFrame.
         if 'style scores' in self.features:
@@ -123,6 +115,7 @@ class SearchableCollection(object):
         """
         Exact nearest neighbor seach through exhaustive comparison.
         """
+        # S = self.S[feature]
         feats = self.features[feature]
         feats_norm = self.features_norm[feature]
         feat = feats[self.index.index(image_id)]
@@ -142,15 +135,11 @@ class SearchableCollection(object):
         elif distance == 'cosine':
             dists = -np.dot(feats, feat) / feats_norm / np.linalg.norm(feat, 2)
 
-        elif distance == 'projected dot':
-            feats_proj = self.features_proj[feature]
-            dists = -np.dot(feats_proj, np.dot(self.M[feature], feat))
-
-        elif distance == 'projected cosine':
-            feats_proj = self.features_proj[feature]
-            feats_proj_norm = self.features_proj_norm[feature]
-            feat_proj = np.dot(self.M[feature], feat)
-            dists = -np.dot(feats_proj, feat_proj) / feats_proj_norm / np.linalg.norm(feat_proj, 2)
+        # elif distance == 'mahalanobis':
+        #     dists = np.zeros(feats.shape[0])
+        #     for i in range(feats.shape[0]):
+        #         t = (feats[i] - feat)
+        #         dists[i] = np.dot(np.dot(S, t), t)
 
         dists = dists.flatten()
         if K > 0:
@@ -197,5 +186,6 @@ def run_worker(dataset_name='flickr'):
 
 if __name__ == '__main__':
     print("usage: python searchable_collection.py <dataset_name>")
+    assert(len(sys.argv) == 2)
     dataset_name = sys.argv[1]
     run_worker(dataset_name)
