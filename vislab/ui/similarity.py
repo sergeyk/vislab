@@ -15,17 +15,8 @@ df = vislab.datasets.flickr.get_df()
 
 @app.route('/')
 def index():
-    return flask.redirect(flask.url_for('similar_to_random'))
-
-
-@app.route('/similar_to_random')
-def similar_to_random():
-    image_id = df.index[np.random.randint(df.shape[0] + 1)]
-    # TODO: actually, need to get random ind from searchable_collection,
-    # since it might be a downsampled set
-    # image_id = collection.get_random_id(collection_name)
     return flask.redirect(flask.url_for(
-        'similar_to_id', image_id=image_id, feature='caffe fc6', distance='euclidean'
+        'similar_to_id', image_id='random', feature='caffe fc6', distance='euclidean'
     ))
 
 
@@ -36,6 +27,12 @@ def similar_to_id(image_id, feature, distance):
     and the JSON results, depending on whether the json arg is set.
     This keeps the parameter-parsing logic in one place.
     """
+    if image_id == 'random':
+        image_id = df.index[np.random.randint(df.shape[0] + 1)]
+        # TODO: actually, need to get random ind from searchable_collection,
+        # since it might be a downsampled set. Something like:
+        # image_id = collection.get_random_id(collection_name)
+
     prediction_options = ['all']
     # prediction_options += [
     #     'pred_{}'.format(x)
@@ -68,14 +65,12 @@ def similar_to_id(image_id, feature, distance):
     image_info = df.loc[image_id].to_dict()
 
     select_options = [
-        ('feature', [
-                'caffe fc6',
-                'caffe fc7'
-            ], feature),
+        ('feature', ['caffe fc6', 'caffe fc7'], feature),
         (
             'distance',
             [
-                'dot', 'cosine', 'euclidean', 'manhattan', 'chi_square'
+                'dot', 'cosine', 'euclidean', 'manhattan', 'chi_square',
+                'projected'
             ],
             distance
         ),

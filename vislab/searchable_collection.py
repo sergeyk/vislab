@@ -2,14 +2,17 @@
 A searchable collection of images, listening for jobs on a Redis queue.
 """
 import sys
-import operator
 import time
-import pandas as pd
+import cPickle
+import sklearn
+import operator
 import numpy as np
+import pandas as pd
 import sklearn.metrics.pairwise as metrics
+
 import vislab
-import vislab.utils.redis_q
 import vislab.datasets
+import vislab.utils.redis_q
 
 
 feats_dir = vislab.config['paths']['feats']
@@ -35,7 +38,7 @@ class SearchableCollection(object):
 
         # TODO: formalize
         # Load Flickr weights
-        # weights = cPickle.load(open('data/shared/flickr_finetune_weights.pickle'))
+        weights = cPickle.load(open('data/shared/flickr_finetune_weights.pickle'))
 
         # Load image information in a dataframe.
         self.images = dataset_loaders[dataset_name]()
@@ -52,6 +55,7 @@ class SearchableCollection(object):
         # self.S = {}
         self.features_norm = {}
         self.features_index = {}
+        self.features_proj = {}
         for feature_name, filename in feat_filenames[dataset_name].iteritems():
             try:
                 feats = pd.read_hdf(filename, 'df')
@@ -60,7 +64,10 @@ class SearchableCollection(object):
             feats = feats.ix[self.images.index].values
             self.features[feature_name] = feats
             self.features_norm[feature_name] = np.sqrt(np.power(feats, 2).sum(1))
-            # self.S[feature_name] = np.linalg.inv(np.cov(weights[feature_name].T))
+
+            W = weights[feature_name].T
+            Wm = W - W.mean(1)[:, np.newaxis]
+            self.features_proj[feature_name] = np.dot(feats, Wm)
 
         # Append predictions to the images DataFrame.
         if 'style scores' in self.features:
@@ -115,7 +122,6 @@ class SearchableCollection(object):
         """
         # S = self.S[feature]
         feats = self.features[feature]
-        feats_norm = self.features_norm[feature]
         feat = feats[self.index.index(image_id)]
 
         if distance == 'manhattan':
@@ -131,13 +137,13 @@ class SearchableCollection(object):
             dists = -np.dot(feats, feat)
 
         elif distance == 'cosine':
+            feats_norm = self.features_norm[feature]
             dists = -np.dot(feats, feat) / feats_norm / np.linalg.norm(feat, 2)
 
-        # elif distance == 'mahalanobis':
-        #     dists = np.zeros(feats.shape[0])
-        #     for i in range(feats.shape[0]):
-        #         t = (feats[i] - feat)
-        #         dists[i] = np.dot(np.dot(S, t), t)
+        elif distance == 'projected':
+            feats = self.features_proj[feature]
+            feat = feats[self.index.index(image_id)]
+            dists = sklearn.utils.extmath.row_norms(feats - feat)
 
         dists = dists.flatten()
         if K > 0:
