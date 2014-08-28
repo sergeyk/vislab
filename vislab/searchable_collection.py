@@ -4,14 +4,12 @@ A searchable collection of images, listening for jobs on a Redis queue.
 import sys
 import operator
 import time
-import bottleneck as bn
 import pandas as pd
 import numpy as np
 import sklearn.metrics.pairwise as metrics
 import vislab
 import vislab.utils.redis_q
 import vislab.datasets
-import cPickle
 
 
 feats_dir = vislab.config['paths']['feats']
@@ -143,8 +141,7 @@ class SearchableCollection(object):
 
         dists = dists.flatten()
         if K > 0:
-            nn_ind = bn.argpartsort(dists, K).flatten()[:K]
-            nn_ind = nn_ind[np.argsort(dists[nn_ind])]
+            nn_ind = np.argsort(dists).flatten()[:K]
         else:
             nn_ind = np.argsort(dists)
         nn_dist = dists[nn_ind]
