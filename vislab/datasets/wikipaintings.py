@@ -18,6 +18,34 @@ BASIC_DF_FILENAME = _DIRNAME + '/wikipaintings_basic_info.h5'
 DETAILED_DF_FILENAME = _DIRNAME + '/wikipaintings_detailed_info.h5'
 URL_DF_FILENAME = _DIRNAME + '/wikipaintings_urls.h5'
 
+underscored_style_names = [
+    'style_Abstract_Art',
+    'style_Abstract_Expressionism',
+    'style_Art_Informel',
+    'style_Art_Nouveau_(Modern)',
+    'style_Baroque',
+    'style_Color_Field_Painting',
+    'style_Cubism',
+    'style_Early_Renaissance',
+    'style_Expressionism',
+    'style_High_Renaissance',
+    'style_Impressionism',
+    'style_Magic_Realism',
+    'style_Mannerism_(Late_Renaissance)',
+    'style_Minimalism',
+    'style_Nave_Art_(Primitivism)',
+    'style_Neoclassicism',
+    'style_Northern_Renaissance',
+    'style_Pop_Art',
+    'style_Post-Impressionism',
+    'style_Realism',
+    'style_Rococo',
+    'style_Romanticism',
+    'style_Surrealism',
+    'style_Symbolism',
+    'style_Ukiyo-e'
+]
+
 
 def get_image_url_for_id(image_id):
     filename = URL_DF_FILENAME

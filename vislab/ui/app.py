@@ -57,7 +57,7 @@ def load_pred_results(results_dirname, db_name, experiment_name, settings):
 
         for setting in settings[experiment_name]:
             df_ = preds_panel.minor_xs(setting)
-            for style_name in style_names:
+            for style_name in style_names[experiment_name]:
                 df_['pred_' + style_name] -= \
                     threshold_df.loc[style_name, setting]
                 df_['abs_pred_' + style_name] = \
@@ -74,12 +74,21 @@ def load_pred_results(results_dirname, db_name, experiment_name, settings):
 settings = {}
 results_dirname = vislab.config['paths']['shared_data'] + '/results'
 db_name = 'all_preds'
-experiment_names = ['flickr_mar23', 'wikipaintings_mar23']
+EXPERIMENT_NAMES = ['flickr_mar23', 'wikipaintings_mar23']
+style_names = {}
+style_names['flickr'] = vislab.datasets.flickr.underscored_style_names
+style_names['flickr_mar23'] = vislab.datasets.flickr.underscored_style_names
+style_names['wikipaintings'] = vislab.datasets.wikipaintings.underscored_style_names
+style_names['wikipaintings_mar23'] = vislab.datasets.wikipaintings.underscored_style_names
+
 # TODO: get rid of this! use mongo!
-style_names = vislab.datasets.flickr.underscored_style_names
 flickr_df = vislab.datasets.flickr.get_df()
-# wp_df = vislab.datasets.wikipaintings.get_df()
-for experiment_name in experiment_names:
+wp_df = vislab.datasets.wikipaintings.get_df()
+all_dfs = {
+    'flickr_mar23': flickr_df,
+    'wikipaintings_mar23': wp_df
+}
+for experiment_name in EXPERIMENT_NAMES:
     load_pred_results(results_dirname, db_name, experiment_name, settings)
 
 
@@ -91,7 +100,7 @@ def get_collection(dataset_name):
     """
     dataset_loaders = {
         'flickr': vislab.datasets.flickr.get_df,
-        'pinterest': vislab.datasets.pinterest.get_pins_80k_df
+        'wikipaintings': vislab.datasets.wikipaintings.get_style_df
     }
 
     collection = mongo_client['ui_datasets'][dataset_name]
@@ -108,14 +117,23 @@ def index():
 
 
 @app.route('/data')
-def data_default():
+@app.route('/data/flickr')
+def data_flickr():
     return flask.redirect(flask.url_for(
         'data', dataset_name='flickr', style_name='style_Pastel', page=1
     ))
 
 
+@app.route('/data/wikipaintings')
+def data_wikipaintings():
+    return flask.redirect(flask.url_for(
+        'data', dataset_name='wikipaintings', style_name='style_Impressionism', page=1
+    ))
+
+
 @app.route('/results')
-def results_default():
+@app.route('/results/flickr')
+def results_flickr():
     return flask.redirect(flask.url_for(
         'results', experiment='flickr_mar23', setting='caffe_fc6 None vw',
         style='style_Vintage', split='test',
@@ -123,14 +141,23 @@ def results_default():
     ))
 
 
-@app.route('/image/<experiment>/<setting>/<style>/<int:img_id>')
+@app.route('/results/wikipaintings')
+def results_wikipaintings():
+    return flask.redirect(flask.url_for(
+        'results', experiment='wikipaintings_mar23', setting='caffe_fc7 None vw',
+        style='style_Impressionism', split='test',
+        gt_label='all', pred_label='positive', confidence='decreasing', page=1
+    ))
+
+
+@app.route('/image/<experiment>/<setting>/<style>/<img_id>')
 def image_page(experiment, setting, style, img_id):
-    collection = mongo_client[db_name][experiment_name]
-    page_url = flickr_df['page_url'][str(img_id)]
-    image_url = flickr_df['image_url'][str(img_id)]
+    collection = mongo_client[db_name][experiment]
+    page_url = all_dfs[experiment]['page_url'][str(img_id)]
+    image_url = all_dfs[experiment]['image_url'][str(img_id)]
     fields = {'_id': 0}
     gt_fields = {'_id': 0}
-    for style in style_names:
+    for style in style_names[experiment]:
         fields['pred_{}'.format(style)] = 1
         gt_fields[style] = 1
     doc = collection.find({'index': str(img_id)}, fields)[0]
@@ -160,7 +187,7 @@ def image_page(experiment, setting, style, img_id):
             colors[i] = \
                 hex(green[0])[2:] + hex(green[1])[2:] + hex(green[2])[2:]
         else:
-            pink[1] = 204 - st * 70
+            pink[1] = 204 - st * 7
             pink[2] = 204 - st * 70
             colors[i] = hex(pink[0])[2:] + hex(pink[1])[2:] + hex(pink[2])[2:]
 
@@ -243,7 +270,7 @@ def results(experiment, setting, style, split, gt_label, pred_label,
     if num_results > 0:
         results = list(cursor[start_ind:end_ind])
         for result in results:
-            result['image_url'] = flickr_df['image_url'][result['index']]
+            result['image_url'] = all_dfs[experiment]['image_url'][result['index']]
             result['caption'] = 'conf: {:.2f} | gt: {}'.format(
                 result['pred_' + style],
                 '+' if result[style] else '-')
@@ -252,9 +279,9 @@ def results(experiment, setting, style, split, gt_label, pred_label,
 
     # Set filter options. Order matters.
     select_options = [
-        ('experiment', ['flickr_mar23'], experiment),
+        ('experiment', EXPERIMENT_NAMES, experiment),
         ('setting', settings[experiment], setting),
-        ('style', style_names, style),
+        ('style', style_names[experiment], style),
         ('split', ['all', 'train', 'val', 'test'], split),
         ('actual_label', ['all', 'positive', 'negative'], gt_label),
         ('predicted_label', ['all', 'positive', 'negative'], pred_label),
@@ -297,8 +324,8 @@ def data(dataset_name, style_name, page):
 
     # Set filter options
     select_options = [
-        ('dataset', ['flickr', 'pinterest'], dataset_name),
-        ('style', ['all'] + style_names, style_name),
+        ('dataset', ['flickr', 'wikipaintings'], dataset_name),
+        ('style', ['all'] + style_names[dataset_name], style_name),
         ('page', range(1, num_pages), page),
     ]
 
