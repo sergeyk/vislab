@@ -8,6 +8,7 @@ import sklearn
 import operator
 import numpy as np
 import pandas as pd
+import sklearn.utils.extmath
 import sklearn.metrics.pairwise as metrics
 
 import vislab
