@@ -385,7 +385,7 @@ def parse_pin(pin, username, board_name, query):
     data = {
         'username': username,
         'pin_url': 'www.pinterest.com{}'.format(
-            pin.find('a', {'class': 'pinImageWrapper'}).get('href')),
+            pin.find('a', class_='pinImageWrapper').get('href')),
         'repins_likes_url': ['www.pinterest.com{}'.format(
             link['href']) for link in pin.select('a.socialItem')],
         'caption': caption,
@@ -417,7 +417,7 @@ def scrape_pins(driver, board, pin_collection):
     pins = process_whole_page(
         driver, url, lambda soup: [parse_pin(
             pin, board['username'], board['board_name'], board['query'])
-            for pin in soup.select('div.item')
+            for pin in soup.select('div.pinWrapper')
         ])
     for pin in pins:
         if pin_collection.find({'_id': pin['_id']}).count() == 0:
